@@ -18,11 +18,12 @@ use_description(
     Version = "0.1.0",
     Description = "Implementation of the model-agnostic Kernel SHAP algorithm by
     Ian Covert and Su-In Lee (2021) <http://proceedings.mlr.press/v130/covert21a>. 
-    Due to its iterative nature, also standard errors of the SHAP values are provided.
-    The interface is very general: predictions of linear regressions, 
-    logistic regressions (logit or probability scale), multi-input neural networks, 
-    generalized additive models etc. can be decomposed, the only requirement is 
-    that each prediction is a number.",
+    Due to its iterative nature, standard errors of the SHAP values are provided,
+    and convergence is monitored.
+    The package allows to work with any model that provides numeric predictions.
+    Examples include linear regression, logistic regression (logit or probability scale)
+    and other generalized linear models, generalized additive models, and 
+    neural networks.",
     `Authors@R` = "person('Michael', 'Mayer', email = 'mayermichael79@gmail.com', role = c('aut', 'cre'))",
     Depends = "R (>= 3.2.0)",
     LazyData = NULL
@@ -61,7 +62,7 @@ use_testthat()
 use_news_md()
 
 # Add logo
-# use_logo("logo.png")
+use_logo("logo.png")
 
 # If package goes to CRAN: infos (check results etc.) for CRAN
 use_cran_comments()

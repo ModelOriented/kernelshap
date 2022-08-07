@@ -4,7 +4,7 @@ SHAP values [1] decompose model predictions into additive contributions of the f
 
 The "kernelshap" package implements Algorithm 1 in the supplement of [Journal link](https://proceedings.mlr.press/v130/covert21a.html) with pairwise sampling.
 
-Along with SHAP values, their standard errors are calculated.
+Along with SHAP values, their standard errors are calculated. This allows to monitor convergence of the algorithm.
 
 The main function, `kernelshap()`, requires these three arguments:
 
@@ -61,18 +61,21 @@ sv_dependence(shp, "Petal.Length")
 library(kernelshap)
 library(shapviz)
 
-fit <- glm(Species == "setosa" ~ ., data = iris)
+fit <- glm(I(Species == "virginica") ~ Sepal.Length + Sepal.Width, data = iris, family = binomial)
 pred_fun <- function(X) predict(fit, X, type = "response")
 
 # Crunch SHAP values (10 seconds)
-s <- kernelshap(iris[, -5], pred_fun = pred_fun)
+s <- kernelshap(iris[1:2], pred_fun = pred_fun)
 
 # Plot with shapviz
 shp <- shapviz(s$S, s$X, s$baseline)
-sv_waterfall(shp, 1)
+sv_waterfall(shp, 51)
+sv_dependence(shp, "Sepal.Length")
 ```
 
 ![](man/figures/README-glm-waterfall.svg)
+
+![](man/figures/README-glm-dep.svg)
 
 ## Example: Keras neural net
 

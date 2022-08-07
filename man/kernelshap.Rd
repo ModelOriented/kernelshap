@@ -27,19 +27,19 @@ and SHAP values should be on the probability scale, then this argument is
 
 \item{bg_X}{Matrix or data.frame used as background dataset to calculate marginal
 expectations. Its column structure must be similar to \code{X}.
-If too large (>200 rows). Use subsampling or some more sophisticated strategy.}
+If too large (>200 rows), use subsampling or some more sophisticated strategy.}
 
 \item{bg_w}{Optional vector of case weights for each row of \code{bg_X}.}
 
-\item{m}{Optional number of feature subsets S to be evaluated during one iteration.
+\item{m}{Number of feature subsets S to be evaluated during one iteration.
 By default \code{trunc(20 * sqrt(ncol(bg_X)))}. Since we use the pairwise strategy,
 the actual number of evaluations is 2m.}
 
-\item{tol}{Optional tolerance determining when to stop. The algorithm keeps sampling until
+\item{tol}{Tolerance determining when to stop. The algorithm keeps sampling until
 max(sigma_n) / diff(range(beta_n)) < tol, where sigma_n are the standard errors
 and beta_n are the SHAP values of a given observation.}
 
-\item{verbose}{Optional flag. Set to \code{FALSE} to suppress messages and progress bar.}
+\item{verbose}{Set to \code{FALSE} to suppress messages and progress bar.}
 
 \item{...}{Currently unused.}
 }
@@ -51,20 +51,20 @@ An object of class "kernelshap" with the following components:
 \item \code{baseline}: The average prediction on the background data.
 \item \code{SE}: Standard errors corresponding to \code{S}.
 \item \code{n_iter}: Number of iterations until convergence.
-\item \code{m}: Same as parameter \code{m}.
-\item \code{tol}: Same as parameter \code{tol}.
 }
 }
 \description{
 This function implements the model-agnostic Kernel SHAP Algorithm 1
 of Covert and Lee (2021) with pairwise sampling, see reference.
 It is applied to each row in \code{X}. Due to its iterative nature,
-standard errors of the resulting SHAP values are provided. During each iteration,
-\code{2m} feature subsets are evaluated, until the worst standard error of the SHAP
-values is small enough. Note that the data rows to be explained (\code{X}) and the
+standard errors of the resulting SHAP values are provided, and convergence is monitored.
+During each iteration, \code{2m} feature subsets are evaluated,
+until the worst standard error of the SHAP
+values is small enough relative to the range of the SHAP values.
+The data rows \code{X} to be explained and the
 background data \code{bg_X} should only represent feature columns required by the
-prediction function \code{pred_fun}. The latter is a function that
-takes a data structure like \code{X} or \code{bg_X} and provides one numeric
+prediction function \code{pred_fun}. The latter is a function taking
+a data structure like \code{X} or \code{bg_X} and provides one numeric
 prediction per row.
 }
 \examples{
@@ -73,7 +73,7 @@ pred_fun <- function(X) stats::predict(fit, X)
 s <- kernelshap(head(iris[-1], 1), pred_fun = pred_fun, iris[-1])
 s
 
-# Similarly, matrix input would be respected and pred_fun may contain preprocessing
+Matrix input works as well, and pred_fun may contain preprocessing steps.
 fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
 pred_fun <- function(X) stats::predict(fit, as.data.frame(X))
 X <- data.matrix(iris[2:4])
