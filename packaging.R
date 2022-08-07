@@ -16,11 +16,15 @@ use_description(
   fields = list(
     Title = "Kernel SHAP",
     Version = "0.1.0",
-    Description = "Implementation of the Kernel SHAP algorithm described by
-    Covert and Lee (2021). Due to its iterative nature, standard errors of the
-    SHAP values are provided.",
+    Description = "Implementation of the model-agnostic Kernel SHAP algorithm by
+    Ian Covert and Su-In Lee (2021) <http://proceedings.mlr.press/v130/covert21a>. 
+    Due to its iterative nature, also standard errors of the SHAP values are provided.
+    The interface is very general: predictions of linear regressions, 
+    logistic regressions (logit or probability scale), multi-input neural networks, 
+    generalized additive models etc. can be decomposed, the only requirement is 
+    that each prediction is a number.",
     `Authors@R` = "person('Michael', 'Mayer', email = 'mayermichael79@gmail.com', role = c('aut', 'cre'))",
-    Depends = "R (>= 3.4.0)",
+    Depends = "R (>= 3.2.0)",
     LazyData = NULL
   ),
   roxygen = TRUE
@@ -28,14 +32,13 @@ use_description(
 
 use_package("stats", "Imports")
 use_package("utils", "Imports")
-use_package("dplyr", "Imports")
 
-use_package("kernelshap", "Enhances")
+use_package("shapviz", "Suggests")
 
 use_gpl_license(2)
 
 # Your files that do not belong to the package itself (others are added by "use_* function")
-use_build_ignore(c("^packaging.R$", "[.]Rproj$", "^backlog$", "stuff.R",
+use_build_ignore(c("^packaging.R$", "[.]Rproj$", "stuff.R",
                    "^cran-comments.md$", "^logo.png$"), escape = FALSE)
 
 # If your code uses the pipe operator %>%
@@ -48,7 +51,7 @@ use_build_ignore(c("^packaging.R$", "[.]Rproj$", "^backlog$", "stuff.R",
 use_readme_md()
 
 # Longer docu in RMarkdown (with running R code). Often quite similar to readme.
-use_vignette("kernelshap")
+# use_vignette("kernelshap")
 
 # If you want to add unit tests
 use_testthat()
@@ -58,7 +61,7 @@ use_testthat()
 use_news_md()
 
 # Add logo
-use_logo("logo.png")
+# use_logo("logo.png")
 
 # If package goes to CRAN: infos (check results etc.) for CRAN
 use_cran_comments()

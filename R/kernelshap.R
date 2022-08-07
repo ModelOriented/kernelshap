@@ -1,27 +1,34 @@
 #' Kernel SHAP
 #'
-#' This function implements the Kernel SHAP Algorithm 1 of Covert and Lee (2021)
-#' with pairwise sampling, see reference.
-#' It is applied separately to each row in \code{X}. Due to its iterative nature,
-#' standard errors of the resulting SHAP values can be provided. During each iteration,
-#' \code{2m} feature subsets are evaluated, until the worst standard error is small enough.
+#' This function implements the model-agnostic Kernel SHAP Algorithm 1 
+#' of Covert and Lee (2021) with pairwise sampling, see reference.
+#' It is applied to each row in \code{X}. Due to its iterative nature,
+#' standard errors of the resulting SHAP values are provided. During each iteration,
+#' \code{2m} feature subsets are evaluated, until the worst standard error of the SHAP 
+#' values is small enough. Note that the data rows to be explained (\code{X}) and the
+#' background data \code{bg_X} should only represent feature columns required by the
+#' prediction function \code{pred_fun}. The latter is a function that
+#' takes a data structure like \code{X} or \code{bg_X} and provides one numeric 
+#' prediction per row.
 #' 
 #' @param X Matrix or data.frame containing the observations to be explained.
 #' Should only contain features required in \code{pred_fun}, i.e., it should only contain
 #' features.
 #' @param pred_fun A function taking objects like \code{X} as input and providing numeric 
-#' predictions.
+#' predictions. Example: If "fit" denotes a logistic regression fitted via \code{stats::glm}, 
+#' and SHAP values should be on the probability scale, then this argument is
+#' \code{function(X) predict(fit, X, type = "response")}.
 #' @param bg_X Matrix or data.frame used as background dataset to calculate marginal 
 #' expectations. Its column structure must be similar to \code{X}.
-#' If too large (>120 rows). Use subsampling or some more sophisticated strategy. 
-#' @param bg_w An optional vector of case weights for each row of \code{bg_X}.
-#' @param m The number of feature subsets S to be evaluated during one iteration. 
+#' If too large (>200 rows). Use subsampling or some more sophisticated strategy. 
+#' @param bg_w Optional vector of case weights for each row of \code{bg_X}.
+#' @param m Optional number of feature subsets S to be evaluated during one iteration. 
 #' By default \code{trunc(20 * sqrt(ncol(bg_X)))}. Since we use the pairwise strategy,
 #' the actual number of evaluations is 2m.
-#' @param tol Tolerance determining when to stop. The algorithm keeps sampling until
+#' @param tol Optional tolerance determining when to stop. The algorithm keeps sampling until
 #' max(sigma_n) / diff(range(beta_n)) < tol, where sigma_n are the standard errors 
 #' and beta_n are the SHAP values of a given observation.
-#' @param verbose Set to \code{FALSE} to suppress messages and progress bar.
+#' @param verbose Optional flag. Set to \code{FALSE} to suppress messages and progress bar.
 #' @param ... Currently unused.
 #' @return An object of class "kernelshap" with the following components:
 #' \itemize{
@@ -29,12 +36,23 @@
 #'   \item \code{X}: Same as parameter \code{X}.
 #'   \item \code{baseline}: The average prediction on the background data.
 #'   \item \code{SE}: Standard errors corresponding to \code{S}.
+#'   \item \code{n_iter}: Number of iterations until convergence.
+#'   \item \code{m}: Same as parameter \code{m}.
+#'   \item \code{tol}: Same as parameter \code{tol}.
 #' }
 #' @export
 #' @references Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value Estimation Using Linear Regression Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.
 #' @examples
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
-#' s <- kernelshap(head(iris[-1], 1), function(X) stats::predict(fit, X), iris[-1])
+#' pred_fun <- function(X) stats::predict(fit, X)
+#' s <- kernelshap(head(iris[-1], 1), pred_fun = pred_fun, iris[-1])
+#' s
+#' 
+#' # Similarly, matrix input would be respected and pred_fun may contain preprocessing
+#' fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
+#' pred_fun <- function(X) stats::predict(fit, as.data.frame(X))
+#' X <- data.matrix(iris[2:4])
+#' s <- kernelshap(X[1:3, ], pred_fun = pred_fun, X)
 #' s
 kernelshap <- function(X, pred_fun, bg_X = X, bg_w = NULL, 
                        m = trunc(20 * sqrt(ncol(bg_X))), tol = 0.01, 
@@ -54,11 +72,13 @@ kernelshap <- function(X, pred_fun, bg_X = X, bg_w = NULL,
       !all(bg_w == 0)
     )
   }
-  if (verbose && nrow(bg_X) > 120) {
-    message("Your background data is large. This will slow down the process.")
+  if (verbose && nrow(bg_X) > 200) {
+    message("Your background data is large. This will slow down the process. Consider using 100-200 rows.")
   }
   preds <- pred_fun(bg_X)
   stopifnot(
+    "Predictions of multiple observations should be a vector (and not, e.g. a matrix)" = 
+      is.vector(preds),
     "Predictions should be numeric" = is.numeric(preds), 
     length(preds) == nrow(bg_X)
   )
@@ -69,6 +89,7 @@ kernelshap <- function(X, pred_fun, bg_X = X, bg_w = NULL,
   p <- ncol(X)
   n <- nrow(X)
   S <- SE <- matrix(0, nrow = n, ncol = p, dimnames = list(NULL, colnames(X)))
+  n_iter <- numeric(n)
 
   if (p <= 1L) {
     if (p == 1L) {
@@ -95,11 +116,12 @@ kernelshap <- function(X, pred_fun, bg_X = X, bg_w = NULL,
     )
     S[i, ] <- res$beta
     SE[i, ] <- res$sigma
+    n_iter[i] <- res$n_iter
     if (verbose && n >= 2L) {
       utils::setTxtProgressBar(pb, i)
     }
   }
-  out <- list(S = S, X = X, baseline = v0, SE = SE)
+  out <- list(S = S, X = X, baseline = v0, SE = SE, n_iter = n_iter, m = m, tol = tol)
   class(out) <- "kernelshap"
   out
 }
@@ -114,7 +136,7 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, m, tol) {
   group <- rep(1:m, each = nrow(bg_X))
   w <- if (!is.null(bg_w)) rep(bg_w, times = m)
 
-  n_runs <- n <- counter <- 0L
+  n_iter <- n <- counter <- 0L
   A <- Atemp <- matrix(0, nrow = p, ncol = p)
   b <- btemp <- numeric(p)
   est_m = list()
@@ -153,16 +175,16 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, m, tol) {
     Atemp <- matrix(0, nrow = p, ncol = p)
     btemp <- numeric(p)
 
-    n_runs <- n_runs + 1L
+    n_iter <- n_iter + 1L
 
-    if (n_runs >= 2L) {
+    if (n_iter >= 2L) {
       beta_n <- solver(A, b, v1, v0)
       sigma_beta <- m * stats::cov(do.call(rbind, est_m))
       sigma_n <- sqrt(diag(sigma_beta) / n)
       converged <- max(sigma_n) / diff(range(beta_n)) < tol
     }
   }
-  list(beta = beta_n, sigma = sigma_n, nruns = n_runs)
+  list(beta = beta_n, sigma = sigma_n, n_iter = n_iter)
 }
 
 # Simple version without standard errors
@@ -218,7 +240,7 @@ modify_and_stack <- function(X, bg, Z) {
     X_mod[, r] <- bg[, r, drop = FALSE]
     data_list[[j]] <- X_mod
   }
-  dplyr::bind_rows(data_list) # much faster than rbind()
+  do.call(rbind, data_list)
 }
 
 # Convenience wrapper around mean and weighted.mean

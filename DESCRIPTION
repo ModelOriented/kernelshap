@@ -1,0 +1,26 @@
+Package: kernelshap
+Title: Kernel SHAP
+Version: 0.1.0
+Authors@R: 
+    person("Michael", "Mayer", , "mayermichael79@gmail.com", role = c("aut", "cre"))
+Description: Implementation of the model-agnostic Kernel SHAP algorithm by
+    Ian Covert and Su-In Lee (2021)
+    <http://proceedings.mlr.press/v130/covert21a>.  Due to its iterative
+    nature, also standard errors of the SHAP values are provided.  The
+    interface is very general: predictions of linear regressions, logistic
+    regressions (logit or probability scale), multi-input neural networks,
+    generalized additive models etc. can be decomposed, the only
+    requirement is that each prediction is a number.
+License: GPL (>= 2)
+Depends: 
+    R (>= 3.2.0)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.2
+Imports: 
+    stats,
+    utils
+Suggests: 
+    shapviz
+URL: https://github.com/mayer79/kernelshap
+BugReports: https://github.com/mayer79/kernelshap/issues
