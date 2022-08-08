@@ -9,8 +9,10 @@ kernelshap(
   pred_fun,
   bg_X = X,
   bg_w = NULL,
+  paired_sampling = TRUE,
   m = trunc(20 * sqrt(ncol(bg_X))),
   tol = 0.01,
+  max_iter = 250,
   verbose = TRUE,
   ...
 )
@@ -31,13 +33,20 @@ If too large (>200 rows), use subsampling or some more sophisticated strategy.}
 
 \item{bg_w}{Optional vector of case weights for each row of \code{bg_X}.}
 
+\item{paired_sampling}{Logical flag indicating whether to use paired sampling.
+The default is \code{TRUE}. This means that with every feature subset S,
+also its complement is evaluated, which leads to faster convergence.}
+
 \item{m}{Number of feature subsets S to be evaluated during one iteration.
-By default \code{trunc(20 * sqrt(ncol(bg_X)))}. Since we use the pairwise strategy,
+By default \code{trunc(20 * sqrt(ncol(bg_X)))}. For the paired sampling strategy,
 the actual number of evaluations is 2m.}
 
 \item{tol}{Tolerance determining when to stop. The algorithm keeps sampling until
 max(sigma_n) / diff(range(beta_n)) < tol, where sigma_n are the standard errors
 and beta_n are the SHAP values of a given observation.}
+
+\item{max_iter}{If the stopping criterion (see \code{tol}) is not reached after
+\code{max_iter} iterations, then the algorithm stops.}
 
 \item{verbose}{Set to \code{FALSE} to suppress messages and progress bar.}
 
@@ -50,12 +59,13 @@ An object of class "kernelshap" with the following components:
 \item \code{X}: Same as parameter \code{X}.
 \item \code{baseline}: The average prediction on the background data.
 \item \code{SE}: Standard errors corresponding to \code{S}.
-\item \code{n_iter}: Number of iterations until convergence.
+\item \code{n_iter}: Number of iterations until convergence per row.
+\item \code{converged}: Logical vector indicating convergence per row.
 }
 }
 \description{
 This function implements the model-agnostic Kernel SHAP Algorithm 1
-of Covert and Lee (2021) with pairwise sampling, see reference.
+of Covert and Lee (2021) with or without paired sampling, see reference.
 It is applied to each row in \code{X}. Due to its iterative nature,
 standard errors of the resulting SHAP values are provided, and convergence is monitored.
 During each iteration, \code{2m} feature subsets are evaluated,
@@ -70,10 +80,10 @@ prediction per row.
 \examples{
 fit <- stats::lm(Sepal.Length ~ ., data = iris)
 pred_fun <- function(X) stats::predict(fit, X)
-s <- kernelshap(head(iris[-1], 1), pred_fun = pred_fun, iris[-1])
+s <- kernelshap(iris[1:2, -1], pred_fun = pred_fun, iris[-1])
 s
 
-Matrix input works as well, and pred_fun may contain preprocessing steps.
+# Matrix input works as well, and pred_fun may contain preprocessing steps.
 fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
 pred_fun <- function(X) stats::predict(fit, as.data.frame(X))
 X <- data.matrix(iris[2:4])

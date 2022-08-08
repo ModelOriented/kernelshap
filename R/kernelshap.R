@@ -51,10 +51,10 @@
 #' @examples
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
 #' pred_fun <- function(X) stats::predict(fit, X)
-#' s <- kernelshap(head(iris[-1], 1), pred_fun = pred_fun, iris[-1])
+#' s <- kernelshap(iris[1:2, -1], pred_fun = pred_fun, iris[-1])
 #' s
 #' 
-#' Matrix input works as well, and pred_fun may contain preprocessing steps.
+#' # Matrix input works as well, and pred_fun may contain preprocessing steps.
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
 #' pred_fun <- function(X) stats::predict(fit, as.data.frame(X))
 #' X <- data.matrix(iris[2:4])

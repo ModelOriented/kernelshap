@@ -57,6 +57,7 @@ use_readme_md()
 # If you want to add unit tests
 use_testthat()
 # use_test("kernelshap.R")
+# use_test("methods.R")
 
 # On top of NEWS.md, describe changes made to the package
 use_news_md()

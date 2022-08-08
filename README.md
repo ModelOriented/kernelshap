@@ -4,30 +4,28 @@
 
 SHAP values [1] decompose model predictions into additive contributions of the features in a fair way. A model agnostic approach is called Kernel SHAP, introduced in [1], and investigated in detail in [2]. 
 
-The "kernelshap" package implements Algorithm 1 in the supplement of [Journal link](https://proceedings.mlr.press/v130/covert21a.html) with or without paired sampling.
-
-Along with SHAP values, their standard errors are calculated. This allows to monitor convergence of the algorithm.
+The "kernelshap" package implements the basic Kernel SHAP Algorithm 1 described in detail in the supplement of [2]. An advantage of their algorithm is that SHAP values are supplemented by standard errors. Furthermore, convergence can be monitored and controlled.
 
 The main function, `kernelshap()`, requires these three arguments:
 
 - `X`: A matrix or data.frame of rows to be explained. Important: For each column and each row, a SHAP value is calculated. The columns should thus only represent model features, not the response.
-- `pred_fun`: A function that takes a data structure like `X` and provides one numeric prediction for each row.
-- `bg_X`: The background data used to integrate out features "switched off". It should have the same column structure as `X`. A good size is around 100 rows.
+- `pred_fun`: A function that takes a data structure like `X` and provides one numeric prediction per row. Some examples regarding a model `fit`:
+  - `lm()`: `function(X) predict(fit, X)`
+  - `glm()`: `function(X) predict(fit, X)` (link scale) or
+  - `glm()`: `function(X) predict(fit, X, type = "response")` (response scale)
+  - `mgcv::gam()`: Same as for `glm()`
+  - Keras: `as.numeric(predict(fit, X))`
+- `bg_X`: The background data used to integrate out features "switched off". It should have the same column structure as `X`. A good size is around $100-200$ rows.
 
 **Remarks**
 
 - Case weights: Passing `bg_w` allows to respect case weights of the background data.
-- Visualizations: In order to visualize the result, you can use our other R package "shapviz".
-- Probability scale decompositions: Since you can freely choose the prediction function, you can easily get decompositions on a different scale. E.g., if your model is a logistic regression, you can pass a prediction function that provides probabilities to get predictions on probability scale.
+- Visualizations: In order to visualize the result, you can use R package "shapviz".
 - The prediction function can also contain preprocessing steps.
 
 ## Installation
 
 ``` r
-# From CRAN
-install.packages("kernelshap")
-
-# Or the newest version from GitHub:
 # install.packages("devtools")
 devtools::install_github("mayer79/kernelshap")
 ```
@@ -41,8 +39,8 @@ library(shapviz)
 fit <- lm(Sepal.Length ~ ., data = iris)
 pred_fun <- function(X) predict(fit, X)
 
-# Crunch SHAP values (10 seconds)
-s <- kernelshap(iris[1:110, -1], pred_fun = pred_fun, iris[-1])
+# Crunch SHAP values (15 seconds)
+s <- kernelshap(iris[-1], pred_fun = pred_fun, iris[-1])
 
 # Plot with shapviz
 shp <- shapviz(s$S, s$X, s$baseline)
@@ -92,14 +90,15 @@ model %>%
   layer_dense(units = 1)
 
 model %>% 
-  compile(loss = "mse", optimizer = optimizer_nadam(learning_rate = 0.005))
+  compile(loss = "mse", optimizer = optimizer_nadam(0.005))
 
-model %>% fit(
-  x = data.matrix(iris[2:4]), 
-  y = iris[, 1],
-  epochs = 50,
-  batch_size = 30
-)
+model %>% 
+  fit(
+    x = data.matrix(iris[2:4]), 
+    y = iris[, 1],
+    epochs = 50,
+    batch_size = 30
+  )
 
 X <- data.matrix(iris[2:4])
 pred_fun <- function(X) as.numeric(predict(model, X, batch_size = nrow(X)))
@@ -108,7 +107,7 @@ pred_fun <- function(X) as.numeric(predict(model, X, batch_size = nrow(X)))
 
 # Takes about 40 seconds
 system.time(
-  s <- kernelshap(X, pred_fun = pred_fun, X)
+  s <- kernelshap(X, pred_fun = pred_fun)
 )
 
 # Plot with shapviz

@@ -21,6 +21,8 @@ Imports:
     stats,
     utils
 Suggests: 
-    shapviz
+    shapviz,
+    testthat (>= 3.0.0)
 URL: https://github.com/mayer79/kernelshap
 BugReports: https://github.com/mayer79/kernelshap/issues
+Config/testthat/edition: 3
