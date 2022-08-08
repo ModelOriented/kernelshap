@@ -1,8 +1,10 @@
+# shapviz <a href='https://github.com/mayer79/kernelshap'><img src='man/figures/logo.png' align="right" height="138.5" /></a>
+
 ## Introduction
 
 SHAP values [1] decompose model predictions into additive contributions of the features in a fair way. A model agnostic approach is called Kernel SHAP, introduced in [1], and investigated in detail in [2]. 
 
-The "kernelshap" package implements Algorithm 1 in the supplement of [Journal link](https://proceedings.mlr.press/v130/covert21a.html) with pairwise sampling.
+The "kernelshap" package implements Algorithm 1 in the supplement of [Journal link](https://proceedings.mlr.press/v130/covert21a.html) with or without paired sampling.
 
 Along with SHAP values, their standard errors are calculated. This allows to monitor convergence of the algorithm.
 

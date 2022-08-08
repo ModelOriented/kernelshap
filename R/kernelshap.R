@@ -1,7 +1,7 @@
 #' Kernel SHAP
 #'
 #' This function implements the model-agnostic Kernel SHAP Algorithm 1 
-#' of Covert and Lee (2021) with pairwise sampling, see reference.
+#' of Covert and Lee (2021) with or without paired sampling, see reference.
 #' It is applied to each row in \code{X}. Due to its iterative nature,
 #' standard errors of the resulting SHAP values are provided, and convergence is monitored. 
 #' During each iteration, \code{2m} feature subsets are evaluated, 
@@ -24,12 +24,17 @@
 #' expectations. Its column structure must be similar to \code{X}.
 #' If too large (>200 rows), use subsampling or some more sophisticated strategy. 
 #' @param bg_w Optional vector of case weights for each row of \code{bg_X}.
+#' @param paired_sampling Logical flag indicating whether to use paired sampling.
+#' The default is \code{TRUE}. This means that with every feature subset S,
+#' also its complement is evaluated, which leads to faster convergence.
 #' @param m Number of feature subsets S to be evaluated during one iteration. 
-#' By default \code{trunc(20 * sqrt(ncol(bg_X)))}. Since we use the pairwise strategy,
+#' By default \code{trunc(20 * sqrt(ncol(bg_X)))}. For the paired sampling strategy,
 #' the actual number of evaluations is 2m.
 #' @param tol Tolerance determining when to stop. The algorithm keeps sampling until
 #' max(sigma_n) / diff(range(beta_n)) < tol, where sigma_n are the standard errors 
 #' and beta_n are the SHAP values of a given observation.
+#' @param max_iter If the stopping criterion (see \code{tol}) is not reached after 
+#' \code{max_iter} iterations, then the algorithm stops.
 #' @param verbose Set to \code{FALSE} to suppress messages and progress bar.
 #' @param ... Currently unused.
 #' @return An object of class "kernelshap" with the following components:
@@ -38,7 +43,8 @@
 #'   \item \code{X}: Same as parameter \code{X}.
 #'   \item \code{baseline}: The average prediction on the background data.
 #'   \item \code{SE}: Standard errors corresponding to \code{S}.
-#'   \item \code{n_iter}: Number of iterations until convergence.
+#'   \item \code{n_iter}: Number of iterations until convergence per row.
+#'   \item \code{converged}: Logical vector indicating convergence per row.
 #' }
 #' @export
 #' @references Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value Estimation Using Linear Regression Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.
@@ -55,8 +61,8 @@
 #' s <- kernelshap(X[1:3, ], pred_fun = pred_fun, X)
 #' s
 kernelshap <- function(X, pred_fun, bg_X = X, bg_w = NULL, 
-                       m = trunc(20 * sqrt(ncol(bg_X))), 
-                       tol = 0.01, verbose = TRUE, ...) {
+                       paired_sampling = TRUE, m = trunc(20 * sqrt(ncol(bg_X))), 
+                       tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
   stopifnot(
     is.matrix(X) || is.data.frame(X),
     is.matrix(bg_X) || is.data.frame(bg_X),
@@ -88,7 +94,8 @@ kernelshap <- function(X, pred_fun, bg_X = X, bg_w = NULL,
   p <- ncol(X)
   n <- nrow(X)
   S <- SE <- matrix(0, nrow = n, ncol = p, dimnames = list(NULL, colnames(X)))
-  n_iter <- numeric(n)
+  n_iter <- integer(n)
+  converged <- logical(n)
 
   # Handle special case
   if (p == 1L) {
@@ -109,17 +116,27 @@ kernelshap <- function(X, pred_fun, bg_X = X, bg_w = NULL,
       bg_X = bg_X, 
       bg_w = bg_w, 
       v0 = v0,
+      paired_sampling = paired_sampling,
       m = m,
-      tol = tol
+      tol = tol,
+      max_iter = max_iter
     )
+    
     S[i, ] <- res$beta
     SE[i, ] <- res$sigma
     n_iter[i] <- res$n_iter
+    converged[i] <- res$converged
+    
     if (verbose && n >= 2L) {
       utils::setTxtProgressBar(pb, i)
     }
   }
-  out <- list(S = S, X = X, baseline = v0, SE = SE, n_iter = n_iter)
+  if (verbose && !all(converged)) {
+    warning("\nNon-convergence for ", sum(!converged), " rows.")
+  }
+  out <- list(
+    S = S, X = X, baseline = v0, SE = SE, n_iter = n_iter, converged = converged
+  )
   class(out) <- "kernelshap"
   out
 }
@@ -127,7 +144,8 @@ kernelshap <- function(X, pred_fun, bg_X = X, bg_w = NULL,
 # Little helpers
 
 # Kernel SHAP algorithm for a single row x with paired sampling
-kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, m, tol) {
+kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, 
+                           paired_sampling, m, tol, max_iter) {
   v1 <- pred_fun(x)
   p <- ncol(x)
   X <- x[rep(1, nrow(bg_X)), ]
@@ -141,22 +159,30 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, m, tol) {
 
   converged <- FALSE
 
-  while(!isTRUE(converged)) {
+  while(!isTRUE(converged) && n_iter < max_iter) {
     Z <- make_Z(m, p)
     
-    # Pairwise strategy: predictions take some time
+    # Calling pred_fun and modify_and_stack is expensive
     v_z1 <- rowmean(
       pred_fun(modify_and_stack(X, bg = bg_X, Z = Z)), group = group, w = w
     )
-    v_z2 <- rowmean(
-      pred_fun(modify_and_stack(X, bg = bg_X, Z = 1 - Z)), group = group, w = w
-    )
+    if (paired_sampling) {
+      v_z2 <- rowmean(
+        pred_fun(modify_and_stack(X, bg = bg_X, Z = 1 - Z)), group = group, w = w
+      )
+    }
 
     # Maybe loop can be replaced by vectorized operation
     for (i in 1:m) { # i <- 1
       z <- Z[i, ]
-      Asample <- (tcrossprod(z) + tcrossprod(1 - z)) / 2
-      bsample <- (z * v_z1[i] + (1 - z) * v_z2[i] - v0) / 2
+      
+      if (paired_sampling) {
+        Asample <- (tcrossprod(z) + tcrossprod(1 - z)) / 2
+        bsample <- (z * v_z1[i] + (1 - z) * v_z2[i] - v0) / 2
+      } else {
+        Asample <- tcrossprod(z)
+        bsample <- z * (v_z1[i] - v0)
+      }
 
       # Welford's algorithm to iteratively calculate covariances etc
       n <- n + 1L
@@ -183,7 +209,7 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, m, tol) {
       converged <- max(sigma_n) / diff(range(beta_n)) < tol
     }
   }
-  list(beta = beta_n, sigma = sigma_n, n_iter = n_iter)
+  list(beta = beta_n, sigma = sigma_n, n_iter = n_iter, converged = converged)
 }
 
 # Simple version without standard errors
