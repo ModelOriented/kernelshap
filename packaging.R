@@ -18,13 +18,13 @@ use_description(
     Version = "0.1.0",
     Description = "Implementation of the model-agnostic Kernel SHAP algorithm by
     Ian Covert and Su-In Lee (2021) <http://proceedings.mlr.press/v130/covert21a>. 
-    Due to its iterative nature, approximate standard errors of the SHAP values are provided
+    Due to its iterative nature, standard errors of the SHAP values are provided
     and convergence is monitored.
     The package allows to work with any model that provides numeric predictions.
     Examples include linear regression, logistic regression (logit or probability scale),
     other generalized linear models, generalized additive models, and 
     neural networks. The package plays well together with meta-learning packages
-    like 'caret' or 'mlr3'. Visuaizations can be done using the R package 'shapviz'.",
+    like 'caret' or 'mlr3'. Visualizations can be done using the R package 'shapviz'.",
     `Authors@R` = "person('Michael', 'Mayer', email = 'mayermichael79@gmail.com', role = c('aut', 'cre'))",
     Depends = "R (>= 3.2.0)",
     LazyData = NULL
@@ -35,7 +35,7 @@ use_description(
 use_package("stats", "Imports")
 use_package("utils", "Imports")
 
-use_package("shapviz", "Suggests")
+# use_package("shapviz", "Suggests")
 
 use_gpl_license(2)
 
@@ -87,10 +87,7 @@ install()
 # Run only if package is public(!) and should go to CRAN
 if (FALSE) {
   check_win_devel()
-  # check_rhub()
-  check_mac_release()
-  check_win_release()
-  check_win_oldrelease()
+  check_rhub()
 
   # Wait until above checks are passed without relevant notes/warnings
   # then submit to CRAN

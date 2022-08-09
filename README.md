@@ -2,11 +2,11 @@
 
 ## Introduction
 
-SHAP values [1] decompose model predictions into additive contributions of the features in a fair way. A model agnostic approach is called Kernel SHAP, introduced in [1], and investigated in detail in [2]. 
+SHAP values (Lundberg and Lee, 2017) decompose model predictions into additive contributions of the features in a fair way. A model agnostic approach is called Kernel SHAP, introduced in Lundberg and Lee (2017), and investigated in detail in Covert and Lee (2021). 
 
-The "kernelshap" package implements the Kernel SHAP Algorithm 1 described in the supplement of [2]. An advantage of their algorithm is that SHAP values are supplemented by standard errors. Furthermore, convergence can be monitored and controlled.
+The "kernelshap" package implements the Kernel SHAP Algorithm 1 described in the supplement of Covert and Lee (2021). An advantage of their algorithm is that SHAP values are supplemented by standard errors. Furthermore, convergence can be monitored and controlled.
 
-The main function, `kernelshap()`, requires three key arguments:
+The main function `kernelshap()` has three key arguments:
 
 - `X`: A matrix or data.frame of rows to be explained. Important: The columns should only represent model features, not the response.
 - `pred_fun`: A function that takes a data structure like `X` and provides one numeric prediction per row. Some examples:
@@ -14,18 +14,18 @@ The main function, `kernelshap()`, requires three key arguments:
   - `glm()`: `function(X) predict(fit, X)` (link scale) or
   - `glm()`: `function(X) predict(fit, X, type = "response")` (response scale)
   - `mgcv::gam()`: Same as for `glm()`
-  - Keras: `funciton(X) as.numeric(predict(fit, X))`
+  - Keras: `function(X) as.numeric(predict(fit, X))`
   - mlr3: `function(X) fit$predict_newdata(X)$response`
   - caret: `function(X) predict(fit, X)`
 - `bg_X`: The background data used to integrate out "switched off" features. It should have the same column structure as `X`. A good size is around $50-200$ rows.
 
 **Remarks**
 
-- Visualizations: To visualize the result, you can use R package "shapviz".
-- Meta-learners: "kernelshap" plays well together with packages like "caret" and "mlr3".
-- Case weights: Passing `bg_w` allows to respect case weights of the background data.
-- Classification: If your model provides multiple outputs per observation, e.g., for a classification task, just pass the probabilities of one class via `pred_fun`. This is necessary since `kernelshap()` requires one numeric prediction per row.
-- Speed: If `X` and `bg_X` are matrices, the algorithm will often run much faster.
+- *Visualization:* To visualize the result, you can use R package "shapviz".
+- *Meta-learners:* "kernelshap" plays well together with packages like "caret" and "mlr3".
+- *Case weights:* Passing `bg_w` allows to weight background data.
+- *Classification:* `kernelshap()` requires one numeric prediction per row. Thus, the prediction function should provide probabilities only of a selected class.
+- *Speed:* If `X` and `bg_X` are matrices, the algorithm can runs faster. The faster the prediction function, the more this matters.
 
 ## Installation
 
@@ -43,7 +43,7 @@ library(shapviz)
 fit <- lm(Sepal.Length ~ ., data = iris)
 pred_fun <- function(X) predict(fit, X)
 
-# Crunch SHAP values (15 seconds)
+# Crunch SHAP values (9 seconds)
 s <- kernelshap(iris[-1], pred_fun = pred_fun, bg_X = iris[-1])
 s
 
@@ -59,7 +59,7 @@ s
 # [2,] 2.463307e-16 5.661049e-16 1.110223e-15 1.755417e-16
 
 # Plot with shapviz
-shp <- shapviz(s$S, s$X, s$baseline)
+shp <- shapviz(s)  # for CRAN release: shapviz(s$S, s$X, s$baseline)
 sv_waterfall(shp, 1)
 sv_importance(shp)
 sv_dependence(shp, "Petal.Length")
@@ -80,11 +80,11 @@ library(shapviz)
 fit <- glm(I(Species == "virginica") ~ Sepal.Length + Sepal.Width, data = iris, family = binomial)
 pred_fun <- function(X) predict(fit, X, type = "response")
 
-# Crunch SHAP values (10 seconds)
+# Crunch SHAP values (4 seconds)
 s <- kernelshap(iris[1:2], pred_fun = pred_fun, bg_X = iris[1:2])
 
 # Plot with shapviz
-shp <- shapviz(s$S, s$X, s$baseline)
+shp <- shapviz(s)  # for CRAN release: shapviz(s$S, s$X, s$baseline)
 sv_waterfall(shp, 51)
 sv_dependence(shp, "Sepal.Length")
 ```
@@ -127,7 +127,7 @@ system.time(
 )
 
 # Plot with shapviz
-shp <- shapviz(s$S, s$X, s$baseline)
+shp <- shapviz(s)  # for CRAN release: shapviz(s$S, s$X, s$baseline)
 sv_waterfall(shp, 1)
 sv_importance(shp)
 sv_dependence(shp, "Petal.Length")
@@ -153,7 +153,7 @@ task_iris <- TaskRegr$new(id = "iris", backend = iris, target = "Sepal.Length")
 fit_lm <- lrn("regr.lm")
 fit_lm$train(task_iris)
 s <- kernelshap(iris, function(X) fit_lm$predict_newdata(X)$response, bg_X = iris)
-sv <- shapviz(s$S, s$X, s$baseline)
+sv <- shapviz(s)  # for CRAN release: shapviz(s$S, s$X, s$baseline)
 sv_waterfall(sv, 1)
 sv_dependence(sv, "Species")
 ```
@@ -176,7 +176,7 @@ fit <- train(
 )
 
 s <- kernelshap(iris[1, -1], function(X) predict(fit, X), bg_X = iris[-1])
-sv <- shapviz(s$S, s$X, s$baseline)
+sv <- shapviz(s)  # for CRAN release: shapviz(s$S, s$X, s$baseline)
 sv_waterfall(sv, 1)
 ```
 
