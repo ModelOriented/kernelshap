@@ -44,6 +44,18 @@ pred_fun <- function(X) predict(fit, X)
 
 # Crunch SHAP values (15 seconds)
 s <- kernelshap(iris[-1], pred_fun = pred_fun, bg_X = iris[-1])
+s
+
+# Output (partly)
+# SHAP values of first 2 observations:
+#      Sepal.Width Petal.Length Petal.Width   Species
+# [1,]  0.21951350    -1.955357   0.3149451 0.5823533
+# [2,] -0.02843097    -1.955357   0.3149451 0.5823533
+# 
+#  Corresponding standard errors:
+#       Sepal.Width Petal.Length  Petal.Width      Species
+# [1,] 1.526557e-15 1.570092e-16 1.110223e-16 1.554312e-15
+# [2,] 2.463307e-16 5.661049e-16 1.110223e-15 1.755417e-16
 
 # Plot with shapviz
 shp <- shapviz(s$S, s$X, s$baseline)
