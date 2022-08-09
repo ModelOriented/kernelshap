@@ -7,10 +7,10 @@
 kernelshap(
   X,
   pred_fun,
-  bg_X = X,
+  bg_X,
   bg_w = NULL,
   paired_sampling = TRUE,
-  m = trunc(20 * sqrt(ncol(bg_X))),
+  m = "auto",
   tol = 0.01,
   max_iter = 250,
   verbose = TRUE,
@@ -19,17 +19,17 @@ kernelshap(
 }
 \arguments{
 \item{X}{Matrix or data.frame containing the observations to be explained.
-Should only contain features required in \code{pred_fun}, i.e., it should only contain
-features.}
+Should only contain model features.}
 
-\item{pred_fun}{A function taking objects like \code{X} as input and providing numeric
+\item{pred_fun}{A function taking objects like \code{X} or \code{bg_X} as input and providing numeric
 predictions. Example: If "fit" denotes a logistic regression fitted via \code{stats::glm},
 and SHAP values should be on the probability scale, then this argument is
 \code{function(X) predict(fit, X, type = "response")}.}
 
-\item{bg_X}{Matrix or data.frame used as background dataset to calculate marginal
+\item{bg_X}{Matrix or data.frame used as background data to calculate marginal
 expectations. Its column structure must be similar to \code{X}.
-If too large (>200 rows), use subsampling or some more sophisticated strategy.}
+This data should neither be too small nor too large (50-200 rows). A large background
+data slows down the calculations, while a small data set leads to imprecise SHAP values.}
 
 \item{bg_w}{Optional vector of case weights for each row of \code{bg_X}.}
 
@@ -38,17 +38,17 @@ The default is \code{TRUE}. This means that with every feature subset S,
 also its complement is evaluated, which leads to faster convergence.}
 
 \item{m}{Number of feature subsets S to be evaluated during one iteration.
-By default \code{trunc(20 * sqrt(ncol(bg_X)))}. For the paired sampling strategy,
-the actual number of evaluations is 2m.}
+The default, "auto", equals \code{trunc(20 * sqrt(ncol(X)))}.
+For the paired sampling strategy, 2m evaluations are done per iteration.}
 
-\item{tol}{Tolerance determining when to stop. The algorithm keeps sampling until
+\item{tol}{Tolerance determining when to stop. The algorithm keeps iterating until
 max(sigma_n) / diff(range(beta_n)) < tol, where sigma_n are the standard errors
 and beta_n are the SHAP values of a given observation.}
 
 \item{max_iter}{If the stopping criterion (see \code{tol}) is not reached after
 \code{max_iter} iterations, then the algorithm stops.}
 
-\item{verbose}{Set to \code{FALSE} to suppress messages and progress bar.}
+\item{verbose}{Set to \code{FALSE} to suppress messages, warnings, and the progress bar.}
 
 \item{...}{Currently unused.}
 }
@@ -64,18 +64,19 @@ An object of class "kernelshap" with the following components:
 }
 }
 \description{
-This function implements the model-agnostic Kernel SHAP Algorithm 1
-of Covert and Lee (2021) with or without paired sampling, see reference.
-It is applied to each row in \code{X}. Due to its iterative nature,
+This function implements the model-agnostic Kernel SHAP algorithm explained in detail in
+Covert and Lee (2021). It is an iterative refinement of the original Kernel SHAP algorithm
+of Lundberg and Lee (2017).
+The algorithm is applied to each row in \code{X}. Due to its iterative nature, approximate
 standard errors of the resulting SHAP values are provided, and convergence is monitored.
-During each iteration, \code{2m} feature subsets are evaluated,
-until the worst standard error of the SHAP
-values is small enough relative to the range of the SHAP values.
 The data rows \code{X} to be explained and the
-background data \code{bg_X} should only represent feature columns required by the
+background data \code{bg_X} should only contain feature columns required by the
 prediction function \code{pred_fun}. The latter is a function taking
-a data structure like \code{X} or \code{bg_X} and provides one numeric
+a data structure like \code{X} and \code{bg_X} and providing one numeric
 prediction per row.
+During each iteration, \code{m} subsets are evaluated until the worst standard error of the SHAP
+values is small enough relative to the range of the SHAP values. This exactly follows the logic
+used by Covert and Lee (2021).
 }
 \examples{
 fit <- stats::lm(Sepal.Length ~ ., data = iris)
@@ -91,5 +92,8 @@ s <- kernelshap(X[1:3, ], pred_fun = pred_fun, X)
 s
 }
 \references{
-Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value Estimation Using Linear Regression Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.
+\enumerate{
+\item Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value Estimation Using Linear Regression. Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.
+\item Scott M. Lundberg and Su-In Lee. A Unified Approach to Interpreting Model Predictions. Advances in Neural Information Processing Systems 30, 2017.
+}
 }

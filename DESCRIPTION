@@ -6,11 +6,14 @@ Authors@R:
 Description: Implementation of the model-agnostic Kernel SHAP algorithm by
     Ian Covert and Su-In Lee (2021)
     <http://proceedings.mlr.press/v130/covert21a>.  Due to its iterative
-    nature, also standard errors of the SHAP values are provided.  The
-    interface is very general: predictions of linear regressions, logistic
-    regressions (logit or probability scale), multi-input neural networks,
-    generalized additive models etc. can be decomposed, the only
-    requirement is that each prediction is a number.
+    nature, approximate standard errors of the SHAP values are provided
+    and convergence is monitored.  The package allows to work with any
+    model that provides numeric predictions.  Examples include linear
+    regression, logistic regression (logit or probability scale), other
+    generalized linear models, generalized additive models, and neural
+    networks. The package plays well together with meta-learning packages
+    like 'caret' or 'mlr3'. Visuaizations can be done using the R package
+    'shapviz'.
 License: GPL (>= 2)
 Depends: 
     R (>= 3.2.0)
@@ -23,6 +26,6 @@ Imports:
 Suggests: 
     shapviz,
     testthat (>= 3.0.0)
+Config/testthat/edition: 3
 URL: https://github.com/mayer79/kernelshap
 BugReports: https://github.com/mayer79/kernelshap/issues
-Config/testthat/edition: 3

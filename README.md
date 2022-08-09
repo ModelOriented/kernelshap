@@ -4,24 +4,27 @@
 
 SHAP values [1] decompose model predictions into additive contributions of the features in a fair way. A model agnostic approach is called Kernel SHAP, introduced in [1], and investigated in detail in [2]. 
 
-The "kernelshap" package implements the basic Kernel SHAP Algorithm 1 described in detail in the supplement of [2]. An advantage of their algorithm is that SHAP values are supplemented by standard errors. Furthermore, convergence can be monitored and controlled.
+The "kernelshap" package implements the Kernel SHAP Algorithm 1 described in the supplement of [2]. An advantage of their algorithm is that SHAP values are supplemented by standard errors. Furthermore, convergence can be monitored and controlled.
 
-The main function, `kernelshap()`, requires these three arguments:
+The main function, `kernelshap()`, requires three key arguments:
 
-- `X`: A matrix or data.frame of rows to be explained. Important: For each column and each row, a SHAP value is calculated. The columns should thus only represent model features, not the response.
-- `pred_fun`: A function that takes a data structure like `X` and provides one numeric prediction per row. Some examples regarding a model `fit`:
+- `X`: A matrix or data.frame of rows to be explained. Important: The columns should only represent model features, not the response.
+- `pred_fun`: A function that takes a data structure like `X` and provides one numeric prediction per row. Some examples:
   - `lm()`: `function(X) predict(fit, X)`
   - `glm()`: `function(X) predict(fit, X)` (link scale) or
   - `glm()`: `function(X) predict(fit, X, type = "response")` (response scale)
   - `mgcv::gam()`: Same as for `glm()`
-  - Keras: `as.numeric(predict(fit, X))`
-- `bg_X`: The background data used to integrate out features "switched off". It should have the same column structure as `X`. A good size is around $100-200$ rows.
+  - Keras: `funciton(X) as.numeric(predict(fit, X))`
+  - mlr3: `function(X) fit$predict_newdata(X)$response`
+  - caret: `function(X) predict(fit, X)`
+- `bg_X`: The background data used to integrate out "switched off" features. It should have the same column structure as `X`. A good size is around $50-200$ rows.
 
 **Remarks**
 
+- Visualizations: To visualize the result, you can use R package "shapviz".
+- Meta-learners: "kernelshap" plays well together with packages like "caret" and "mlr3".
 - Case weights: Passing `bg_w` allows to respect case weights of the background data.
-- Visualizations: In order to visualize the result, you can use R package "shapviz".
-- The prediction function can also contain preprocessing steps.
+- Classification: If your model provides multiple outputs per observation, e.g., for a classification task, just pass the probabilities of one class via `pred_fun`. This is necessary since `kernelshap()` requires one numeric prediction per row.
 
 ## Installation
 
@@ -40,7 +43,7 @@ fit <- lm(Sepal.Length ~ ., data = iris)
 pred_fun <- function(X) predict(fit, X)
 
 # Crunch SHAP values (15 seconds)
-s <- kernelshap(iris[-1], pred_fun = pred_fun, iris[-1])
+s <- kernelshap(iris[-1], pred_fun = pred_fun, bg_X = iris[-1])
 
 # Plot with shapviz
 shp <- shapviz(s$S, s$X, s$baseline)
@@ -65,7 +68,7 @@ fit <- glm(I(Species == "virginica") ~ Sepal.Length + Sepal.Width, data = iris, 
 pred_fun <- function(X) predict(fit, X, type = "response")
 
 # Crunch SHAP values (10 seconds)
-s <- kernelshap(iris[1:2], pred_fun = pred_fun)
+s <- kernelshap(iris[1:2], pred_fun = pred_fun, bg_X = iris[1:2])
 
 # Plot with shapviz
 shp <- shapviz(s$S, s$X, s$baseline)
@@ -107,7 +110,7 @@ pred_fun <- function(X) as.numeric(predict(model, X, batch_size = nrow(X)))
 
 # Takes about 40 seconds
 system.time(
-  s <- kernelshap(X, pred_fun = pred_fun)
+  s <- kernelshap(X, pred_fun = pred_fun, bg_X = X)
 )
 
 # Plot with shapviz
@@ -122,6 +125,50 @@ sv_dependence(shp, "Petal.Length")
 ![](man/figures/README-nn-imp.svg)
 
 ![](man/figures/README-nn-dep.svg)
+
+### Example: mlr3
+
+```R
+library(mlr3)
+library(mlr3learners)
+library(kernelshap)
+library(shapviz)
+
+mlr_tasks$get("iris")
+tsk("iris")
+task_iris <- TaskRegr$new(id = "iris", backend = iris, target = "Sepal.Length")
+fit_lm <- lrn("regr.lm")
+fit_lm$train(task_iris)
+s <- kernelshap(iris, function(X) fit_lm$predict_newdata(X)$response, bg_X = iris)
+sv <- shapviz(s$S, s$X, s$baseline)
+sv_waterfall(sv, 1)
+sv_dependence(sv, "Species")
+```
+
+![](man/figures/README-mlr3-dep.svg)
+
+### Example: caret
+
+```r
+library(caret)
+library(kernelshap)
+library(shapviz)
+
+fit <- train(
+  Sepal.Length ~ ., 
+  data = iris, 
+  method = "lm", 
+  tuneGrid = data.frame(intercept = TRUE),
+  trControl = trainControl(method = "none")
+)
+
+s <- kernelshap(iris[1, -1], function(X) predict(fit, X), bg_X = iris[-1])
+sv <- shapviz(s$S, s$X, s$baseline)
+sv_waterfall(sv, 1)
+```
+
+![](man/figures/README-caret-waterfall.svg)
+
 
 ## References
 

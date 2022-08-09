@@ -1,41 +1,41 @@
 #' Kernel SHAP
 #'
-#' This function implements the model-agnostic Kernel SHAP Algorithm 1 
-#' of Covert and Lee (2021) with or without paired sampling, see reference.
-#' It is applied to each row in \code{X}. Due to its iterative nature,
+#' This function implements the model-agnostic Kernel SHAP algorithm explained in detail in 
+#' Covert and Lee (2021). It is an iterative refinement of the original Kernel SHAP algorithm 
+#' of Lundberg and Lee (2017).
+#' The algorithm is applied to each row in \code{X}. Due to its iterative nature, approximate
 #' standard errors of the resulting SHAP values are provided, and convergence is monitored. 
-#' During each iteration, \code{2m} feature subsets are evaluated, 
-#' until the worst standard error of the SHAP 
-#' values is small enough relative to the range of the SHAP values. 
 #' The data rows \code{X} to be explained and the
-#' background data \code{bg_X} should only represent feature columns required by the
+#' background data \code{bg_X} should only contain feature columns required by the
 #' prediction function \code{pred_fun}. The latter is a function taking
-#' a data structure like \code{X} or \code{bg_X} and provides one numeric 
+#' a data structure like \code{X} and \code{bg_X} and providing one numeric 
 #' prediction per row.
-#' 
+#' During each iteration, \code{m} subsets are evaluated until the worst standard error of the SHAP 
+#' values is small enough relative to the range of the SHAP values. This exactly follows the logic
+#' used by Covert and Lee (2021).
 #' @param X Matrix or data.frame containing the observations to be explained.
-#' Should only contain features required in \code{pred_fun}, i.e., it should only contain
-#' features.
-#' @param pred_fun A function taking objects like \code{X} as input and providing numeric 
+#' Should only contain model features.
+#' @param pred_fun A function taking objects like \code{X} or \code{bg_X} as input and providing numeric 
 #' predictions. Example: If "fit" denotes a logistic regression fitted via \code{stats::glm}, 
 #' and SHAP values should be on the probability scale, then this argument is
 #' \code{function(X) predict(fit, X, type = "response")}.
-#' @param bg_X Matrix or data.frame used as background dataset to calculate marginal 
+#' @param bg_X Matrix or data.frame used as background data to calculate marginal 
 #' expectations. Its column structure must be similar to \code{X}.
-#' If too large (>200 rows), use subsampling or some more sophisticated strategy. 
+#' This data should neither be too small nor too large (50-200 rows). A large background
+#' data slows down the calculations, while a small data set leads to imprecise SHAP values.
 #' @param bg_w Optional vector of case weights for each row of \code{bg_X}.
 #' @param paired_sampling Logical flag indicating whether to use paired sampling.
 #' The default is \code{TRUE}. This means that with every feature subset S,
 #' also its complement is evaluated, which leads to faster convergence.
 #' @param m Number of feature subsets S to be evaluated during one iteration. 
-#' By default \code{trunc(20 * sqrt(ncol(bg_X)))}. For the paired sampling strategy,
-#' the actual number of evaluations is 2m.
-#' @param tol Tolerance determining when to stop. The algorithm keeps sampling until
+#' The default, "auto", equals \code{trunc(20 * sqrt(ncol(X)))}. 
+#' For the paired sampling strategy, 2m evaluations are done per iteration.
+#' @param tol Tolerance determining when to stop. The algorithm keeps iterating until
 #' max(sigma_n) / diff(range(beta_n)) < tol, where sigma_n are the standard errors 
 #' and beta_n are the SHAP values of a given observation.
 #' @param max_iter If the stopping criterion (see \code{tol}) is not reached after 
 #' \code{max_iter} iterations, then the algorithm stops.
-#' @param verbose Set to \code{FALSE} to suppress messages and progress bar.
+#' @param verbose Set to \code{FALSE} to suppress messages, warnings, and the progress bar.
 #' @param ... Currently unused.
 #' @return An object of class "kernelshap" with the following components:
 #' \itemize{
@@ -47,7 +47,11 @@
 #'   \item \code{converged}: Logical vector indicating convergence per row.
 #' }
 #' @export
-#' @references Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value Estimation Using Linear Regression Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.
+#' @references
+#' \enumerate{
+#'   \item Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value Estimation Using Linear Regression. Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.
+#'   \item Scott M. Lundberg and Su-In Lee. A Unified Approach to Interpreting Model Predictions. Advances in Neural Information Processing Systems 30, 2017.
+#'}
 #' @examples
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
 #' pred_fun <- function(X) stats::predict(fit, X)
@@ -60,15 +64,18 @@
 #' X <- data.matrix(iris[2:4])
 #' s <- kernelshap(X[1:3, ], pred_fun = pred_fun, X)
 #' s
-kernelshap <- function(X, pred_fun, bg_X = X, bg_w = NULL, 
-                       paired_sampling = TRUE, m = trunc(20 * sqrt(ncol(bg_X))), 
+kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL, 
+                       paired_sampling = TRUE, m = "auto", 
                        tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
   stopifnot(
     is.matrix(X) || is.data.frame(X),
     is.matrix(bg_X) || is.data.frame(bg_X),
     is.function(pred_fun),
     dim(X) >= 1L,
-    dim(bg_X) >= 1L,
+    ncol(bg_X) >= 1L,
+    nrow(bg_X) >= 2L,
+    !is.null(colnames(X)),
+    !is.null(colnames(bg_X)),
     colnames(X) == colnames(bg_X)
   )
   if (!is.null(bg_w)) {
@@ -78,8 +85,11 @@ kernelshap <- function(X, pred_fun, bg_X = X, bg_w = NULL,
       !all(bg_w == 0)
     )
   }
-  if (verbose && nrow(bg_X) > 200) {
-    message("Your background data is large. This will slow down the process. Consider using 100-200 rows.")
+  if (verbose && nrow(bg_X) > 1000) {
+    warning("Your background data 'bg_X' is large, which will slow down the process. Consider using 50-200 rows.")
+  }
+  if (verbose && nrow(bg_X) < 10) {
+    warning("Your background data 'bg_X' is small, which might lead to imprecise SHAP values. Consider using 50-200 rows.")
   }
   preds <- pred_fun(bg_X)
   stopifnot(
@@ -96,11 +106,16 @@ kernelshap <- function(X, pred_fun, bg_X = X, bg_w = NULL,
   S <- SE <- matrix(0, nrow = n, ncol = p, dimnames = list(NULL, colnames(X)))
   n_iter <- integer(n)
   converged <- logical(n)
+  if (m == "auto") {
+    m <- trunc(20 * sqrt(p))
+  }
 
-  # Handle special case
+  # Handle simple exact case
   if (p == 1L) {
-    S <- as.matrix(preds - v0, ncol = 1, dimnames = list(NULL, colnames(X)))
-    out <- list(S = S, X = X, baseline = v0, SE = SE, n_iter = n_iter)
+    S <- matrix(pred_fun(X) - v0, ncol = 1, dimnames = list(NULL, colnames(X)))
+    out <- list(
+      S = S, X = X, baseline = v0, SE = SE, n_iter = n_iter, converged = rep(TRUE, n)
+    )
     class(out) <- "kernelshap"
     return(out)
   }

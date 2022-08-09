@@ -1,7 +1,6 @@
 ^LICENSE\.md$
 ^packaging.R$
 [.]Rproj$
-stuff.R
 ^cran-comments.md$
 ^logo.png$
 ^cran-comments\.md$
