@@ -59,7 +59,7 @@ s
 # [2,] 2.463307e-16 5.661049e-16 1.110223e-15 1.755417e-16
 
 # Plot with shapviz
-shp <- shapviz(s)  # for CRAN release: shapviz(s$S, s$X, s$baseline)
+shp <- shapviz(s)  # until shapviz 0.2.0: shapviz(s$S, s$X, s$baseline)
 sv_waterfall(shp, 1)
 sv_importance(shp)
 sv_dependence(shp, "Petal.Length")
@@ -84,7 +84,7 @@ pred_fun <- function(X) predict(fit, X, type = "response")
 s <- kernelshap(iris[1:2], pred_fun = pred_fun, bg_X = iris[1:2])
 
 # Plot with shapviz
-shp <- shapviz(s)  # for CRAN release: shapviz(s$S, s$X, s$baseline)
+shp <- shapviz(s)  # until shapviz 0.2.0: shapviz(s$S, s$X, s$baseline)
 sv_waterfall(shp, 51)
 sv_dependence(shp, "Sepal.Length")
 ```
@@ -127,7 +127,7 @@ system.time(
 )
 
 # Plot with shapviz
-shp <- shapviz(s)  # for CRAN release: shapviz(s$S, s$X, s$baseline)
+shp <- shapviz(s)  # until shapviz 0.2.0: shapviz(s$S, s$X, s$baseline)
 sv_waterfall(shp, 1)
 sv_importance(shp)
 sv_dependence(shp, "Petal.Length")
@@ -153,7 +153,7 @@ task_iris <- TaskRegr$new(id = "iris", backend = iris, target = "Sepal.Length")
 fit_lm <- lrn("regr.lm")
 fit_lm$train(task_iris)
 s <- kernelshap(iris, function(X) fit_lm$predict_newdata(X)$response, bg_X = iris)
-sv <- shapviz(s)  # for CRAN release: shapviz(s$S, s$X, s$baseline)
+sv <- shapviz(s)  # until shapviz 0.2.0: shapviz(s$S, s$X, s$baseline)
 sv_waterfall(sv, 1)
 sv_dependence(sv, "Species")
 ```
@@ -176,7 +176,7 @@ fit <- train(
 )
 
 s <- kernelshap(iris[1, -1], function(X) predict(fit, X), bg_X = iris[-1])
-sv <- shapviz(s)  # for CRAN release: shapviz(s$S, s$X, s$baseline)
+sv <- shapviz(s)  # until shapviz 0.2.0: shapviz(s$S, s$X, s$baseline)
 sv_waterfall(sv, 1)
 ```
 
