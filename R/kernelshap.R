@@ -266,6 +266,7 @@ modify_and_stack <- function(X, bg, Z) {
     data_list[[j]] <- X_mod
   }
   do.call(rbind, data_list)
+  # dplyr::bind_rows(data_list) # Faster, but does not work for matrices
 }
 
 # Convenience wrapper around mean and weighted.mean
