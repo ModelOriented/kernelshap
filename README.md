@@ -25,6 +25,7 @@ The main function, `kernelshap()`, requires three key arguments:
 - Meta-learners: "kernelshap" plays well together with packages like "caret" and "mlr3".
 - Case weights: Passing `bg_w` allows to respect case weights of the background data.
 - Classification: If your model provides multiple outputs per observation, e.g., for a classification task, just pass the probabilities of one class via `pred_fun`. This is necessary since `kernelshap()` requires one numeric prediction per row.
+- Speed: If `X` and `bg_X` are matrices, the algorithm will often run much faster.
 
 ## Installation
 
