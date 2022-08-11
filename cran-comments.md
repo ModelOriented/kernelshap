@@ -6,5 +6,5 @@ http://proceedings.mlr.press/v130/covert21a of Covert and Lee 2021. Along with S
 ## Checks
 
 - check_win_devel() -> ok
-- check_rhub() ->
+- check_rhub() -> ok
 - check(manual = TRUE, cran = TRUE) -> 0 errors | 0 warnings | 0 notes

@@ -55,8 +55,8 @@ s
 # 
 #  Corresponding standard errors:
 #       Sepal.Width Petal.Length  Petal.Width      Species
-# [1,] 1.526557e-15 1.570092e-16 1.110223e-16 1.554312e-15
-# [2,] 2.463307e-16 5.661049e-16 1.110223e-15 1.755417e-16
+# [1,] 4.996004e-16 4.440892e-16 8.053901e-16 7.850462e-17
+# [2,] 5.516421e-16 3.510833e-16 9.436896e-16 6.661338e-16
 
 # Plot with shapviz
 shp <- shapviz(s)  # until shapviz 0.2.0: shapviz(s$S, s$X, s$baseline)
@@ -80,7 +80,7 @@ library(shapviz)
 fit <- glm(I(Species == "virginica") ~ Sepal.Length + Sepal.Width, data = iris, family = binomial)
 pred_fun <- function(X) predict(fit, X, type = "response")
 
-# Crunch SHAP values (4 seconds)
+# Crunch SHAP values (5 seconds)
 s <- kernelshap(iris[1:2], pred_fun = pred_fun, bg_X = iris[1:2])
 
 # Plot with shapviz
@@ -119,14 +119,12 @@ model %>%
 X <- data.matrix(iris[2:4])
 pred_fun <- function(X) as.numeric(predict(model, X, batch_size = nrow(X)))
 
-# Crunch SHAP values
-
-# Takes about 40 seconds
+# Crunch SHAP values (25 seconds)
 system.time(
   s <- kernelshap(X, pred_fun = pred_fun, bg_X = X)
 )
 
-# Plot with shapviz
+# Plot with shapviz (results depend on neural net seed)
 shp <- shapviz(s)  # until shapviz 0.2.0: shapviz(s$S, s$X, s$baseline)
 sv_waterfall(shp, 1)
 sv_importance(shp)
@@ -154,7 +152,6 @@ fit_lm <- lrn("regr.lm")
 fit_lm$train(task_iris)
 s <- kernelshap(iris, function(X) fit_lm$predict_newdata(X)$response, bg_X = iris)
 sv <- shapviz(s)  # until shapviz 0.2.0: shapviz(s$S, s$X, s$baseline)
-sv_waterfall(sv, 1)
 sv_dependence(sv, "Species")
 ```
 
