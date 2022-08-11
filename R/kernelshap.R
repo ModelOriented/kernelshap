@@ -131,7 +131,7 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
       bg_X = bg_X, 
       bg_w = bg_w, 
       v0 = v0,
-      paired_sampling = paired_sampling,
+      paired = paired_sampling,
       m = m,
       tol = tol,
       max_iter = max_iter
@@ -159,44 +159,40 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
 # Little helpers
 
 # Kernel SHAP algorithm for a single row x with paired sampling
-kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, 
-                           paired_sampling, m, tol, max_iter) {
+kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, paired, m, tol, max_iter) {
   v1 <- pred_fun(x)
   p <- ncol(x)
-  X <- x[rep(1, nrow(bg_X)), ]
-  group <- rep(1:m, each = nrow(bg_X))
-  w <- if (!is.null(bg_w)) rep(bg_w, times = m)
-
-  n_iter <- n <- counter <- 0L
-  A <- Atemp <- matrix(0, nrow = p, ncol = p)
-  b <- btemp <- numeric(p)
+  X <- x[rep(1L, nrow(bg_X)), ]
+  
+  # Outer loop init
   est_m = list()
-
   converged <- FALSE
+  n_iter <- 0L
+  n <- 0L
+  A <- matrix(0, nrow = p, ncol = p)
+  b <- numeric(p)
 
   while(!isTRUE(converged) && n_iter < max_iter) {
     Z <- make_Z(m, p)
     
-    # Calling pred_fun and modify_and_stack is expensive
-    v_z1 <- rowmean(
-      pred_fun(modify_and_stack(X, bg = bg_X, Z = Z)), group = group, w = w
+    # Calling get_vZ() is expensive
+    vz <- get_vz(
+      X,  bg = bg_X, Z = if (paired) rbind(Z, 1-Z) else Z, pred_fun = pred_fun, w = bg_w
     )
-    if (paired_sampling) {
-      v_z2 <- rowmean(
-        pred_fun(modify_and_stack(X, bg = bg_X, Z = 1 - Z)), group = group, w = w
-      )
-    }
-
-    # Maybe loop can be replaced by vectorized operation
+    
+    # The inner loop can be replaced by vectorized operation, but is negligible
+    counter <- 0L
+    Atemp <- matrix(0, nrow = p, ncol = p)
+    btemp <- numeric(p)
+    
     for (i in 1:m) { # i <- 1
       z <- Z[i, ]
-      
-      if (paired_sampling) {
+      if (paired) {
         Asample <- (tcrossprod(z) + tcrossprod(1 - z)) / 2
-        bsample <- (z * v_z1[i] + (1 - z) * v_z2[i] - v0) / 2
+        bsample <- (z * vz[i] + (1 - z) * vz[i + m] - v0) / 2
       } else {
         Asample <- tcrossprod(z)
-        bsample <- z * (v_z1[i] - v0)
+        bsample <- z * (vz[i] - v0)
       }
 
       # Welford's algorithm to iteratively calculate covariances etc
@@ -209,11 +205,6 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0,
     }
 
     est_m[[length(est_m) + 1L]] <- solver(Atemp, btemp, v1, v0)
-
-    counter <- 0L
-    Atemp <- matrix(0, nrow = p, ncol = p)
-    btemp <- numeric(p)
-
     n_iter <- n_iter + 1L
 
     # Covariance calculation would fail in the first iteration
@@ -271,17 +262,21 @@ make_Z <- function(m, p) {
   t(out)
 }
 
-# This step takes time: the prediction data is being generated
-modify_and_stack <- function(X, bg, Z) {
-  data_list <- vector("list", nrow(Z))
-  for (j in seq_len(nrow(Z))) {
-    X_mod <- X
-    r <- !Z[j, ]
-    X_mod[, r] <- bg[, r, drop = FALSE]
-    data_list[[j]] <- X_mod
+# This step takes time: marginal expectations for multiple z are calculated
+get_vz <- function(X, bg, Z, pred_fun, w) {
+  modify_X <- function(not_z) {
+    X[, not_z] <- bg[, not_z, drop = FALSE]
+    X
   }
-  do.call(rbind, data_list)
-  # dplyr::bind_rows(data_list) # Faster, but does not work for matrices
+  data_list <- apply(!Z, 1L, modify_X, simplify = FALSE)
+  pred_data <- do.call(rbind, data_list)
+  # pred_data <- dplyr::bind_rows(data_list) # Faster, but does not work for matrices
+  preds <- pred_fun(pred_data)
+  rowmean(
+    preds, 
+    group = rep(1:nrow(Z), each = nrow(bg)), 
+    w = if (!is.null(w)) rep(w, times = nrow(Z))
+  )
 }
 
 # Convenience wrapper around mean and weighted.mean
