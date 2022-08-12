@@ -13,29 +13,31 @@ kernelshap(
   m = "auto",
   tol = 0.01,
   max_iter = 250,
+  use_dt = TRUE,
   verbose = TRUE,
   ...
 )
 }
 \arguments{
-\item{X}{Matrix or data.frame containing the observations to be explained.
-Should only contain model features.}
+\item{X}{Feature matrix or data.frame of dimension (n x p) containing the observations
+to be explained. Should only contain model features.}
 
-\item{pred_fun}{A function taking objects like \code{X} or \code{bg_X} as input and providing numeric
-predictions. Example: If "fit" denotes a logistic regression fitted via \code{stats::glm},
+\item{pred_fun}{A function taking a matrix/data.frame like \code{X}
+as input and providing numeric predictions.
+Example: If "fit" denotes a logistic regression fitted via \code{stats::glm},
 and SHAP values should be on the probability scale, then this argument is
 \code{function(X) predict(fit, X, type = "response")}.}
 
 \item{bg_X}{Matrix or data.frame used as background data to calculate marginal
 expectations. Its column structure must be similar to \code{X}.
-This data should neither be too small nor too large (50-200 rows). A large background
+It should neither be too small nor too large (50-200 rows). A large background
 data slows down the calculations, while a small data set leads to imprecise SHAP values.}
 
 \item{bg_w}{Optional vector of case weights for each row of \code{bg_X}.}
 
 \item{paired_sampling}{Logical flag indicating whether to use paired sampling.
 The default is \code{TRUE}. This means that with every feature subset S,
-also its complement is evaluated, which leads to faster convergence.}
+also its complement is evaluated, which leads to considerably faster convergence.}
 
 \item{m}{Number of feature subsets S to be evaluated during one iteration.
 The default, "auto", equals \code{trunc(20 * sqrt(ncol(X)))}.
@@ -48,7 +50,11 @@ and beta_n are the SHAP values of a given observation.}
 \item{max_iter}{If the stopping criterion (see \code{tol}) is not reached after
 \code{max_iter} iterations, then the algorithm stops.}
 
-\item{verbose}{Set to \code{FALSE} to suppress messages, warnings, and the progress bar.}
+\item{use_dt}{Logical flag indicating whether to use the "data.table" package
+for expensive data reshapings (default is \code{TRUE}). The flag is silently
+ignored if \code{X} is a matrix or if the "data.table" package is not available.}
+
+\item{verbose}{Set to \code{FALSE} to suppress messages, warnings, and progress bar.}
 
 \item{...}{Currently unused.}
 }
@@ -72,16 +78,16 @@ standard errors of the resulting SHAP values are provided, and convergence is mo
 The data rows \code{X} to be explained and the
 background data \code{bg_X} should only contain feature columns required by the
 prediction function \code{pred_fun}. The latter is a function taking
-a data structure like \code{X} and \code{bg_X} and providing one numeric
+a data structure like \code{X} or \code{bg_X} and providing one numeric
 prediction per row.
-During each iteration, \code{m} subsets are evaluated until the worst standard error of the SHAP
-values is small enough relative to the range of the SHAP values. This exactly follows the logic
-used by Covert and Lee (2021).
+During each iteration, \code{m} feature subsets are evaluated until the worst
+standard error of the SHAP values is small enough relative to the range of the SHAP values.
+This stopping criterion was suggested in Covert and Lee (2021).
 }
 \examples{
 fit <- stats::lm(Sepal.Length ~ ., data = iris)
 pred_fun <- function(X) stats::predict(fit, X)
-s <- kernelshap(iris[1:2, -1], pred_fun = pred_fun, iris[-1])
+s <- kernelshap(iris[1:2, -1], pred_fun = pred_fun, iris[, -1])
 s
 
 # Matrix input works as well, and pred_fun may contain preprocessing steps.

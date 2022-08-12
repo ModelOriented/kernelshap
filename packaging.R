@@ -35,7 +35,7 @@ use_description(
 use_package("stats", "Imports")
 use_package("utils", "Imports")
 
-# use_package("shapviz", "Suggests")
+use_package("data.table", "Suggests")
 
 use_gpl_license(2)
 
