@@ -284,11 +284,7 @@ get_vz <- function(X, bg, Z, pred_fun, w, use_dt) {
     }
   }
   preds <- pred_fun(pred_data)
-  rowmean(
-    preds, 
-    group = rep(1:nrow(Z), each = nrow(bg)),
-    w = if (!is.null(w)) rep(w, times = nrow(Z))
-  )
+  rowmean(preds, n_bg = nrow(bg), n_z = nrow(Z), w = w)
 }
 
 # Convenience wrapper around mean and weighted.mean
@@ -299,10 +295,13 @@ weighted_mean <- function(x, w = NULL, ...) {
   stats::weighted.mean(x, w = w, ...)
 }
 
-# Fast way to calculate grouped weighted means
-rowmean <- function(x, group, w = NULL) {
+# Average per Z
+rowmean <- function(x, n_bg, n_z, w = NULL) {
+  g <- rep(seq_len(n_z), each = n_bg)
   if (is.null(w)) {
-    w <- rep(1.0, length(x))
+    out <- rowsum(x, group = g, reorder = FALSE) / n_bg
+  } else {
+    out <- rowsum(x * rep(w, times = n_z), group = g, reorder = FALSE) / sum(w)
   }
-  rowsum(x * w, group) / rowsum(w, group)
+  as.numeric(out)
 }

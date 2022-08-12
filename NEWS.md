@@ -1,4 +1,4 @@
-# kernelshap 0.1.1
+# kernelshap 0.1.1 DEVEL
 
 - Major speed-up of data operations.
 - Added "data.table" package to "Suggests"
