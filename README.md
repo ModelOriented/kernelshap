@@ -25,7 +25,7 @@ The main function `kernelshap()` has three key arguments:
 - *Meta-learners:* "kernelshap" plays well together with packages like "caret" and "mlr3".
 - *Case weights:* Passing `bg_w` allows to weight background data.
 - *Classification:* `kernelshap()` requires one numeric prediction per row. Thus, the prediction function should provide probabilities only of a selected class.
-- *Speed:* If `X` and `bg_X` are matrices, the algorithm can runs faster. The faster the prediction function, the more this matters.
+- *Speed:* The algorithm has two computational bottlenecks: (1) applying the prediction function and (b) reorganizing the data. The latter is significantly faster for matrix `X`, or if the "data.table" package is available.
 
 ## Installation
 
@@ -43,7 +43,7 @@ library(shapviz)
 fit <- lm(Sepal.Length ~ ., data = iris)
 pred_fun <- function(X) predict(fit, X)
 
-# Crunch SHAP values (9 seconds)
+# Crunch SHAP values (4 seconds)
 s <- kernelshap(iris[-1], pred_fun = pred_fun, bg_X = iris[-1])
 s
 
@@ -53,13 +53,13 @@ s
 # [1,]  0.21951350    -1.955357   0.3149451 0.5823533
 # [2,] -0.02843097    -1.955357   0.3149451 0.5823533
 # 
-#  Corresponding standard errors:
+#  Corresponding standard errors (depends on seed):
 #       Sepal.Width Petal.Length  Petal.Width      Species
 # [1,] 4.996004e-16 4.440892e-16 8.053901e-16 7.850462e-17
 # [2,] 5.516421e-16 3.510833e-16 9.436896e-16 6.661338e-16
 
 # Plot with shapviz
-shp <- shapviz(s)  # until shapviz 0.2.0: shapviz(s$S, s$X, s$baseline)
+shp <- shapviz(s)
 sv_waterfall(shp, 1)
 sv_importance(shp)
 sv_dependence(shp, "Petal.Length")
@@ -80,11 +80,11 @@ library(shapviz)
 fit <- glm(I(Species == "virginica") ~ Sepal.Length + Sepal.Width, data = iris, family = binomial)
 pred_fun <- function(X) predict(fit, X, type = "response")
 
-# Crunch SHAP values (5 seconds)
+# Crunch SHAP values (2 seconds)
 s <- kernelshap(iris[1:2], pred_fun = pred_fun, bg_X = iris[1:2])
 
 # Plot with shapviz
-shp <- shapviz(s)  # until shapviz 0.2.0: shapviz(s$S, s$X, s$baseline)
+shp <- shapviz(s)
 sv_waterfall(shp, 51)
 sv_dependence(shp, "Sepal.Length")
 ```
@@ -119,13 +119,13 @@ model %>%
 X <- data.matrix(iris[2:4])
 pred_fun <- function(X) as.numeric(predict(model, X, batch_size = nrow(X)))
 
-# Crunch SHAP values (25 seconds)
+# Crunch SHAP values (23 seconds)
 system.time(
   s <- kernelshap(X, pred_fun = pred_fun, bg_X = X)
 )
 
 # Plot with shapviz (results depend on neural net seed)
-shp <- shapviz(s)  # until shapviz 0.2.0: shapviz(s$S, s$X, s$baseline)
+shp <- shapviz(s)
 sv_waterfall(shp, 1)
 sv_importance(shp)
 sv_dependence(shp, "Petal.Length")
@@ -151,7 +151,7 @@ task_iris <- TaskRegr$new(id = "iris", backend = iris, target = "Sepal.Length")
 fit_lm <- lrn("regr.lm")
 fit_lm$train(task_iris)
 s <- kernelshap(iris, function(X) fit_lm$predict_newdata(X)$response, bg_X = iris)
-sv <- shapviz(s)  # until shapviz 0.2.0: shapviz(s$S, s$X, s$baseline)
+sv <- shapviz(s)
 sv_dependence(sv, "Species")
 ```
 

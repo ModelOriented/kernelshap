@@ -104,3 +104,4 @@ test_that("Matrix input is fine with case weights", {
   expect_equal(s$baseline, weighted.mean(iris$Sepal.Length, iris$Sepal.Width))
   expect_equal(rowSums(s$S) + s$baseline, preds[1:3])
 })
+
