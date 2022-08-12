@@ -15,7 +15,7 @@ library(usethis)
 use_description(
   fields = list(
     Title = "Kernel SHAP",
-    Version = "0.1.0",
+    Version = "0.1.1",
     Description = "Implementation of the model-agnostic Kernel SHAP algorithm by
     Ian Covert and Su-In Lee (2021) <http://proceedings.mlr.press/v130/covert21a>. 
     Due to its iterative nature, standard errors of the SHAP values are provided

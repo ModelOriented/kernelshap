@@ -13,7 +13,8 @@ The main function `kernelshap()` has three key arguments:
   - `lm()`: `function(X) predict(fit, X)`
   - `glm()`: `function(X) predict(fit, X)` (link scale) or
   - `glm()`: `function(X) predict(fit, X, type = "response")` (response scale)
-  - `mgcv::gam()`: Same as for `glm()`
+  - `mgcv::gam()`: `function(X) as.numeric(predict(fit, X))` (link scale)
+  - `mgcv::gam()`: `function(X) as.numeric(predict(fit, X, type = "response"))` (response scale)
   - Keras: `function(X) as.numeric(predict(fit, X))`
   - mlr3: `function(X) fit$predict_newdata(X)$response`
   - caret: `function(X) predict(fit, X)`
@@ -43,7 +44,7 @@ library(shapviz)
 fit <- lm(Sepal.Length ~ ., data = iris)
 pred_fun <- function(X) predict(fit, X)
 
-# Crunch SHAP values (4 seconds)
+# Crunch SHAP values (3 seconds)
 s <- kernelshap(iris[-1], pred_fun = pred_fun, bg_X = iris[-1])
 s
 

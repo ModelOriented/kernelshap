@@ -83,46 +83,45 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
     !is.null(colnames(bg_X)),
     colnames(X) == colnames(bg_X)
   )
+  bg_n <- nrow(bg_X)
   if (!is.null(bg_w)) {
     stopifnot(
-      length(bg_w) == nrow(bg_X),
+      length(bg_w) == bg_n,
       all(bg_w >= 0),
       !all(bg_w == 0)
     )
   }
-  if (verbose && nrow(bg_X) > 1000) {
+  if (verbose && bg_n > 1000L) {
     warning("Your background data 'bg_X' is large, which will slow down the process. Consider using 50-200 rows.")
   }
-  if (verbose && nrow(bg_X) < 10) {
+  if (verbose && bg_n < 10L) {
     warning("Your background data 'bg_X' is small, which might lead to imprecise SHAP values. Consider using 50-200 rows.")
   }
-  preds <- pred_fun(bg_X)
+  bg_preds <- pred_fun(bg_X)
   stopifnot(
     "Predictions of multiple observations should be a vector (and not, e.g. a matrix)" = 
-      is.vector(preds),
-    "Predictions should be numeric" = is.numeric(preds), 
-    length(preds) == nrow(bg_X)
+      is.vector(bg_preds),
+    "Predictions should be numeric" = is.numeric(bg_preds), 
+    length(bg_preds) == bg_n
   )
-  if (use_dt) {
-    use_dt <- !is.matrix(X) && requireNamespace("data.table", quietly = TRUE)
-  }
+  use_dt <- use_dt &&!is.matrix(X) && requireNamespace("data.table", quietly = TRUE)
 
   # Initialization
-  v0 <- weighted_mean(preds, bg_w)
-  p <- ncol(X)
+  v0 <- weighted_mean(bg_preds, bg_w)  # Average prediction of background data
+  v1 <- pred_fun(X)                    # Vector of predictions of X
   n <- nrow(X)
+  nms <- colnames(X)
   if (m == "auto") {
-    m <- trunc(20 * sqrt(p))
+    m <- trunc(20 * sqrt(ncol(X)))
   }
 
   # Handle simple exact case
-  nms <- colnames(X)
-  if (p == 1L) {
+  if (ncol(X) == 1L) {
     out <- list(
-      S = matrix(pred_fun(X) - v0, ncol = 1, dimnames = list(NULL, nms)), 
+      S = matrix(v1 - v0, ncol = 1L, dimnames = list(NULL, nms)), 
       X = X, 
       baseline = v0, 
-      SE = matrix(0, nrow = n, ncol = 1, dimnames = list(NULL, nms)), 
+      SE = matrix(0, nrow = n, ncol = 1L, dimnames = list(NULL, nms)), 
       n_iter = integer(n), 
       converged = rep(TRUE, n)
     )
@@ -130,18 +129,19 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
     return(out)
   }
 
-  # KernelSHAP: loop over rows of X
+  # Real work: apply Kernel SHAP to each row of X
   if (verbose && n >= 2L) {
-    pb <- utils::txtProgressBar(1, n, style = 3)  
+    pb <- utils::txtProgressBar(1L, n, style = 3)  
   }
   res <- vector("list", n)
   for (i in seq_len(n)) {
     res[[i]] <- kernelshap_one(
-      X[i, , drop = FALSE], 
+      x = X[i, , drop = FALSE], 
       pred_fun = pred_fun, 
       bg_X = bg_X, 
       bg_w = bg_w, 
       v0 = v0,
+      v1 = v1[i],
       paired = paired_sampling,
       m = m,
       tol = tol,
@@ -170,16 +170,11 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
   out
 }
 
-# Little helpers
-
 # Kernel SHAP algorithm for a single row x with paired sampling
-kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, 
+kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1, 
                            paired, m, tol, max_iter, use_dt) {
-  v1 <- pred_fun(x)
-  p <- ncol(x)
-  X <- x[rep(1L, nrow(bg_X)), ]
-  
-  # Outer loop init
+  X <- x[rep(1L, nrow(bg_X)), , drop = FALSE]
+  p <- ncol(X)
   est_m = list()
   converged <- FALSE
   n_iter <- 0L
@@ -238,25 +233,6 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0,
   list(beta = beta_n, sigma = sigma_n, n_iter = n_iter, converged = converged)
 }
 
-# Simple version without standard errors
-# kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, tol = 0) {
-#   v1 <- pred_fun(x)
-#   p <- ncol(x)
-#   m <- trunc(500 * sqrt(p))
-#   X <- x[rep(1, nrow(bg_X)), ]
-#   group <- rep(1:m, each = nrow(bg_X))
-#   w <- if (!is.null(bg_w)) rep(bg_w, times = m)
-#   
-#   Z <- make_Z(m, p)
-#   vz <- rowmean(
-#     pred_fun(modify_and_stack(X, bg = bg_X, Z = Z)), group = group, w = w
-#   )
-#   A <- crossprod(Z) / m
-#   b <- crossprod(Z, (vz - v0)) / m
-# 
-#   list(beta = solver(A, b, v1, v0), sigma = 0)
-# }
-
 # Calculates regression coefficients
 solver <- function(A, b, v1, v0) {
   Ainv <- solve(A)
@@ -310,7 +286,7 @@ get_vz <- function(X, bg, Z, pred_fun, w, use_dt) {
   preds <- pred_fun(pred_data)
   rowmean(
     preds, 
-    group = rep(1:nrow(Z), each = nrow(bg)), 
+    group = rep(1:nrow(Z), each = nrow(bg)),
     w = if (!is.null(w)) rep(w, times = nrow(Z))
   )
 }
