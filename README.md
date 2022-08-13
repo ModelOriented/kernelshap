@@ -81,7 +81,7 @@ library(shapviz)
 fit <- glm(I(Species == "virginica") ~ Sepal.Length + Sepal.Width, data = iris, family = binomial)
 pred_fun <- function(X) predict(fit, X, type = "response")
 
-# Crunch SHAP values (2 seconds)
+# Crunch SHAP values
 s <- kernelshap(iris[1:2], pred_fun = pred_fun, bg_X = iris[1:2])
 
 # Plot with shapviz
@@ -120,7 +120,7 @@ model %>%
 X <- data.matrix(iris[2:4])
 pred_fun <- function(X) as.numeric(predict(model, X, batch_size = nrow(X)))
 
-# Crunch SHAP values (23 seconds)
+# Crunch SHAP values (22 seconds)
 system.time(
   s <- kernelshap(X, pred_fun = pred_fun, bg_X = X)
 )

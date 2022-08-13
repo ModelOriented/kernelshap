@@ -178,55 +178,30 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1,
   est_m = list()
   converged <- FALSE
   n_iter <- 0L
-  n <- 0L
   A <- matrix(0, nrow = p, ncol = p)
   b <- numeric(p)
-
+  
   while(!isTRUE(converged) && n_iter < max_iter) {
     Z <- make_Z(m, p)
+    if (paired) {
+      Z <- rbind(Z, 1 - Z)
+    }
     
     # Calling get_vZ() is expensive
-    vz <- get_vz(
-      X,  
-      bg = bg_X, 
-      Z = if (paired) rbind(Z, 1 - Z) else Z, 
-      pred_fun = pred_fun, 
-      w = bg_w,
-      use_dt = use_dt
-    )
+    vz <- get_vz(X, bg = bg_X, Z, pred_fun = pred_fun, w = bg_w, use_dt = use_dt)
+  
+    Atemp <- crossprod(Z) / nrow(Z)
+    btemp <- crossprod(Z, (vz - v0)) / nrow(Z)
     
-    # The inner loop can be replaced by vectorized operation, but is negligible
-    counter <- 0L
-    Atemp <- matrix(0, nrow = p, ncol = p)
-    btemp <- numeric(p)
-    
-    for (i in 1:m) { # i <- 1
-      z <- Z[i, ]
-      if (paired) {
-        Asample <- (tcrossprod(z) + tcrossprod(1 - z)) / 2
-        bsample <- (z * vz[i] + (1 - z) * vz[i + m] - v0) / 2
-      } else {
-        Asample <- tcrossprod(z)
-        bsample <- z * (vz[i] - v0)
-      }
-
-      # Welford's algorithm to iteratively calculate covariances etc
-      n <- n + 1L
-      A <- A + (Asample - A) / n
-      b <- b + (bsample - b) / n
-      counter <- counter + 1L
-      Atemp <- Atemp + (Asample - Atemp) / counter
-      btemp <- btemp + (bsample - btemp) / counter
-    }
-
-    est_m[[length(est_m) + 1L]] <- solver(Atemp, btemp, v1, v0)
     n_iter <- n_iter + 1L
-
+    A <- A + (Atemp - A) / n_iter
+    b <- b + (btemp - b) / n_iter
+    est_m[[n_iter]] <- solver(Atemp, btemp, v1, v0)
+    
     # Covariance calculation would fail in the first iteration
     if (n_iter >= 2L) {
       beta_n <- solver(A, b, v1, v0)
-      sigma_beta <- m * stats::cov(do.call(rbind, est_m))
-      sigma_n <- sqrt(diag(sigma_beta) / n)
+      sigma_n <- sqrt(diag(stats::cov(do.call(rbind, est_m))) / n_iter)
       converged <- max(sigma_n) / diff(range(beta_n)) < tol
     }
   }
@@ -299,9 +274,7 @@ weighted_mean <- function(x, w = NULL, ...) {
 rowmean <- function(x, n_bg, n_z, w = NULL) {
   g <- rep(seq_len(n_z), each = n_bg)
   if (is.null(w)) {
-    out <- rowsum(x, group = g, reorder = FALSE) / n_bg
-  } else {
-    out <- rowsum(x * rep(w, times = n_z), group = g, reorder = FALSE) / sum(w)
+    return(rowsum(x, group = g, reorder = FALSE) / n_bg)
   }
-  as.numeric(out)
+  rowsum(x * rep(w, times = n_z), group = g, reorder = FALSE) / sum(w)
 }
