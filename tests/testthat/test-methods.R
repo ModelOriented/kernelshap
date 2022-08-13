@@ -3,21 +3,20 @@ pred_fun <- function(X) stats::predict(fit, X)
 s <- kernelshap(iris[1:2, -1], pred_fun = pred_fun, iris[-1])
 
 test_that("get_* functions get the right element", {
-  expect_equal(s$S, ks_shap_values(s))
-  expect_equal(s$X, ks_feature_values(s))
-  expect_equal(s$SE, ks_standard_errors(s))
-  expect_equal(s$baseline, ks_baseline(s))
-  expect_equal(s$converged, ks_converged(s))
-  expect_equal(s$n_iter, ks_n_iter(s))
+  expect_equal(s$S, ks_extract(s, "S"))
+  expect_equal(s$X, ks_extract(s, "X"))
+  expect_equal(s$SE, ks_extract(s, "SE"))
+  expect_equal(s$baseline, ks_extract(s, "baseline"))
+  expect_equal(s$converged, ks_extract(s, "converged"))
+  expect_equal(s$n_iter, ks_extract(s, "n_iter"))
 })
 
-test_that("get_* functions fail for wrong objects", {
-  expect_error(ks_shap_values(1))
-  expect_error(ks_feature_values(1))
-  expect_error(ks_standard_errors(1))
-  expect_error(ks_baseline(1))
-  expect_error(ks_converged(1))
-  expect_error(ks_n_iter(1))
+test_that("ks_extract() fails for wrong objects", {
+  expect_error(ks_extract(1))
+})
+
+test_that("ks_extract() fails for wrong elements", {
+  expect_error(ks_extract(s, "x"))
 })
 
 test_that("is_kernelshap() works", {

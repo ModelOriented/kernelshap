@@ -12,21 +12,22 @@
 #' s
 #' @seealso \code{\link{kernelshap}}.
 print.kernelshap <- function(x, n = 2L, ...) {
-  S <- ks_shap_values(x)
+  S <- ks_extract(x, "S")
   n <- min(n, nrow(S))
   cat(
     "'kernelshap' object representing \n  - SHAP matrix of dimension",
     nrow(S), "x", ncol(S),
     "\n  - feature data.frame/matrix of dimension",  nrow(S), "x", ncol(S),
-    "\n  - baseline value of", ks_baseline(x)
+    "\n  - baseline value of", ks_extract(x, "baseline"),
+    "\n  - average number of iterations of", mean(ks_extract(x, "n_iter"))
   )
   cat("\n\n")
   cat("SHAP values of first", n, "observations:\n")
   print(utils::head(S, n))
   cat("\n Corresponding standard errors:\n")
-  print(utils::head(ks_standard_errors(x), n))
+  print(utils::head(ks_extract(x, "SE"), n))
   cat("\n And the feature values:\n")
-  print(utils::head(ks_feature_values(x), n))
+  print(utils::head(ks_extract(x, "X"), n))
   cat("\n")
   invisible(x)
 }
@@ -48,134 +49,33 @@ is.kernelshap <- function(object){
   inherits(object, "kernelshap")
 }
 
-#' Extractor Functions
+#' Extractor Function
 #'
-#' Functions to extract SHAP values, feature values, standard errors etc. from a "kernelshap" object.
+#' Function to extract an element of a "kernelshap" object, e.g., the SHAP values "S".
 #'
-#' @name extractors
 #' @param object Object to extract something.
+#' @param what Element to extract. One of "S", "X", "baseline", "SE", "n_iter", or "converged".
 #' @param ... Currently unused.
-#' @return The corresponding object is returned, i.e.,
-#' \itemize{
-#'   \item \code{ks_shap_values()} returns the matrix of SHAP values, 
-#'   \item \code{ks_feature_values()} the \code{data.frame} of feature values, 
-#'   \item \code{ks_baseline()} the numeric baseline value of the input, 
-#'   \item \code{ks_standard_errors()} the matrix of standard errors of SHAP values, 
-#'   \item \code{ks_converged()} returns the vector of convergence flags, and finally
-#'   \item \code{ks_n_iter()} the number of iterations per row.
-#' }
-NULL
-
-#' @rdname extractors
+#' @return The corresponding object is returned.
 #' @export
-ks_shap_values <- function(object, ...){
-  UseMethod("ks_shap_values")
+ks_extract <- function(object, ...){
+  UseMethod("ks_extract")
 }
 
-#' @rdname extractors
+#' @describeIn ks_extract Method for "kernelshap" object.
 #' @export
 #' @examples
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
 #' pred_fun <- function(X) stats::predict(fit, X)
 #' s <- kernelshap(iris[1:2, -1], pred_fun = pred_fun, iris[-1])
-#' ks_shap_values(s)
-ks_shap_values.kernelshap = function(object, ...) {
-  object[["S"]]
+#' ks_extract(s, what = "S")
+ks_extract.kernelshap = function(object, what = c("S", "X", "baseline", "SE", "n_iter", "converged"), ...) {
+  what <- match.arg(what)
+  object[[what]]
 }
 
-#' @rdname extractors
+#' @describeIn ks_extract No default method available.
 #' @export
-ks_shap_values.default = function(object, ...) {
-  stop("No default method available.")
+ks_extract.default = function(object, ...) {
+  stop("ks_extract() only accepts 'kernelshap' objects.")
 }
-
-#' @rdname extractors
-#' @export
-ks_feature_values <- function(object, ...){
-  UseMethod("ks_feature_values")
-}
-
-#' @rdname extractors
-#' @export
-ks_feature_values.kernelshap = function(object, ...) {
-  object[["X"]]
-}
-
-#' @rdname extractors
-#' @export
-ks_feature_values.default = function(object, ...) {
-  stop("No default method available.")
-}
-
-#' @rdname extractors
-#' @export
-ks_baseline <- function(object, ...){
-  UseMethod("ks_baseline")
-}
-
-#' @rdname extractors
-#' @export
-ks_baseline.kernelshap = function(object, ...) {
-  object[["baseline"]]
-}
-
-#' @rdname extractors
-#' @export
-ks_baseline.default = function(object, ...) {
-  stop("No default method available.")
-}
-
-#' @rdname extractors
-#' @export
-ks_standard_errors <- function(object, ...){
-  UseMethod("ks_standard_errors")
-}
-
-#' @rdname extractors
-#' @export
-ks_standard_errors.kernelshap = function(object, ...) {
-  object[["SE"]]
-}
-
-#' @rdname extractors
-#' @export
-ks_standard_errors.default = function(object, ...) {
-  stop("No default method available.")
-}
-
-#' @rdname extractors
-#' @export
-ks_n_iter <- function(object, ...){
-  UseMethod("ks_n_iter")
-}
-
-#' @rdname extractors
-#' @export
-ks_n_iter.kernelshap = function(object, ...) {
-  object[["n_iter"]]
-}
-
-#' @rdname extractors
-#' @export
-ks_n_iter.default = function(object, ...) {
-  stop("No default method available.")
-}
-
-#' @rdname extractors
-#' @export
-ks_converged <- function(object, ...){
-  UseMethod("ks_converged")
-}
-
-#' @rdname extractors
-#' @export
-ks_converged.kernelshap = function(object, ...) {
-  object[["converged"]]
-}
-
-#' @rdname extractors
-#' @export
-ks_converged.default = function(object, ...) {
-  stop("No default method available.")
-}
-
