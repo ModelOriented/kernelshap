@@ -178,29 +178,28 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1,
   est_m = list()
   converged <- FALSE
   n_iter <- 0L
-  A <- matrix(0, nrow = p, ncol = p)
-  b <- numeric(p)
+  Asum <- matrix(0, nrow = p, ncol = p)
+  bsum <- numeric(p)
   
   while(!isTRUE(converged) && n_iter < max_iter) {
+    n_iter <- n_iter + 1L
     Z <- make_Z(m, p)
     if (paired) {
       Z <- rbind(Z, 1 - Z)
     }
     
-    # Calling get_vZ() is expensive
+    # Calling get_vz() is expensive
     vz <- get_vz(X, bg = bg_X, Z, pred_fun = pred_fun, w = bg_w, use_dt = use_dt)
   
     Atemp <- crossprod(Z) / nrow(Z)
     btemp <- crossprod(Z, (vz - v0)) / nrow(Z)
-    
-    n_iter <- n_iter + 1L
-    A <- A + (Atemp - A) / n_iter
-    b <- b + (btemp - b) / n_iter
+    Asum <- Asum + Atemp
+    bsum <- bsum + btemp
     est_m[[n_iter]] <- solver(Atemp, btemp, v1, v0)
     
     # Covariance calculation would fail in the first iteration
     if (n_iter >= 2L) {
-      beta_n <- solver(A, b, v1, v0)
+      beta_n <- solver(Asum / n_iter, bsum / n_iter, v1, v0)
       sigma_n <- sqrt(diag(stats::cov(do.call(rbind, est_m))) / n_iter)
       converged <- max(sigma_n) / diff(range(beta_n)) < tol
     }
