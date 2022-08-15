@@ -9,13 +9,13 @@ The "kernelshap" package implements the Kernel SHAP Algorithm 1 described in the
 The main function `kernelshap()` has three key arguments:
 
 - `X`: A matrix or data.frame of rows to be explained. Important: The columns should only represent model features, not the response.
-- `pred_fun`: A function that takes a data structure like `X` and provides one numeric prediction per row. Some examples:
+- `pred_fun`: A function that takes a data structure like `X` and provides $K \ge 1$ numeric prediction per row. Some examples:
   - `lm()`: `function(X) predict(fit, X)`
   - `glm()`: `function(X) predict(fit, X)` (link scale) or
   - `glm()`: `function(X) predict(fit, X, type = "response")` (response scale)
-  - `mgcv::gam()`: `function(X) as.numeric(predict(fit, X))` (link scale)
-  - `mgcv::gam()`: `function(X) as.numeric(predict(fit, X, type = "response"))` (response scale)
-  - Keras: `function(X) as.numeric(predict(fit, X))`
+  - `mgcv::gam()`: `function(X) predict(fit, X)` (link scale)
+  - `mgcv::gam()`: `function(X) predict(fit, X, type = "response")` (response scale)
+  - Keras: `function(X) predict(fit, X)`
   - mlr3: `function(X) fit$predict_newdata(X)$response`
   - caret: `function(X) predict(fit, X)`
 - `bg_X`: The background data used to integrate out "switched off" features. It should have the same column structure as `X`. A good size is around $50-200$ rows.

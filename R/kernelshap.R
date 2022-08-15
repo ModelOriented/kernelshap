@@ -8,22 +8,21 @@
 #' The data rows \code{X} to be explained and the
 #' background data \code{bg_X} should only contain feature columns required by the
 #' prediction function \code{pred_fun}. The latter is a function taking
-#' a data structure like \code{X} or \code{bg_X} and providing one numeric 
-#' prediction per row.
+#' a data structure like \code{X} or \code{bg_X} and providing K >= 1 numeric 
+#' predictions per row.
 #' During each iteration, \code{m} feature subsets are evaluated until the worst 
 #' standard error of the SHAP values is small enough relative to the range of the SHAP values. 
-#' This stopping criterion was suggested in Covert and Lee (2021).
-#' @param X Feature matrix or data.frame of dimension (n x p) containing the observations 
-#' to be explained. Should only contain model features.
-#' @param pred_fun A function taking a matrix/data.frame like \code{X} 
-#' as input and providing numeric predictions. 
+#' This stopping criterion was suggested in Covert and Lee (2021). We apply it to each
+#' of the K dimensions of the predictions and stop if the stopping criterion fires for all of them.
+#' @param X A (n x p) matrix or data.frame of rows to be explained. 
+#' Important: The columns should only represent model features, not the response.
+#' @param pred_fun A function that takes a data structure like \code{X} or \code{bg_X} 
+#' and provides K >= 1 numeric prediction per row.
 #' Example: If "fit" denotes a logistic regression fitted via \code{stats::glm}, 
 #' and SHAP values should be on the probability scale, then this argument is
 #' \code{function(X) predict(fit, X, type = "response")}.
-#' @param bg_X Matrix or data.frame used as background data to calculate marginal 
-#' expectations. Its column structure must be similar to \code{X}.
-#' It should neither be too small nor too large (50-200 rows). A large background
-#' data slows down the calculations, while a small data set leads to imprecise SHAP values.
+#' @param bg_X The background data used to integrate out "switched off" features. 
+#' It should have the same column structure as \code{X}. A good size is around $50-200$ rows.
 #' @param bg_w Optional vector of case weights for each row of \code{bg_X}.
 #' @param paired_sampling Logical flag indicating whether to use paired sampling.
 #' The default is \code{TRUE}. This means that with every feature subset S,
@@ -32,8 +31,9 @@
 #' The default, "auto", equals \code{trunc(20 * sqrt(ncol(X)))}. 
 #' For the paired sampling strategy, 2m evaluations are done per iteration.
 #' @param tol Tolerance determining when to stop. The algorithm keeps iterating until
-#' max(sigma_n) / diff(range(beta_n)) < tol, where sigma_n are the standard errors 
-#' and beta_n are the SHAP values of a given observation.
+#' max(sigma_n) / diff(range(beta_n)) < tol, where the beta_n are the SHAP values 
+#' of a given observation and sigma_n their standard errors. For multidimensional
+#' predictions, the criterion must be satisfied for each dimension separately.
 #' @param max_iter If the stopping criterion (see \code{tol}) is not reached after 
 #' \code{max_iter} iterations, then the algorithm stops.
 #' @param use_dt Logical flag indicating whether to use the "data.table" package 
@@ -43,12 +43,13 @@
 #' @param ... Currently unused.
 #' @return An object of class "kernelshap" with the following components:
 #' \itemize{
-#'   \item \code{S}: Matrix with SHAP values.
-#'   \item \code{X}: Same as parameter \code{X}.
-#'   \item \code{baseline}: The average prediction on the background data.
-#'   \item \code{SE}: Standard errors corresponding to \code{S}.
-#'   \item \code{n_iter}: Number of iterations until convergence per row.
-#'   \item \code{converged}: Logical vector indicating convergence per row.
+#'   \item \code{S}: (n x p) matrix with SHAP values or, if the predictions are multidimensional,
+#'   a list of K such matrices.
+#'   \item \code{X}: Same as input argument \code{X}.
+#'   \item \code{baseline}: A vector of length K representing the average prediction on the background data.
+#'   \item \code{SE}: Standard errors corresponding to \code{S} (and organized like \code{S}).
+#'   \item \code{n_iter}: Integer vector of length n providing the number of iterations per row of \code{X}.
+#'   \item \code{converged}: Logical vector of length n indicating convergence per row of \code{X}.
 #' }
 #' @export
 #' @references
@@ -62,7 +63,15 @@
 #' s <- kernelshap(iris[1:2, -1], pred_fun = pred_fun, iris[, -1])
 #' s
 #' 
-#' # Matrix input works as well, and pred_fun may contain preprocessing steps.
+#' # Multi-output regression or (probabilistic) classification
+#' fit <- stats::lm(
+#'   as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris
+#' )
+#' fit
+#' s <- kernelshap(iris[1:4, 3:5], pred_fun = pred_fun, iris[, 3:5])
+#' s
+#' 
+#' # Matrix input works as well, and pred_fun may contain preprocessing steps
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
 #' pred_fun <- function(X) stats::predict(fit, as.data.frame(X))
 #' X <- data.matrix(iris[2:4])
@@ -97,19 +106,13 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
   if (verbose && bg_n < 10L) {
     warning("Your background data 'bg_X' is small, which might lead to imprecise SHAP values. Consider using 50-200 rows.")
   }
-  bg_preds <- pred_fun(bg_X)
-  stopifnot(
-    "Predictions of multiple observations should be a vector (and not, e.g. a matrix)" = 
-      is.vector(bg_preds),
-    "Predictions should be numeric" = is.numeric(bg_preds), 
-    length(bg_preds) == bg_n
-  )
+  bg_preds <- check_pred(pred_fun(bg_X), n = bg_n)
   use_dt <- use_dt &&!is.matrix(X) && requireNamespace("data.table", quietly = TRUE)
 
   # Initialization
-  v0 <- weighted_mean(bg_preds, bg_w)  # Average prediction of background data
-  v1 <- pred_fun(X)                    # Vector of predictions of X
   n <- nrow(X)
+  v0 <- weighted_colMeans(bg_preds, bg_w)  # Average pred of background data: 1 x K
+  v1 <- check_pred(pred_fun(X), n = n)     # Vector of predictions of X:      n x K
   nms <- colnames(X)
   if (m == "auto") {
     m <- trunc(20 * sqrt(ncol(X)))
@@ -117,11 +120,14 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
 
   # Handle simple exact case
   if (ncol(X) == 1L) {
+    S <- matrix(v1 - v0, ncol = 1L, dimnames = list(NULL, nms))
+    SE <- matrix(0, nrow = n, ncol = 1L, dimnames = list(NULL, nms))
+    
     out <- list(
-      S = matrix(v1 - v0, ncol = 1L, dimnames = list(NULL, nms)), 
+      S = S, 
       X = X, 
       baseline = v0, 
-      SE = matrix(0, nrow = n, ncol = 1L, dimnames = list(NULL, nms)), 
+      SE = SE, 
       n_iter = integer(n), 
       converged = rep(TRUE, n)
     )
@@ -141,7 +147,7 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
       bg_X = bg_X, 
       bg_w = bg_w, 
       v0 = v0,
-      v1 = v1[i],
+      v1 = v1[i, , drop = FALSE],
       paired = paired_sampling,
       m = m,
       tol = tol,
@@ -154,10 +160,8 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
   }
 
   # Organize output
-  S <- do.call(rbind, lapply(res, `[[`, "beta"))
-  colnames(S) <- nms
-  SE <- do.call(rbind, lapply(res, `[[`, "sigma"))
-  colnames(SE) <- nms
+  S <- reorganize_list(lapply(res, `[[`, "beta"), nms = nms)
+  SE <- reorganize_list(lapply(res, `[[`, "sigma"), nms = nms)
   n_iter <- vapply(res, `[[`, "n_iter", FUN.VALUE = integer(1L))
   converged <- vapply(res, `[[`, "converged", FUN.VALUE = logical(1L))
   if (verbose && !all(converged)) {
@@ -180,6 +184,8 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1,
   n_iter <- 0L
   Asum <- matrix(0, nrow = p, ncol = p)
   bsum <- numeric(p)
+  n_Z <- m * (1L + paired)
+  v0_ext <- v0[rep(1L, times = n_Z), , drop = FALSE]             #  (n_Z x K)
   
   while(!isTRUE(converged) && n_iter < max_iter) {
     n_iter <- n_iter + 1L
@@ -188,20 +194,20 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1,
       Z <- rbind(Z, 1 - Z)
     }
     
-    # Calling get_vz() is expensive
+    # Calling get_vz() is expensive                                  (n_Z x K)
     vz <- get_vz(X, bg = bg_X, Z, pred_fun = pred_fun, w = bg_w, use_dt = use_dt)
-  
-    Atemp <- crossprod(Z) / nrow(Z)
-    btemp <- crossprod(Z, (vz - v0)) / nrow(Z)
-    Asum <- Asum + Atemp
-    bsum <- bsum + btemp
-    est_m[[n_iter]] <- solver(Atemp, btemp, v1, v0)
+    
+    Atemp <- crossprod(Z) / n_Z                                   #  (p x p)
+    btemp <- crossprod(Z, (vz - v0_ext)) / n_Z                    #  (p x K)
+    Asum <- Asum + Atemp                                          #  (p x p)
+    bsum <- bsum + btemp                                          #  (p x K)
+    est_m[[n_iter]] <- solver(Atemp, btemp, v1, v0)               #  (p x K)
     
     # Covariance calculation would fail in the first iteration
     if (n_iter >= 2L) {
-      beta_n <- solver(Asum / n_iter, bsum / n_iter, v1, v0)
-      sigma_n <- sqrt(diag(stats::cov(do.call(rbind, est_m))) / n_iter)
-      converged <- max(sigma_n) / diff(range(beta_n)) < tol
+      beta_n <- solver(Asum / n_iter, bsum / n_iter, v1, v0)      #  (p x K)
+      sigma_n <- get_sigma(est_m, iter = n_iter)                  #  (p x K)
+      converged <- all(conv_crit(sigma_n, beta_n) < tol)
     }
   }
   list(beta = beta_n, sigma = sigma_n, n_iter = n_iter, converged = converged)
@@ -209,9 +215,11 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1,
 
 # Calculates regression coefficients
 solver <- function(A, b, v1, v0) {
+  p <- ncol(A)
   Ainv <- solve(A)
-  out <- Ainv %*% (b - (sum(crossprod(Ainv, b)) - v1 + v0) / sum(Ainv))
-  as.numeric(out)
+  s <- (matrix(colSums(crossprod(Ainv, b)), nrow = 1L) - v1 + v0) / sum(Ainv)  # (1 x K)
+  s <- s[rep(1L, times = p), , drop = FALSE]                                   # (p x K) 
+  Ainv %*% (b - s)                                                             # (p x K)
 }
 
 # Generates m permutations distributed according to Kernel SHAP weights
@@ -233,7 +241,7 @@ make_Z <- function(m, p) {
 }
 
 # This function is by far the most expensive: data manipulation and prediction
-# We further try to work with data.tables
+# We try to work with matrices or data.tables
 get_vz <- function(X, bg, Z, pred_fun, w, use_dt) {
   if (inherits(X, "data.table") && use_dt) {
     modify_X <- function(not_z) {
@@ -257,23 +265,73 @@ get_vz <- function(X, bg, Z, pred_fun, w, use_dt) {
       pred_data <- as.data.frame(data.table::rbindlist(data_list))
     }
   }
-  preds <- pred_fun(pred_data)
+  preds <- check_pred(pred_fun(pred_data), n = nrow(pred_data))
   rowmean(preds, n_bg = nrow(bg), n_z = nrow(Z), w = w)
 }
 
-# Convenience wrapper around mean and weighted.mean
-weighted_mean <- function(x, w = NULL, ...) {
-  if (is.null(w)) {
-    return(mean(x, ...))
+# Weighted colMeans(). Always returns a (1 x ncol(x)) matrix
+weighted_colMeans <- function(x, w = NULL, ...) {
+  if (!is.matrix(x)) {
+    stop("x must be a matrix")
   }
-  stats::weighted.mean(x, w = w, ...)
+  if (is.null(w)) {
+    out <- colMeans(x, ...)
+  } else {
+    out <- colSums(x * w, ...) / sum(w)  
+  }
+  matrix(out, nrow = 1L)
 }
 
-# Average per Z
-rowmean <- function(x, n_bg, n_z, w = NULL) {
+# Average per Z (optimized for speed)
+rowmean <- function(P, n_bg, n_z, w = NULL) {
   g <- rep(seq_len(n_z), each = n_bg)
   if (is.null(w)) {
-    return(rowsum(x, group = g, reorder = FALSE) / n_bg)
+    return(rowsum(P, group = g, reorder = FALSE) / n_bg)
   }
-  rowsum(x * rep(w, times = n_z), group = g, reorder = FALSE) / sum(w)
+  rowsum(P * rep(w, times = n_z), group = g, reorder = FALSE) / sum(w)
 }
+
+# Binds list of matrices along new first axis
+abind1 <- function(a) {
+  out <- array(dim = c(length(a), dim(a[[1L]])))
+  for (i in seq_along(a)) {
+    out[i, , ] <- a[[i]]
+  }
+  out
+}
+
+# Calculate standard error from list of m estimates
+get_sigma <- function(est, iter) {
+  apply(abind1(est), 3L, FUN = function(Y) sqrt(diag(stats::cov(Y)) / iter))
+}
+
+# Convergence criterion
+conv_crit <- function(sig, bet) {
+  apply(sig, 2L, FUN = max) / apply(bet, 2L, FUN = function(z) diff(range(z)))
+}
+
+# Turn list of n (p x K) matrices into K lists of (n x p) matrices. Reduce if K = 1.
+reorganize_list <- function(alist, nms) {
+  out <- abind1(alist)
+  dimnames(out) <- list(NULL, nms, NULL)
+  out <- asplit(out, MARGIN = 3L)
+  if (length(out) == 1L) {
+    return(out[[1L]])
+  }
+  out
+}
+
+# Checks and reshapes predictions to matrix with n rows
+check_pred <- function(x, n) {
+  if (!is.numeric(x)) {
+    stop("Predictions must be numeric")
+  }
+  if (is.matrix(x) && nrow(x) == n) {
+    return(x)
+  }
+  if (length(x) == n) {
+      return(matrix(x, nrow = n))
+  }
+  stop("Predictions must be a length n vector or a matrix with n rows.")
+}
+
