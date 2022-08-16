@@ -14,7 +14,7 @@ test_that("SHAP + baseline = prediction", {
 })
 
 test_that("Decomposing a single row works", {
-  s <- kernelshap(iris[1, x], pred_fun = pred_fun, bg_X = iris[, x])
+  s <- kernelshap(iris[1L, x], pred_fun = pred_fun, bg_X = iris[, x])
   
   expect_equal(s$baseline, mean(iris$Sepal.Length))
   expect_equal(rowSums(s$S) + s$baseline, preds[1])

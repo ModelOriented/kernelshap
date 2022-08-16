@@ -15,12 +15,13 @@ library(usethis)
 use_description(
   fields = list(
     Title = "Kernel SHAP",
-    Version = "0.1.1",
+    Version = "0.1.900",
     Description = "Implementation of the model-agnostic Kernel SHAP algorithm by
     Ian Covert and Su-In Lee (2021) <http://proceedings.mlr.press/v130/covert21a>. 
     Due to its iterative nature, standard errors of the SHAP values are provided
     and convergence is monitored.
-    The package allows to work with any model that provides numeric predictions.
+    The package allows to work with any model that provides numeric predictions of 
+    dimension one or higher.
     Examples include linear regression, logistic regression (logit or probability scale),
     other generalized linear models, generalized additive models, and 
     neural networks. The package plays well together with meta-learning packages

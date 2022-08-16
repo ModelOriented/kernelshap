@@ -1,6 +1,7 @@
 #' Prints "kernelshap" Object
 #'
 #' @param x An object of class "kernelshap".
+#' @param compact Set to \code{TRUE} to hide printing the top n SHAP values, standard errors and feature values. 
 #' @param n Maximum number of rows of SHAP values, standard errors and feature values to print.
 #' @param ... Further arguments passed from other methods.
 #' @return Invisibly, the input is returned.
@@ -11,24 +12,36 @@
 #' s <- kernelshap(iris[1:3, -1], pred_fun = pred_fun, iris[-1])
 #' s
 #' @seealso \code{\link{kernelshap}}.
-print.kernelshap <- function(x, n = 2L, ...) {
+print.kernelshap <- function(x, compact = FALSE, n = 2L, ...) {
   S <- ks_extract(x, "S")
-  n <- min(n, nrow(S))
+  SE <- ks_extract(x, "SE")
+  X <- ks_extract(x, "X")
+  if (!is.list(S)) {
+    n <- min(n, nrow(S))
+    s_text <- paste("- SHAP matrix of dimension",  nrow(S), "x", ncol(S))
+  } else {
+    n <- min(n, nrow(S[[1L]]))
+    s_text <- paste(
+      "-", length(S), "SHAP matrices of dimension",  nrow(S[[1L]]), "x", ncol(S[[1L]])
+    )
+  }
   cat(
-    "'kernelshap' object representing \n  - SHAP matrix of dimension",
-    nrow(S), "x", ncol(S),
-    "\n  - feature data.frame/matrix of dimension",  nrow(S), "x", ncol(S),
-    "\n  - baseline value of", ks_extract(x, "baseline"),
-    "\n  - average number of iterations of", mean(ks_extract(x, "n_iter"))
+    "'kernelshap' object representing \n ", s_text,
+    "\n  - feature data.frame/matrix of dimension",  nrow(X), "x", ncol(X),
+    "\n  - baseline:", ks_extract(x, "baseline"),
+    "\n  - average iterations:", mean(ks_extract(x, "n_iter")),
+    "\n  - rows not converged:", sum(!ks_extract(x, "converged"))
   )
-  cat("\n\n")
-  cat("SHAP values of first", n, "observations:\n")
-  print(utils::head(S, n))
-  cat("\n Corresponding standard errors:\n")
-  print(utils::head(ks_extract(x, "SE"), n))
-  cat("\n And the feature values:\n")
-  print(utils::head(ks_extract(x, "X"), n))
   cat("\n")
+  if (!compact) {
+    cat("\nSHAP values of first", n, "observations:\n")
+    if (!is.list(S)) print(utils::head(S, n)) else print(lapply(S, utils::head, n))
+    cat("\n Corresponding standard errors:\n")
+    if (!is.list(S)) print(utils::head(SE, n)) else print(lapply(SE, utils::head, n))
+    cat("\n And the feature values:\n")
+    print(utils::head(X, n))
+    cat("\n")
+  }
   invisible(x)
 }
 

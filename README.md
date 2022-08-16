@@ -4,18 +4,17 @@
 
 SHAP values (Lundberg and Lee, 2017) decompose model predictions into additive contributions of the features in a fair way. A model agnostic approach is called Kernel SHAP, introduced in Lundberg and Lee (2017), and investigated in detail in Covert and Lee (2021). 
 
-The "kernelshap" package implements the Kernel SHAP Algorithm 1 described in the supplement of Covert and Lee (2021). An advantage of their algorithm is that SHAP values are supplemented by standard errors. Furthermore, convergence can be monitored and controlled.
+The "kernelshap" package implements a multidimensional version of the Kernel SHAP Algorithm 1 described in the supplement of Covert and Lee (2021). An advantage of their algorithm is that SHAP values are calculated iteratively, allowing to calculate standard errors and to control convergence.
 
 The main function `kernelshap()` has three key arguments:
 
 - `X`: A matrix or data.frame of rows to be explained. Important: The columns should only represent model features, not the response.
-- `pred_fun`: A function that takes a data structure like `X` and provides one numeric prediction per row. Some examples:
+- `pred_fun`: A function that takes a data structure like `X` and provides $K \ge 1$ numeric prediction per row. Some examples:
   - `lm()`: `function(X) predict(fit, X)`
   - `glm()`: `function(X) predict(fit, X)` (link scale) or
   - `glm()`: `function(X) predict(fit, X, type = "response")` (response scale)
-  - `mgcv::gam()`: `function(X) as.numeric(predict(fit, X))` (link scale)
-  - `mgcv::gam()`: `function(X) as.numeric(predict(fit, X, type = "response"))` (response scale)
-  - Keras: `function(X) as.numeric(predict(fit, X))`
+  - `mgcv::gam()`: same as `glm()`
+  - Keras: `function(X) predict(fit, X)`
   - mlr3: `function(X) fit$predict_newdata(X)$response`
   - caret: `function(X) predict(fit, X)`
 - `bg_X`: The background data used to integrate out "switched off" features. It should have the same column structure as `X`. A good size is around $50-200$ rows.
@@ -25,8 +24,7 @@ The main function `kernelshap()` has three key arguments:
 - *Visualization:* To visualize the result, you can use R package "shapviz".
 - *Meta-learners:* "kernelshap" plays well together with packages like "caret" and "mlr3".
 - *Case weights:* Passing `bg_w` allows to weight background data.
-- *Classification:* `kernelshap()` requires one numeric prediction per row. Thus, the prediction function should provide probabilities only of a selected class.
-- *Speed:* The algorithm has two computational bottlenecks: (1) applying the prediction function and (b) reorganizing the data. The latter is significantly faster for matrix `X`, or if the "data.table" package is available.
+- *Speed:* The algorithm has two computational bottlenecks: (1) applying the prediction function and (b) reorganizing the data. The latter is significantly faster for matrix valued `X`, or if the "data.table" package is available.
 
 ## Installation
 
@@ -118,7 +116,7 @@ model %>%
   )
 
 X <- data.matrix(iris[2:4])
-pred_fun <- function(X) as.numeric(predict(model, X, batch_size = nrow(X)))
+pred_fun <- function(X) predict(model, X, batch_size = nrow(X))
 
 # Crunch SHAP values (22 seconds)
 system.time(
@@ -180,6 +178,41 @@ sv_waterfall(sv, 1)
 
 ![](man/figures/README-caret-waterfall.svg)
 
+### Example: probability random forest
+
+```r
+library(ranger)
+library(kernelshap)
+
+fit <- ranger(Species ~ ., data = iris, probability = TRUE)
+
+s <- kernelshap(iris[c(1, 51, 101), -5], function(X) predict(fit, X)$predictions, bg_X = iris[-5])
+s
+
+# 'kernelshap' object representing 
+#   - 3 SHAP matrices of dimension 3 x 4 
+#   - feature data.frame/matrix of dimension 3 x 4 
+#   - baseline: 0.3329264 0.3350256 0.332048 
+#   - average iterations: 2 
+#   - rows not converged: 0
+# 
+# SHAP values of first 2 observations:
+# [[1]]
+#      Sepal.Length  Sepal.Width Petal.Length Petal.Width
+# [1,]   0.01803834  0.006901874    0.3581866   0.2839468
+# [2,]  -0.01055919 -0.002260017   -0.1787110  -0.1413962
+# 
+# [[2]]
+#      Sepal.Length  Sepal.Width Petal.Length Petal.Width
+# [1,]  0.007470697 -0.003149377   -0.1931851  -0.1461618
+# [2,]  0.019447205  0.010322171    0.3335031   0.2830797
+# 
+# [[3]]
+#      Sepal.Length  Sepal.Width Petal.Length Petal.Width
+# [1,] -0.025509037 -0.003752497   -0.1650015  -0.1377849
+# [2,] -0.008888013 -0.008062154   -0.1547921  -0.1416835
+
+```
 
 ## References
 
