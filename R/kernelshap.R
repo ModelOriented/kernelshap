@@ -12,8 +12,8 @@
 #' predictions per row.
 #' During each iteration, \code{m} feature subsets are evaluated until the worst 
 #' standard error of the SHAP values is small enough relative to the range of the SHAP values. 
-#' This stopping criterion was suggested in Covert and Lee (2021). We apply it to each
-#' of the K dimensions of the predictions and stop if the stopping criterion fires for all of them.
+#' This stopping criterion was suggested in Covert and Lee (2021). In the multioutput case,
+#' the criterion must be fulfilled for each dimension separately until iteration stops.
 #' @param X A (n x p) matrix or data.frame of rows to be explained. 
 #' Important: The columns should only represent model features, not the response.
 #' @param pred_fun A function that takes a data structure like \code{X} or \code{bg_X} 
@@ -43,7 +43,7 @@
 #' @param ... Currently unused.
 #' @return An object of class "kernelshap" with the following components:
 #' \itemize{
-#'   \item \code{S}: (n x p) matrix with SHAP values or, if the predictions are multidimensional,
+#'   \item \code{S}: (n x p) matrix with SHAP values or, if the model output has dimension K > 1,
 #'   a list of K such matrices.
 #'   \item \code{X}: Same as input argument \code{X}.
 #'   \item \code{baseline}: A vector of length K representing the average prediction on the background data.
@@ -63,7 +63,7 @@
 #' s <- kernelshap(iris[1:2, -1], pred_fun = pred_fun, iris[, -1])
 #' s
 #' 
-#' # Multi-output regression or (probabilistic) classification
+#' # Multioutput regression (or probabilistic classification)
 #' fit <- stats::lm(
 #'   as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris
 #' )
@@ -94,11 +94,7 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
   )
   bg_n <- nrow(bg_X)
   if (!is.null(bg_w)) {
-    stopifnot(
-      length(bg_w) == bg_n,
-      all(bg_w >= 0),
-      !all(bg_w == 0)
-    )
+    stopifnot(length(bg_w) == bg_n, all(bg_w >= 0), !all(bg_w == 0))
   }
   if (verbose && bg_n > 1000L) {
     warning("Your background data 'bg_X' is large, which will slow down the process. Consider using 50-200 rows.")
@@ -120,13 +116,20 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
 
   # Handle simple exact case
   if (ncol(X) == 1L) {
-    S <- matrix(v1 - v0, ncol = 1L, dimnames = list(NULL, nms))
-    SE <- matrix(0, nrow = n, ncol = 1L, dimnames = list(NULL, nms))
-    
+    S <- v1 - repn(v0, n)
+    SE <- matrix(numeric(n), dimnames = list(NULL, nms))
+    if (ncol(v1) > 1L) {
+      SE <- replicate(ncol(v1), SE, simplify = FALSE)
+      S <- lapply(
+        asplit(S, MARGIN = 2L), function(M) as.matrix(M, dimnames = list(NULL, nms))
+      )
+    } else {
+      colnames(S) <- nms      
+    }
     out <- list(
       S = S, 
       X = X, 
-      baseline = v0, 
+      baseline = as.vector(v0), 
       SE = SE, 
       n_iter = integer(n), 
       converged = rep(TRUE, n)
@@ -160,15 +163,17 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
   }
 
   # Organize output
-  S <- reorganize_list(lapply(res, `[[`, "beta"), nms = nms)
-  SE <- reorganize_list(lapply(res, `[[`, "sigma"), nms = nms)
-  n_iter <- vapply(res, `[[`, "n_iter", FUN.VALUE = integer(1L))
   converged <- vapply(res, `[[`, "converged", FUN.VALUE = logical(1L))
   if (verbose && !all(converged)) {
     warning("\nNon-convergence for ", sum(!converged), " rows.")
   }
   out <- list(
-    S = S, X = X, baseline = v0, SE = SE, n_iter = n_iter, converged = converged
+    S = reorganize_list(lapply(res, `[[`, "beta"), nms = nms), 
+    X = X, 
+    baseline = as.vector(v0), 
+    SE = reorganize_list(lapply(res, `[[`, "sigma"), nms = nms), 
+    n_iter = vapply(res, `[[`, "n_iter", FUN.VALUE = integer(1L)),
+    converged = converged
   )
   class(out) <- "kernelshap"
   out
@@ -177,7 +182,7 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
 # Kernel SHAP algorithm for a single row x with paired sampling
 kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1, 
                            paired, m, tol, max_iter, use_dt) {
-  X <- x[rep(1L, nrow(bg_X)), , drop = FALSE]
+  X <- repn(x, nrow(bg_X))
   p <- ncol(X)
   est_m = list()
   converged <- FALSE
@@ -185,7 +190,7 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1,
   Asum <- matrix(0, nrow = p, ncol = p)
   bsum <- numeric(p)
   n_Z <- m * (1L + paired)
-  v0_ext <- v0[rep(1L, times = n_Z), , drop = FALSE]             #  (n_Z x K)
+  v0_ext <- repn(v0, n_Z)                                         #  (n_Z x K)
   
   while(!isTRUE(converged) && n_iter < max_iter) {
     n_iter <- n_iter + 1L
@@ -212,126 +217,3 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1,
   }
   list(beta = beta_n, sigma = sigma_n, n_iter = n_iter, converged = converged)
 }
-
-# Calculates regression coefficients
-solver <- function(A, b, v1, v0) {
-  p <- ncol(A)
-  Ainv <- solve(A)
-  s <- (matrix(colSums(crossprod(Ainv, b)), nrow = 1L) - v1 + v0) / sum(Ainv)  # (1 x K)
-  s <- s[rep(1L, times = p), , drop = FALSE]                                   # (p x K) 
-  Ainv %*% (b - s)                                                             # (p x K)
-}
-
-# Generates m permutations distributed according to Kernel SHAP weights
-make_Z <- function(m, p) {
-  if (p <= 1L) {
-    stop("p must be 2 or larger")
-  }
-  S <- 1:(p - 1)
-  # First draw number of elements in S
-  probs <- (p - 1) / (choose(p, S) * S * (p - S))
-  len_S <- sample(S, m, replace = TRUE, prob = probs)
-  
-  # Then, conditional on that number, set random positions to 1
-  # Can this be done without loop/vapply?
-  out <- vapply(len_S, function(z) {
-    out <- numeric(p); out[sample(1:p, z)] <- 1; out}, FUN.VALUE = numeric(p)
-  )
-  t(out)
-}
-
-# This function is by far the most expensive: data manipulation and prediction
-# We try to work with matrices or data.tables
-get_vz <- function(X, bg, Z, pred_fun, w, use_dt) {
-  if (inherits(X, "data.table") && use_dt) {
-    modify_X <- function(not_z) {
-      X_mod <- data.table::copy(X)
-      for (j in which(not_z)) {
-        data.table::set(X_mod, j = j, value = bg[[j]])
-      }
-      X_mod
-    }
-    data_list <- apply(!Z, 1L, modify_X, simplify = FALSE)
-    pred_data <- data.table::rbindlist(data_list)
-  } else {
-    modify_X <- function(not_z) {
-      X[, not_z] <- bg[, not_z, drop = FALSE]
-      X
-    }
-    data_list <- apply(!Z, 1L, modify_X, simplify = FALSE)
-    if (!use_dt) {
-      pred_data <- do.call(rbind, data_list)
-    } else {
-      pred_data <- as.data.frame(data.table::rbindlist(data_list))
-    }
-  }
-  preds <- check_pred(pred_fun(pred_data), n = nrow(pred_data))
-  rowmean(preds, n_bg = nrow(bg), n_z = nrow(Z), w = w)
-}
-
-# Weighted colMeans(). Always returns a (1 x ncol(x)) matrix
-weighted_colMeans <- function(x, w = NULL, ...) {
-  if (!is.matrix(x)) {
-    stop("x must be a matrix")
-  }
-  if (is.null(w)) {
-    out <- colMeans(x, ...)
-  } else {
-    out <- colSums(x * w, ...) / sum(w)  
-  }
-  matrix(out, nrow = 1L)
-}
-
-# Average per Z (optimized for speed)
-rowmean <- function(P, n_bg, n_z, w = NULL) {
-  g <- rep(seq_len(n_z), each = n_bg)
-  if (is.null(w)) {
-    return(rowsum(P, group = g, reorder = FALSE) / n_bg)
-  }
-  rowsum(P * rep(w, times = n_z), group = g, reorder = FALSE) / sum(w)
-}
-
-# Binds list of matrices along new first axis
-abind1 <- function(a) {
-  out <- array(dim = c(length(a), dim(a[[1L]])))
-  for (i in seq_along(a)) {
-    out[i, , ] <- a[[i]]
-  }
-  out
-}
-
-# Calculate standard error from list of m estimates
-get_sigma <- function(est, iter) {
-  apply(abind1(est), 3L, FUN = function(Y) sqrt(diag(stats::cov(Y)) / iter))
-}
-
-# Convergence criterion
-conv_crit <- function(sig, bet) {
-  apply(sig, 2L, FUN = max) / apply(bet, 2L, FUN = function(z) diff(range(z)))
-}
-
-# Turn list of n (p x K) matrices into K lists of (n x p) matrices. Reduce if K = 1.
-reorganize_list <- function(alist, nms) {
-  out <- abind1(alist)
-  dimnames(out) <- list(NULL, nms, NULL)
-  out <- asplit(out, MARGIN = 3L)
-  if (length(out) == 1L) {
-    return(out[[1L]])
-  }
-  out
-}
-
-# Checks and reshapes predictions to matrix with n rows
-check_pred <- function(x, n) {
-  if (!is.numeric(x)) {
-    stop("Predictions must be numeric")
-  }
-  if (is.matrix(x) && nrow(x) == n) {
-    return(x)
-  }
-  if (length(x) == n) {
-      return(matrix(x, nrow = n))
-  }
-  stop("Predictions must be a length n vector or a matrix with n rows.")
-}
-

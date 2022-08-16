@@ -19,19 +19,17 @@ kernelshap(
 )
 }
 \arguments{
-\item{X}{Feature matrix or data.frame of dimension (n x p) containing the observations
-to be explained. Should only contain model features.}
+\item{X}{A (n x p) matrix or data.frame of rows to be explained.
+Important: The columns should only represent model features, not the response.}
 
-\item{pred_fun}{A function taking a matrix/data.frame like \code{X}
-as input and providing numeric predictions.
+\item{pred_fun}{A function that takes a data structure like \code{X} or \code{bg_X}
+and provides K >= 1 numeric prediction per row.
 Example: If "fit" denotes a logistic regression fitted via \code{stats::glm},
 and SHAP values should be on the probability scale, then this argument is
 \code{function(X) predict(fit, X, type = "response")}.}
 
-\item{bg_X}{Matrix or data.frame used as background data to calculate marginal
-expectations. Its column structure must be similar to \code{X}.
-It should neither be too small nor too large (50-200 rows). A large background
-data slows down the calculations, while a small data set leads to imprecise SHAP values.}
+\item{bg_X}{The background data used to integrate out "switched off" features.
+It should have the same column structure as \code{X}. A good size is around $50-200$ rows.}
 
 \item{bg_w}{Optional vector of case weights for each row of \code{bg_X}.}
 
@@ -44,8 +42,9 @@ The default, "auto", equals \code{trunc(20 * sqrt(ncol(X)))}.
 For the paired sampling strategy, 2m evaluations are done per iteration.}
 
 \item{tol}{Tolerance determining when to stop. The algorithm keeps iterating until
-max(sigma_n) / diff(range(beta_n)) < tol, where sigma_n are the standard errors
-and beta_n are the SHAP values of a given observation.}
+max(sigma_n) / diff(range(beta_n)) < tol, where the beta_n are the SHAP values
+of a given observation and sigma_n their standard errors. For multidimensional
+predictions, the criterion must be satisfied for each dimension separately.}
 
 \item{max_iter}{If the stopping criterion (see \code{tol}) is not reached after
 \code{max_iter} iterations, then the algorithm stops.}
@@ -61,12 +60,13 @@ ignored if \code{X} is a matrix or if the "data.table" package is not available.
 \value{
 An object of class "kernelshap" with the following components:
 \itemize{
-\item \code{S}: Matrix with SHAP values.
-\item \code{X}: Same as parameter \code{X}.
-\item \code{baseline}: The average prediction on the background data.
-\item \code{SE}: Standard errors corresponding to \code{S}.
-\item \code{n_iter}: Number of iterations until convergence per row.
-\item \code{converged}: Logical vector indicating convergence per row.
+\item \code{S}: (n x p) matrix with SHAP values or, if the model output has dimension K > 1,
+a list of K such matrices.
+\item \code{X}: Same as input argument \code{X}.
+\item \code{baseline}: A vector of length K representing the average prediction on the background data.
+\item \code{SE}: Standard errors corresponding to \code{S} (and organized like \code{S}).
+\item \code{n_iter}: Integer vector of length n providing the number of iterations per row of \code{X}.
+\item \code{converged}: Logical vector of length n indicating convergence per row of \code{X}.
 }
 }
 \description{
@@ -78,11 +78,12 @@ standard errors of the resulting SHAP values are provided, and convergence is mo
 The data rows \code{X} to be explained and the
 background data \code{bg_X} should only contain feature columns required by the
 prediction function \code{pred_fun}. The latter is a function taking
-a data structure like \code{X} or \code{bg_X} and providing one numeric
-prediction per row.
+a data structure like \code{X} or \code{bg_X} and providing K >= 1 numeric
+predictions per row.
 During each iteration, \code{m} feature subsets are evaluated until the worst
 standard error of the SHAP values is small enough relative to the range of the SHAP values.
-This stopping criterion was suggested in Covert and Lee (2021).
+This stopping criterion was suggested in Covert and Lee (2021). In the multioutput case,
+the criterion must be fulfilled for each dimension separately until iteration stops.
 }
 \examples{
 fit <- stats::lm(Sepal.Length ~ ., data = iris)
@@ -90,7 +91,15 @@ pred_fun <- function(X) stats::predict(fit, X)
 s <- kernelshap(iris[1:2, -1], pred_fun = pred_fun, iris[, -1])
 s
 
-# Matrix input works as well, and pred_fun may contain preprocessing steps.
+# Multioutput regression (or probabilistic classification)
+fit <- stats::lm(
+  as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris
+)
+fit
+s <- kernelshap(iris[1:4, 3:5], pred_fun = pred_fun, iris[, 3:5])
+s
+
+# Matrix input works as well, and pred_fun may contain preprocessing steps
 fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
 pred_fun <- function(X) stats::predict(fit, as.data.frame(X))
 X <- data.matrix(iris[2:4])
