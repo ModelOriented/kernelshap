@@ -136,7 +136,7 @@ sv_dependence(shp, "Petal.Length")
 
 ![](man/figures/README-nn-dep.svg)
 
-### Example: mlr3
+## Example: mlr3
 
 ```R
 library(mlr3)
@@ -156,7 +156,7 @@ sv_dependence(sv, "Species")
 
 ![](man/figures/README-mlr3-dep.svg)
 
-### Example: caret
+## Example: caret
 
 ```r
 library(caret)
@@ -178,7 +178,7 @@ sv_waterfall(sv, 1)
 
 ![](man/figures/README-caret-waterfall.svg)
 
-### Example: probability random forest
+## Example: probability random forest
 
 ```r
 library(ranger)
