@@ -184,6 +184,7 @@ sv_waterfall(sv, 1)
 library(ranger)
 library(kernelshap)
 
+set.seed(1)
 fit <- ranger(Species ~ ., data = iris, probability = TRUE)
 
 s <- kernelshap(iris[c(1, 51, 101), -5], function(X) predict(fit, X)$predictions, bg_X = iris[-5])
@@ -192,25 +193,25 @@ s
 # 'kernelshap' object representing 
 #   - 3 SHAP matrices of dimension 3 x 4 
 #   - feature data.frame/matrix of dimension 3 x 4 
-#   - baseline: 0.3329264 0.3350256 0.332048 
+#   - baseline: 0.3332606 0.3347014 0.332038 
 #   - average iterations: 2 
 #   - rows not converged: 0
 # 
 # SHAP values of first 2 observations:
 # [[1]]
 #      Sepal.Length  Sepal.Width Petal.Length Petal.Width
-# [1,]   0.01803834  0.006901874    0.3581866   0.2839468
-# [2,]  -0.01055919 -0.002260017   -0.1787110  -0.1413962
+# [1,]   0.02281273  0.008499394    0.3176995   0.3177278
+# [2,]  -0.01478680 -0.002062507   -0.1585189  -0.1578923
 # 
 # [[2]]
 #      Sepal.Length  Sepal.Width Petal.Length Petal.Width
-# [1,]  0.007470697 -0.003149377   -0.1931851  -0.1461618
-# [2,]  0.019447205  0.010322171    0.3335031   0.2830797
+# [1,]  0.001991366 -0.004733618   -0.1621847  -0.1697744
+# [2,]  0.024604249  0.006666781    0.3159394   0.2939358
 # 
 # [[3]]
 #      Sepal.Length  Sepal.Width Petal.Length Petal.Width
-# [1,] -0.025509037 -0.003752497   -0.1650015  -0.1377849
-# [2,] -0.008888013 -0.008062154   -0.1547921  -0.1416835
+# [1,] -0.024804100 -0.003765776   -0.1555148  -0.1479534
+# [2,] -0.009817448 -0.004604274   -0.1574205  -0.1360435
 
 ```
 
