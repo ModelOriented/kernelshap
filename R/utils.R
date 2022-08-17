@@ -2,11 +2,11 @@
 solver <- function(A, b, v1, v0) {
   p <- ncol(A)
   Ainv <- solve(A)
-  s <- (matrix(colSums(crossprod(Ainv, b)), nrow = 1L) - v1 + v0) / sum(Ainv)  # (1 x K)
-  Ainv %*% (b - repn(s, p))                                                    # (p x K)
+  s <- (matrix(colSums(Ainv %*% b), nrow = 1L) - v1 + v0) / sum(Ainv)  # (1 x K)
+  Ainv %*% (b - repn(s, p))                                            # (p x K)
 }
 
-# Generates m permutations distributed according to Kernel SHAP weights
+# m permutations distributed according to Kernel SHAP weights -> (p x m) matrix
 make_Z <- function(m, p) {
   if (p <= 1L) {
     stop("p must be 2 or larger")
@@ -18,12 +18,11 @@ make_Z <- function(m, p) {
   
   # Then, conditional on that number, set random positions to 1
   # Can this be done without loop/vapply?
-  out <- vapply(
+  vapply(
     len_S, 
     function(z) {out <- numeric(p); out[sample(1:p, z)] <- 1; out}, 
     FUN.VALUE = numeric(p)
   )
-  t(out)
 }
 
 # This function is by far the most expensive: data manipulation and prediction
@@ -39,14 +38,14 @@ get_vz <- function(X, bg, Z, pred_fun, w, use_dt) {
       }
       X_mod
     }
-    data_list <- apply(!Z, 1L, modify_X, simplify = FALSE)
+    data_list <- apply(!Z, 2L, modify_X, simplify = FALSE)
     pred_data <- data.table::rbindlist(data_list)
   } else {
     modify_X <- function(not_z) {
       X[, not_z] <- bg[, not_z, drop = FALSE]
       X
     }
-    data_list <- apply(!Z, 1L, modify_X, simplify = FALSE)
+    data_list <- apply(!Z, 2L, modify_X, simplify = FALSE)
     if (!use_dt) {
       pred_data <- do.call(rbind, data_list)
     } else {
@@ -54,7 +53,7 @@ get_vz <- function(X, bg, Z, pred_fun, w, use_dt) {
     }
   }
   preds <- check_pred(pred_fun(pred_data), n = nrow(pred_data))
-  rowmean(preds, n_bg = nrow(bg), n_z = nrow(Z), w = w)
+  rowmean(preds, n_bg = nrow(bg), n_z = ncol(Z), w = w)
 }
 
 # Weighted colMeans(). Always returns a (1 x ncol(x)) matrix

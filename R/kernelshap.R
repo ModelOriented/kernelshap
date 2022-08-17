@@ -194,16 +194,16 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1,
   
   while(!isTRUE(converged) && n_iter < max_iter) {
     n_iter <- n_iter + 1L
-    Z <- make_Z(m, p)
+    Z <- make_Z(m, p)                                             #  (p x m)
     if (paired) {
-      Z <- rbind(Z, 1 - Z)
+      Z <- cbind(Z, 1 - Z)                                        #  (p x n_Z)
     }
     
     # Calling get_vz() is expensive                                  (n_Z x K)
     vz <- get_vz(X, bg = bg_X, Z, pred_fun = pred_fun, w = bg_w, use_dt = use_dt)
     
-    Atemp <- crossprod(Z) / n_Z                                   #  (p x p)
-    btemp <- crossprod(Z, (vz - v0_ext)) / n_Z                    #  (p x K)
+    Atemp <- tcrossprod(Z) / n_Z                                  #  (p x p)
+    btemp <- Z %*% (vz - v0_ext) / n_Z                            #  (p x K)
     Asum <- Asum + Atemp                                          #  (p x p)
     bsum <- bsum + btemp                                          #  (p x K)
     est_m[[n_iter]] <- solver(Atemp, btemp, v1, v0)               #  (p x K)
