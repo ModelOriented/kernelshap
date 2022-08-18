@@ -1,6 +1,6 @@
 # kernelshap 0.2.0
 
-- KernelSHAP now works for multioutput models, at no additional computation cost.
+- KernelSHAP now works for multioutput models, at almost no additional computation cost.
 - The functions have been improved for computational speed
 
 ## Checks

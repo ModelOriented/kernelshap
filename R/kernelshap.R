@@ -1,6 +1,6 @@
 #' Kernel SHAP
 #'
-#' This function implements the model-agnostic Kernel SHAP algorithm explained in detail in 
+#' Implements a multidimensional version of the Kernel SHAP algorithm explained in detail in 
 #' Covert and Lee (2021). It is an iterative refinement of the original Kernel SHAP algorithm 
 #' of Lundberg and Lee (2017).
 #' The algorithm is applied to each row in \code{X}. Due to its iterative nature, approximate
@@ -36,9 +36,6 @@
 #' predictions, the criterion must be satisfied for each dimension separately.
 #' @param max_iter If the stopping criterion (see \code{tol}) is not reached after 
 #' \code{max_iter} iterations, then the algorithm stops.
-#' @param use_dt Logical flag indicating whether to use the "data.table" package 
-#' for expensive data reshapings (default is \code{TRUE}). The flag is silently
-#' ignored if \code{X} is a matrix or if the "data.table" package is not available. 
 #' @param verbose Set to \code{FALSE} to suppress messages, warnings, and progress bar.
 #' @param ... Currently unused.
 #' @return An object of class "kernelshap" with the following components:
@@ -77,9 +74,8 @@
 #' X <- data.matrix(iris[2:4])
 #' s <- kernelshap(X[1:3, ], pred_fun = pred_fun, X)
 #' s
-kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL, 
-                       paired_sampling = TRUE, m = "auto", tol = 0.01, max_iter = 250, 
-                       use_dt = TRUE, verbose = TRUE, ...) {
+kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL, paired_sampling = TRUE, 
+                       m = "auto", tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
   stopifnot(
     is.matrix(X) || is.data.frame(X),
     is.matrix(bg_X) || is.data.frame(bg_X),
@@ -103,7 +99,6 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
     warning("Your background data 'bg_X' is small, which might lead to imprecise SHAP values. Consider using 50-200 rows.")
   }
   bg_preds <- check_pred(pred_fun(bg_X), n = bg_n)
-  use_dt <- use_dt &&!is.matrix(X) && requireNamespace("data.table", quietly = TRUE)
 
   # Initialization
   n <- nrow(X)
@@ -113,10 +108,11 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
   if (m == "auto") {
     m <- trunc(20 * sqrt(ncol(X)))
   }
-
+  bg_Xm <- bg_X[rep(seq_len(bg_n), times = m * (1L + paired_sampling)), , drop = FALSE]
+  
   # Handle simple exact case
   if (ncol(X) == 1L) {
-    S <- v1 - repn(v0, n)
+    S <- v1 - v0[rep(1L, n), , drop = FALSE]
     SE <- matrix(numeric(n), dimnames = list(NULL, nms))
     if (ncol(v1) > 1L) {
       SE <- replicate(ncol(v1), SE, simplify = FALSE)
@@ -145,17 +141,16 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
   res <- vector("list", n)
   for (i in seq_len(n)) {
     res[[i]] <- kernelshap_one(
-      x = X[i, , drop = FALSE], 
+      X = X[rep(i, times = nrow(bg_Xm)), , drop = FALSE], 
       pred_fun = pred_fun, 
-      bg_X = bg_X, 
+      bg_X = bg_Xm, 
       bg_w = bg_w, 
       v0 = v0,
       v1 = v1[i, , drop = FALSE],
       paired = paired_sampling,
       m = m,
       tol = tol,
-      max_iter = max_iter,
-      use_dt = use_dt
+      max_iter = max_iter
     )
     if (verbose && n >= 2L) {
       utils::setTxtProgressBar(pb, i)
@@ -180,9 +175,8 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
 }
 
 # Kernel SHAP algorithm for a single row x with paired sampling
-kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1, 
-                           paired, m, tol, max_iter, use_dt) {
-  X <- repn(x, nrow(bg_X))
+kernelshap_one <- function(X, pred_fun, bg_X, bg_w, v0, v1, 
+                           paired, m, tol, max_iter) {
   p <- ncol(X)
   est_m = list()
   converged <- FALSE
@@ -190,7 +184,7 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1,
   Asum <- matrix(0, nrow = p, ncol = p)
   bsum <- numeric(p)
   n_Z <- m * (1L + paired)
-  v0_ext <- repn(v0, n_Z)                                         #  (n_Z x K)
+  v0_ext <- v0[rep(1L, n_Z), , drop = FALSE]                      #  (n_Z x K)
   
   while(!isTRUE(converged) && n_iter < max_iter) {
     n_iter <- n_iter + 1L
@@ -199,8 +193,8 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1,
       Z <- cbind(Z, 1 - Z)                                        #  (p x n_Z)
     }
     
-    # Calling get_vz() is expensive                                  (n_Z x K)
-    vz <- get_vz(X, bg = bg_X, Z, pred_fun = pred_fun, w = bg_w, use_dt = use_dt)
+    # Calling get_vz() is expensive                               
+    vz <- get_vz(X, bg = bg_X, Z, pred_fun = pred_fun, w = bg_w)  # (n_Z x K)
     
     Atemp <- tcrossprod(Z) / n_Z                                  #  (p x p)
     btemp <- Z %*% (vz - v0_ext) / n_Z                            #  (p x K)

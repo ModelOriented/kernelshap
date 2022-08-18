@@ -16,7 +16,7 @@ use_description(
   fields = list(
     Title = "Kernel SHAP",
     Version = "0.1.900",
-    Description = "Implementation of the model-agnostic Kernel SHAP algorithm by
+    Description = "Multidimensional version of the iterative Kernel SHAP algorithm described in
     Ian Covert and Su-In Lee (2021) <http://proceedings.mlr.press/v130/covert21a>. 
     Due to its iterative nature, standard errors of the SHAP values are provided
     and convergence is monitored.
@@ -35,8 +35,6 @@ use_description(
 
 use_package("stats", "Imports")
 use_package("utils", "Imports")
-
-use_package("data.table", "Suggests")
 
 use_gpl_license(2)
 
