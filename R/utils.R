@@ -27,18 +27,19 @@ make_Z <- function(m, p) {
 
 # Calculates all vz of an iteration and thus takes time
 get_vz <- function(X, bg, Z, pred_fun, w) {
-  Z <- t(!Z)
-  n_Z <- nrow(Z)
-  n_bg <- nrow(bg) / n_Z
-  g <- rep(seq_len(n_Z), each = n_bg)
-  Z <- Z[g, , drop = FALSE]
+  not_Z <- t(!Z)
+  n_Z <- nrow(not_Z)
+  n_bg <- nrow(bg) / n_Z   # Remember that bg was replicated n_Z times
   
-  # X, bg, Z are now all of dimension (n_Z*n_bg x p)
+  # Replicate not_Z, so that X, bg, not_Z are all of dimension (n_Z*n_bg x p)
+  g <- rep(seq_len(n_Z), each = n_bg)
+  not_Z <- not_Z[g, , drop = FALSE]
+  
   if (is.matrix(X)) {
-    X[Z] <- bg[Z]
+    X[not_Z] <- bg[not_Z]
   } else {
     for (j in seq_len(ncol(bg))) {
-      s <- Z[, j]
+      s <- not_Z[, j, drop = TRUE]
       X[[j]][s] <- bg[[j]][s]
     }
   }

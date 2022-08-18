@@ -141,7 +141,7 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL, paired_sampling = TRUE,
   res <- vector("list", n)
   for (i in seq_len(n)) {
     res[[i]] <- kernelshap_one(
-      X = X[rep(i, times = nrow(bg_Xm)), , drop = FALSE], 
+      x = X[i, , drop = FALSE],
       pred_fun = pred_fun, 
       bg_X = bg_Xm, 
       bg_w = bg_w, 
@@ -175,8 +175,9 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL, paired_sampling = TRUE,
 }
 
 # Kernel SHAP algorithm for a single row x with paired sampling
-kernelshap_one <- function(X, pred_fun, bg_X, bg_w, v0, v1, 
+kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1, 
                            paired, m, tol, max_iter) {
+  X <- x[rep(1L, times = nrow(bg_X)), , drop = FALSE]
   p <- ncol(X)
   est_m = list()
   converged <- FALSE
