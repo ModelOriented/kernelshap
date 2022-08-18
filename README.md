@@ -4,7 +4,7 @@
 
 SHAP values (Lundberg and Lee, 2017) decompose model predictions into additive contributions of the features in a fair way. A model agnostic approach is called Kernel SHAP, introduced in Lundberg and Lee (2017), and investigated in detail in Covert and Lee (2021). 
 
-The "kernelshap" package implements a multidimensional version of the Kernel SHAP Algorithm 1 described in the supplement of Covert and Lee (2021). An advantage of their algorithm is that SHAP values are calculated iteratively, allowing to calculate standard errors and to control convergence.
+The "kernelshap" package implements a multidimensional version of the Kernel SHAP Algorithm 1 described in the supplement of Covert and Lee (2021). SHAP values are calculated iteratively, allowing to calculate standard errors and to control convergence.
 
 The main function `kernelshap()` has three key arguments:
 
@@ -24,7 +24,7 @@ The main function `kernelshap()` has three key arguments:
 - *Visualization:* To visualize the result, you can use R package "shapviz".
 - *Meta-learners:* "kernelshap" plays well together with packages like "caret" and "mlr3".
 - *Case weights:* Passing `bg_w` allows to weight background data.
-- *Speed:* The algorithm has two computational bottlenecks: (1) applying the prediction function and (b) reorganizing the data. The latter is significantly faster for matrix valued `X`, or if the "data.table" package is available.
+- *Speed:* The algorithm has two computational bottlenecks: (1) applying the prediction function and (b) reorganizing the data. The latter is faster if `X` is a matrix or tibble rather than a data.frame.
 
 ## Installation
 

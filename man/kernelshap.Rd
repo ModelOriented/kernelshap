@@ -13,7 +13,6 @@ kernelshap(
   m = "auto",
   tol = 0.01,
   max_iter = 250,
-  use_dt = TRUE,
   verbose = TRUE,
   ...
 )
@@ -49,10 +48,6 @@ predictions, the criterion must be satisfied for each dimension separately.}
 \item{max_iter}{If the stopping criterion (see \code{tol}) is not reached after
 \code{max_iter} iterations, then the algorithm stops.}
 
-\item{use_dt}{Logical flag indicating whether to use the "data.table" package
-for expensive data reshapings (default is \code{TRUE}). The flag is silently
-ignored if \code{X} is a matrix or if the "data.table" package is not available.}
-
 \item{verbose}{Set to \code{FALSE} to suppress messages, warnings, and progress bar.}
 
 \item{...}{Currently unused.}
@@ -70,7 +65,7 @@ a list of K such matrices.
 }
 }
 \description{
-This function implements the model-agnostic Kernel SHAP algorithm explained in detail in
+Implements a multidimensional version of the Kernel SHAP algorithm explained in detail in
 Covert and Lee (2021). It is an iterative refinement of the original Kernel SHAP algorithm
 of Lundberg and Lee (2017).
 The algorithm is applied to each row in \code{X}. Due to its iterative nature, approximate
