@@ -108,8 +108,7 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL, paired_sampling = TRUE,
   if (m == "auto") {
     m <- trunc(20 * sqrt(ncol(X)))
   }
-  bg_Xm <- bg_X[rep(seq_len(bg_n), times = m * (1L + paired_sampling)), , drop = FALSE]
-  
+
   # Handle simple exact case
   if (ncol(X) == 1L) {
     S <- v1 - v0[rep(1L, n), , drop = FALSE]
@@ -134,6 +133,9 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL, paired_sampling = TRUE,
     return(out)
   }
 
+  # Allocate replicated version of the background data just once
+  bg_Xm <- bg_X[rep(seq_len(bg_n), times = m * (1L + paired_sampling)), , drop = FALSE]
+  
   # Real work: apply Kernel SHAP to each row of X
   if (verbose && n >= 2L) {
     pb <- utils::txtProgressBar(1L, n, style = 3)  
@@ -182,8 +184,8 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1,
   est_m = list()
   converged <- FALSE
   n_iter <- 0L
-  Asum <- matrix(0, nrow = p, ncol = p)
-  bsum <- numeric(p)
+  Asum <- matrix(0, nrow = p, ncol = p)                           #  (p x p)
+  bsum <- matrix(0, nrow = p, ncol = ncol(v0))                    #  (p x K)
   n_Z <- m * (1L + paired)
   v0_ext <- v0[rep(1L, n_Z), , drop = FALSE]                      #  (n_Z x K)
   
@@ -197,6 +199,8 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1,
     # Calling get_vz() is expensive                               
     vz <- get_vz(X, bg = bg_X, Z, pred_fun = pred_fun, w = bg_w)  # (n_Z x K)
     
+    # Least-squares with constraint that beta_1 + ... + beta_p = v_1 - v_0. 
+    # The additional constraint beta_0 = v_0 is dealt via offset
     Atemp <- tcrossprod(Z) / n_Z                                  #  (p x p)
     btemp <- Z %*% (vz - v0_ext) / n_Z                            #  (p x K)
     Asum <- Asum + Atemp                                          #  (p x p)
