@@ -5,9 +5,14 @@
 - The package now supports multi-output predictions. Hurray!
 - Major speed-up of data operations and minimization of calls to the prediction function.
 
+## Bug fixes
+
+- Depending on $m$ and $p$, a matrix inversion required in the constrained least-squares solution could fail. It is now replaced by `MASS::ginv()`, the Moore-Penrose pseudoinverse.
+
 ## Minor changes
 
 - There were too many "ks_*()" functions to extract elements of a "kernelshap" object. They are now all deprecated and replaced by `ks_extract(, what = "S")`.
+- Added package "Mass" to dependencies, see above.
 
 # kernelshap 0.1.0
 

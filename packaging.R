@@ -35,6 +35,7 @@ use_description(
 
 use_package("stats", "Imports")
 use_package("utils", "Imports")
+use_package("MASS", "Imports")
 
 use_gpl_license(2)
 
