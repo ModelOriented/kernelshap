@@ -1,7 +1,8 @@
 # Calculates regression coefficients
 solver <- function(A, b, v1, v0) {
   p <- ncol(A)
-  Ainv <- solve(A)
+  # Ainv <- solve(A)
+  Ainv <- MASS::ginv(A)
   s <- (matrix(colSums(Ainv %*% b), nrow = 1L) - v1 + v0) / sum(Ainv)  # (1 x K)
   Ainv %*% (b - s[rep(1L, p), , drop = FALSE])                         # (p x K)
 }
