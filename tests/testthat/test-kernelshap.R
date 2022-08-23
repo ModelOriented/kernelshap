@@ -105,3 +105,14 @@ test_that("Matrix input is fine with case weights", {
   expect_equal(rowSums(s$S) + s$baseline, preds[1:3])
 })
 
+test_that("kernelshap works for large p", {
+  set.seed(9L)
+  X <- data.frame(matrix(rnorm(20000L), ncol = 100L))
+  y <- rnorm(200L)
+  fit <- lm(y ~ ., data = cbind(y = y, X))
+  s <- kernelshap(X[1L, ], function(X) predict(fit, X), X)
+
+  expect_equal(s$baseline, mean(y))
+  expect_equal(rowSums(s$S) + s$baseline, unname(predict(fit, X[1L, ])))
+})
+
