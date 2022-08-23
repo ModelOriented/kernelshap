@@ -37,7 +37,8 @@ The default is \code{TRUE}. This means that with every feature subset S,
 also its complement is evaluated, which leads to considerably faster convergence.}
 
 \item{m}{Number of feature subsets S to be evaluated during one iteration.
-The default, "auto", equals \code{trunc(20 * sqrt(ncol(X)))}.
+The default, "auto", equals \code{max(trunc(20*sqrt(p)), 5*p)}, where p is the
+number of features.
 For the paired sampling strategy, 2m evaluations are done per iteration.}
 
 \item{tol}{Tolerance determining when to stop. The algorithm keeps iterating until

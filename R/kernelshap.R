@@ -28,7 +28,8 @@
 #' The default is \code{TRUE}. This means that with every feature subset S,
 #' also its complement is evaluated, which leads to considerably faster convergence.
 #' @param m Number of feature subsets S to be evaluated during one iteration. 
-#' The default, "auto", equals \code{trunc(20 * sqrt(ncol(X)))}. 
+#' The default, "auto", equals \code{max(trunc(20*sqrt(p)), 5*p)}, where p is the
+#' number of features. 
 #' For the paired sampling strategy, 2m evaluations are done per iteration.
 #' @param tol Tolerance determining when to stop. The algorithm keeps iterating until
 #' max(sigma_n) / diff(range(beta_n)) < tol, where the beta_n are the SHAP values 
@@ -106,7 +107,8 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL, paired_sampling = TRUE,
   v1 <- check_pred(pred_fun(X), n = n)     # Vector of predictions of X:      n x K
   nms <- colnames(X)
   if (m == "auto") {
-    m <- trunc(20 * sqrt(ncol(X)))
+    p <- ncol(X)
+    m <- max(trunc(20 * sqrt(p)), 5L * p)
   }
 
   # Handle simple exact case
@@ -191,9 +193,9 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1,
   
   while(!isTRUE(converged) && n_iter < max_iter) {
     n_iter <- n_iter + 1L
-    Z <- make_Z(m, p)                                             #  (p x m)
+    Z <- make_Z(m, p)                                             #  (m x p)
     if (paired) {
-      Z <- cbind(Z, 1 - Z)                                        #  (p x n_Z)
+      Z <- rbind(Z, 1 - Z)                                        #  (n_Z x p)
     }
     
     # Calling get_vz() is expensive                               
@@ -201,8 +203,8 @@ kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1,
     
     # Least-squares with constraint that beta_1 + ... + beta_p = v_1 - v_0. 
     # The additional constraint beta_0 = v_0 is dealt via offset
-    Atemp <- tcrossprod(Z) / n_Z                                  #  (p x p)
-    btemp <- Z %*% (vz - v0_ext) / n_Z                            #  (p x K)
+    Atemp <- crossprod(Z) / n_Z                                   #  (p x p)
+    btemp <- crossprod(Z, (vz - v0_ext)) / n_Z                    #  (p x K)
     Asum <- Asum + Atemp                                          #  (p x p)
     bsum <- bsum + btemp                                          #  (p x K)
     est_m[[n_iter]] <- solver(Atemp, btemp, v1, v0)               #  (p x K)

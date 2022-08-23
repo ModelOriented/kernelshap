@@ -7,7 +7,7 @@ solver <- function(A, b, v1, v0) {
   Ainv %*% (b - s[rep(1L, p), , drop = FALSE])                         # (p x K)
 }
 
-# m permutations distributed according to Kernel SHAP weights -> (p x m) matrix
+# m permutations distributed according to Kernel SHAP weights -> (m x p) matrix
 make_Z <- function(m, p) {
   if (p <= 1L) {
     stop("p must be 2 or larger")
@@ -19,17 +19,18 @@ make_Z <- function(m, p) {
   
   # Then, conditional on that number, set random positions to 1
   # Can this be done without loop/vapply?
-  vapply(
+  out <- vapply(
     len_S, 
     function(z) {out <- numeric(p); out[sample(1:p, z)] <- 1; out}, 
     FUN.VALUE = numeric(p)
   )
+  t(out)
 }
 
 # Calculates all vz of an iteration and thus takes time
 get_vz <- function(X, bg, Z, pred_fun, w) {
-  not_Z <- t(!Z)
-  n_Z <- nrow(not_Z)
+  n_Z <- nrow(Z)
+  not_Z <- !Z
   n_bg <- nrow(bg) / n_Z   # Remember that bg was replicated n_Z times
   
   # Replicate not_Z, so that X, bg, not_Z are all of dimension (n_Z*n_bg x p)
