@@ -6,4 +6,4 @@
 ^cran-comments\.md$
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^compare_with_shap.R$
+^compare_with_python.R$
