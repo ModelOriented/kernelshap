@@ -40,7 +40,7 @@ use_package("MASS", "Imports")
 use_gpl_license(2)
 
 # Your files that do not belong to the package itself (others are added by "use_* function")
-use_build_ignore(c("^packaging.R$", "[.]Rproj$", 
+use_build_ignore(c("^packaging.R$", "[.]Rproj$", "^compare_with_shap.R$",
                    "^cran-comments.md$", "^logo.png$"), escape = FALSE)
 
 # If your code uses the pipe operator %>%
