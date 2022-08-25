@@ -11,12 +11,12 @@
 
 ## Bug fixes
 
-- Depending on $m$ and $p$, a matrix inversion required in the constrained least-squares solution could fail. It is now replaced by `MASS::ginv()`, the Moore-Penrose pseudoinverse.
+- Depending on $m$ and $p$, the matrix inversion required in the constrained least-squares solution could fail. It is now replaced by `MASS::ginv()`, the Moore-Penrose pseudoinverse using `svd()`.
 
 ## Minor changes
 
 - There were too many "ks_*()" functions to extract elements of a "kernelshap" object. They are now all deprecated and replaced by `ks_extract(, what = "S")`.
-- Added package "Mass" to dependencies, see above.
+- Added package "MASS" to dependencies, see above.
 
 # kernelshap 0.1.0
 
