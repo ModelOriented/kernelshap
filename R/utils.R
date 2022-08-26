@@ -117,3 +117,37 @@ check_pred <- function(x, n) {
   stop("Predictions must be a length n vector or a matrix with n rows.")
 }
 
+# Informative warning if background data is small or large
+check_bg_size <- function(n) {
+  if (n > 1000L) {
+    warning("Your background data 'bg_X' is large, which will slow down the process. Consider using 50-200 rows.")
+  }
+  if (n < 10L) {
+    warning("Your background data 'bg_X' is small, which might lead to imprecise SHAP values. Consider using 50-200 rows.")
+  }
+}
+
+# Case p = 1 is exact
+case_p1 <- function(n, nms, v0, v1, X) {
+  S <- v1 - v0[rep(1L, n), , drop = FALSE]
+  SE <- matrix(numeric(n), dimnames = list(NULL, nms))
+  if (ncol(v1) > 1L) {
+    SE <- replicate(ncol(v1), SE, simplify = FALSE)
+    S <- lapply(
+      asplit(S, MARGIN = 2L), function(M) as.matrix(M, dimnames = list(NULL, nms))
+    )
+  } else {
+    colnames(S) <- nms      
+  }
+  out <- list(
+    S = S, 
+    X = X, 
+    baseline = as.vector(v0), 
+    SE = SE, 
+    n_iter = integer(n), 
+    converged = rep(TRUE, n)
+  )
+  class(out) <- "kernelshap"
+  out
+}
+

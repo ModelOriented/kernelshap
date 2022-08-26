@@ -28,7 +28,9 @@ and SHAP values should be on the probability scale, then this argument is
 \code{function(X) predict(fit, X, type = "response")}.}
 
 \item{bg_X}{The background data used to integrate out "switched off" features.
-It should have the same column structure as \code{X}. A good size is around $50-200$ rows.}
+It should contain the same columns as \code{X}. A good size is around 50 to 200 rows.
+Columns not in \code{X} are silently dropped and the columns are arranged into
+the order as they appear in \code{X}.}
 
 \item{bg_w}{Optional vector of case weights for each row of \code{bg_X}.}
 
@@ -69,13 +71,15 @@ a list of K such matrices.
 Implements a multidimensional version of the Kernel SHAP algorithm explained in detail in
 Covert and Lee (2021). It is an iterative refinement of the original Kernel SHAP algorithm
 of Lundberg and Lee (2017).
+}
+\details{
 The algorithm is applied to each row in \code{X}. Due to its iterative nature, approximate
 standard errors of the resulting SHAP values are provided, and convergence is monitored.
-The data rows \code{X} to be explained and the
-background data \code{bg_X} should only contain feature columns required by the
+\code{X} should only contain feature columns required by the
 prediction function \code{pred_fun}. The latter is a function taking
 a data structure like \code{X} or \code{bg_X} and providing K >= 1 numeric
-predictions per row.
+predictions per row. The background data \code{bg_X} must contain the same column names
+as \code{X} (additional columns are silently dropped).
 During each iteration, \code{m} feature subsets are evaluated until the worst
 standard error of the SHAP values is small enough relative to the range of the SHAP values.
 This stopping criterion was suggested in Covert and Lee (2021). In the multioutput case,
