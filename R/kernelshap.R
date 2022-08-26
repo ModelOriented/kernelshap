@@ -3,13 +3,14 @@
 #' Implements a multidimensional version of the Kernel SHAP algorithm explained in detail in 
 #' Covert and Lee (2021). It is an iterative refinement of the original Kernel SHAP algorithm 
 #' of Lundberg and Lee (2017).
+#' 
 #' The algorithm is applied to each row in \code{X}. Due to its iterative nature, approximate
 #' standard errors of the resulting SHAP values are provided, and convergence is monitored. 
-#' The data rows \code{X} to be explained and the
-#' background data \code{bg_X} should only contain feature columns required by the
+#' \code{X} should only contain feature columns required by the
 #' prediction function \code{pred_fun}. The latter is a function taking
 #' a data structure like \code{X} or \code{bg_X} and providing K >= 1 numeric 
-#' predictions per row.
+#' predictions per row. The background data \code{bg_X} must contain the same column names
+#' as \code{X} (additional columns are silently dropped).
 #' During each iteration, \code{m} feature subsets are evaluated until the worst 
 #' standard error of the SHAP values is small enough relative to the range of the SHAP values. 
 #' This stopping criterion was suggested in Covert and Lee (2021). In the multioutput case,
@@ -22,7 +23,9 @@
 #' and SHAP values should be on the probability scale, then this argument is
 #' \code{function(X) predict(fit, X, type = "response")}.
 #' @param bg_X The background data used to integrate out "switched off" features. 
-#' It should have the same column structure as \code{X}. A good size is around $50-200$ rows.
+#' It should contain the same columns as \code{X}. A good size is around 50 to 200 rows.
+#' Columns not in \code{X} are silently dropped and the columns are arranged into
+#' the order as they appear in \code{X}.
 #' @param bg_w Optional vector of case weights for each row of \code{bg_X}.
 #' @param paired_sampling Logical flag indicating whether to use paired sampling.
 #' The default is \code{TRUE}. This means that with every feature subset S,
@@ -81,58 +84,34 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL, paired_sampling = TRUE,
     is.matrix(X) || is.data.frame(X),
     is.matrix(bg_X) || is.data.frame(bg_X),
     is.matrix(X) == is.matrix(bg_X),
-    is.function(pred_fun),
-    dim(X) >= 1L,
+    (n <- nrow(X)) >= 1L,
+    (bg_n <- nrow(bg_X)) >= 2L,
+    (p <- ncol(X)) >= 1L,
     ncol(bg_X) >= 1L,
-    nrow(bg_X) >= 2L,
-    !is.null(colnames(X)),
+    !is.null(nms <- colnames(X)),
     !is.null(colnames(bg_X)),
-    colnames(X) == colnames(bg_X)
+    all(nms %in% colnames(bg_X)),
+    is.function(pred_fun)
   )
-  bg_n <- nrow(bg_X)
   if (!is.null(bg_w)) {
     stopifnot(length(bg_w) == bg_n, all(bg_w >= 0), !all(bg_w == 0))
   }
-  if (verbose && bg_n > 1000L) {
-    warning("Your background data 'bg_X' is large, which will slow down the process. Consider using 50-200 rows.")
+  if (verbose) {
+    check_bg_size(bg_n)
   }
-  if (verbose && bg_n < 10L) {
-    warning("Your background data 'bg_X' is small, which might lead to imprecise SHAP values. Consider using 50-200 rows.")
-  }
+  
+  # Calculate v0, v1, and m
+  bg_X <- bg_X[, colnames(X), drop = FALSE]
   bg_preds <- check_pred(pred_fun(bg_X), n = bg_n)
-
-  # Initialization
-  n <- nrow(X)
   v0 <- weighted_colMeans(bg_preds, bg_w)  # Average pred of background data: 1 x K
   v1 <- check_pred(pred_fun(X), n = n)     # Vector of predictions of X:      n x K
-  nms <- colnames(X)
   if (m == "auto") {
-    p <- ncol(X)
     m <- max(trunc(20 * sqrt(p)), 5L * p)
   }
 
   # Handle simple exact case
-  if (ncol(X) == 1L) {
-    S <- v1 - v0[rep(1L, n), , drop = FALSE]
-    SE <- matrix(numeric(n), dimnames = list(NULL, nms))
-    if (ncol(v1) > 1L) {
-      SE <- replicate(ncol(v1), SE, simplify = FALSE)
-      S <- lapply(
-        asplit(S, MARGIN = 2L), function(M) as.matrix(M, dimnames = list(NULL, nms))
-      )
-    } else {
-      colnames(S) <- nms      
-    }
-    out <- list(
-      S = S, 
-      X = X, 
-      baseline = as.vector(v0), 
-      SE = SE, 
-      n_iter = integer(n), 
-      converged = rep(TRUE, n)
-    )
-    class(out) <- "kernelshap"
-    return(out)
+  if (p == 1L) {
+    return(case_p1(n = n, nms = nms, v0 = v0, v1 = v1, X = X))
   }
 
   # Allocate replicated version of the background data just once
@@ -145,7 +124,7 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL, paired_sampling = TRUE,
   res <- vector("list", n)
   for (i in seq_len(n)) {
     res[[i]] <- kernelshap_one(
-      x = X[i, , drop = FALSE],
+      X = X[rep(i, times = nrow(bg_Xm)), , drop = FALSE],
       pred_fun = pred_fun, 
       bg_X = bg_Xm, 
       bg_w = bg_w, 
@@ -179,9 +158,8 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL, paired_sampling = TRUE,
 }
 
 # Kernel SHAP algorithm for a single row x with paired sampling
-kernelshap_one <- function(x, pred_fun, bg_X, bg_w, v0, v1, 
+kernelshap_one <- function(X, pred_fun, bg_X, bg_w, v0, v1, 
                            paired, m, tol, max_iter) {
-  X <- x[rep(1L, times = nrow(bg_X)), , drop = FALSE]
   p <- ncol(X)
   est_m = list()
   converged <- FALSE
