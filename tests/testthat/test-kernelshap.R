@@ -20,6 +20,14 @@ test_that("Decomposing a single row works", {
   expect_equal(rowSums(s$S) + s$baseline, preds[1])
 })
 
+test_that("Background data can contain additional columns", {
+  expect_true(
+    is.kernelshap(
+      kernelshap(iris[1L, x], pred_fun = pred_fun, bg_X = cbind(d = 1, iris[, x]))
+    )
+  )
+})
+
 fit <- stats::lm(Sepal.Length ~ stats::poly(Petal.Width, 2), data = iris)
 x <- "Petal.Width"
 preds <- unname(pred_fun(iris[x]))
@@ -42,6 +50,10 @@ test_that("Matrix input is fine", {
   expect_true(is.kernelshap(s))
   expect_equal(s$baseline, mean(iris$Sepal.Length))
   expect_equal(rowSums(s$S) + s$baseline, preds[1:3])
+})
+
+test_that("Matrix input works if bg data containts extra columns", {
+  expect_true(is.kernelshap(kernelshap(X[1:3, ], pred_fun = pred_fun2, cbind(d = 1, X))))
 })
 
 ## Now with case weights
