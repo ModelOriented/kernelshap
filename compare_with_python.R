@@ -1,53 +1,56 @@
 library(ggplot2)
 library(kernelshap)
 
-fit <- lm(log(price) ~ log(carat) + I(as.integer(cut)-1) + I(as.integer(color)-1) + I(as.integer(clarity)-1), data = diamonds)
-x <- c("carat", "cut", "color", "clarity")
-ks <- kernelshap(head(diamonds[x]), function(z) predict(fit, z), bg_X = head(diamonds[x], 100))
+# Turn ordinal factors into unordered
+ord <- c("clarity", "color", "cut")
+diamonds[, ord] <- lapply(diamonds[ord], factor, ordered = FALSE)
+
+# Fit model
+fit <- lm(log(price) ~ log(carat) * clarity + cut + color, data = diamonds)
+
+# Apply Kernel SHAP to first two diamonds using every 500th diamond as background data
+x <- c("carat", ord)
+bg_data <- diamonds[seq(1, nrow(diamonds), 500), ]
+ks <- kernelshap(diamonds[1:2, x], function(z) predict(fit, z), bg_X = bg_data)
 ks
 
 # SHAP values of first 2 observations:
-#           carat        cut     color    clarity
-# [1,] -0.4992360 0.05224771 0.1512496 -0.2424388
-# [2,] -0.6700215 0.02038935 0.1512496 -0.1193734
+#          carat    clarity    color         cut
+# [1,] -2.180243 -0.2542866 0.109037 0.024558363
+# [2,] -2.364556 -0.1029186 0.109037 0.002575027
 
 #========================
 # The same in Python
 #========================
 
-# import numpy as np
-# import pandas as pd
-# from sklearn.preprocessing import OrdinalEncoder, FunctionTransformer
-# from sklearn.compose import ColumnTransformer
-# from sklearn.linear_model import LinearRegression
-# from plotnine.data import diamonds
-# 
-# x_ord = ["cut", "color", "clarity"]
-# ord_levels = [diamonds[x].cat.categories.to_list() for x in x_ord]
-# ord_levels
-# 
-# preprocessor = ColumnTransformer(
-#   transformers=[
-#     ("log", FunctionTransformer(np.log), ["carat"]),
-#     ("encoder", OrdinalEncoder(categories=ord_levels), x_ord)
-#   ],
-#   remainder="drop"
-# )
-# 
-# X = preprocessor.fit_transform(diamonds)
-# y = np.log(diamonds.price)
-# 
-# ols = LinearRegression()
-# ols.fit(X, y)
-# 
-# ols.coef_, ols.intercept_
-# # (array([ 1.87734554, 0.03185836, -0.0779637 , 0.12306539]), 8.262516487229426)
-# 
-# from shap import KernelExplainer
-# 
-# ks = KernelExplainer(model=lambda X: ols.predict(X), data = X[0:100])
-# sv = ks.shap_values(X[0:2])
-# sv
-# 
-# # array([[-0.49923603,  0.05224771,  0.15124958, -0.24243881],
-# #       [-0.6700215 ,  0.02038935,  0.15124958, -0.11937342]])
+import numpy as np
+import pandas as pd
+from plotnine.data import diamonds
+from statsmodels.formula.api import ols
+from shap import KernelExplainer
+
+# Turn categoricals into integers because, inconveniently, kernel SHAP
+# requires numpy array as inputs
+ord = ["clarity", "color", "cut"]
+x = ["carat"] + ord
+diamonds[ord] = diamonds[ord].apply(lambda x: x.cat.codes)
+X = diamonds[x].to_numpy()
+
+# Fit model with interactions and dummy variables
+fit = ols(
+  "np.log(price) ~ np.log(carat) * C(clarity) + C(cut) + C(color)", 
+  data=diamonds
+).fit()
+
+# Calculate SHAP values for first two obs using every 500th diamond
+# as background data. Predict function has to map numpy array to pd.Dataframe
+ks = KernelExplainer(
+  model=lambda X: fit.predict(pd.DataFrame(X, columns=x)), 
+  data = X[0:len(X):500]
+)
+sv = ks.shap_values(X[0:2])
+sv
+
+# array([[-2.18024332, -0.2542866 ,  0.10903704,  0.02455836],
+#       [-2.3645562 , -0.10291862,  0.10903704,  0.00257503]])
+
