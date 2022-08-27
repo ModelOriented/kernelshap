@@ -104,7 +104,7 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL, paired_sampling = TRUE,
   bg_X <- bg_X[, colnames(X), drop = FALSE]
   bg_preds <- check_pred(pred_fun(bg_X), n = bg_n)
   v0 <- weighted_colMeans(bg_preds, bg_w)  # Average pred of background data: 1 x K
-  v1 <- check_pred(pred_fun(X), n = n)     # Vector of predictions of X:      n x K
+  v1 <- check_pred(pred_fun(X), n = n)     # Predictions on X:                n x K
   if (m == "auto") {
     m <- max(trunc(20 * sqrt(p)), 5L * p)
   }
@@ -176,8 +176,8 @@ kernelshap_one <- function(X, pred_fun, bg_X, bg_w, v0, v1,
       Z <- rbind(Z, 1 - Z)                                        #  (n_Z x p)
     }
     
-    # Calling get_vz() is expensive                               
-    vz <- get_vz(X, bg = bg_X, Z, pred_fun = pred_fun, w = bg_w)  # (n_Z x K)
+    # Calling get_vz() is expensive                               #  (n_Z x K)
+    vz <- get_vz(X = X, bg = bg_X, Z = Z, pred_fun = pred_fun, w = bg_w)
     
     # Least-squares with constraint that beta_1 + ... + beta_p = v_1 - v_0. 
     # The additional constraint beta_0 = v_0 is dealt via offset

@@ -30,7 +30,7 @@ from statsmodels.formula.api import ols
 from shap import KernelExplainer
 
 # Turn categoricals into integers because, inconveniently, kernel SHAP
-# requires numpy array as inputs
+# requires numpy array as input
 ord = ["clarity", "color", "cut"]
 x = ["carat"] + ord
 diamonds[ord] = diamonds[ord].apply(lambda x: x.cat.codes)
@@ -52,5 +52,5 @@ sv = ks.shap_values(X[0:2])
 sv
 
 # array([[-2.18024332, -0.2542866 ,  0.10903704,  0.02455836],
-#       [-2.3645562 , -0.10291862,  0.10903704,  0.00257503]])
+#        [-2.3645562 , -0.10291862,  0.10903704,  0.00257503]])
 
