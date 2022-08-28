@@ -2,7 +2,7 @@
 
 ## Major improvements
 
-- The package now supports multi-output predictions. Hurray!
+- The package now supports multidimensional predictions. Hurray!
 - Major speed-up of data operations and minimization of calls to the prediction function.
 - Besides `matrix`, `data.frames`, and `tibbles`, the package now also accepts `data.tables`.
 
