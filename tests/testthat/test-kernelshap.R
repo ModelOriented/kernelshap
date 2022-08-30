@@ -3,14 +3,22 @@ fit <- stats::lm(Sepal.Length ~ poly(Petal.Width, 2) * Species, data = iris)
 pred_fun <- function(X) stats::predict(fit, X)
 x <- c("Petal.Width", "Species")
 preds <- unname(pred_fun(iris))
-s <- kernelshap(iris[1:5, x], pred_fun = pred_fun, bg_X = iris[, x])
+s <- kernelshap(iris[c(1, 51, 101), x], pred_fun = pred_fun, bg_X = iris[, x])
 
 test_that("Baseline equals average prediction on background data", {
   expect_equal(s$baseline, mean(iris$Sepal.Length))
 })
 
 test_that("SHAP + baseline = prediction", {
-  expect_equal(rowSums(s$S) + s$baseline, preds[1:5])
+  expect_equal(rowSums(s$S) + s$baseline, preds[c(1, 51, 101)])
+})
+
+test_that("Non-exact calculation is similar to exact", {
+  s1 <- kernelshap(
+    iris[c(1, 51, 101), x], pred_fun = pred_fun, bg_X = iris[, x], exact = FALSE
+  )
+  expect_equal(s$S, s1$S)
+  expect_true(all(s$n_iter != s1$n_iter))
 })
 
 test_that("Decomposing a single row works", {

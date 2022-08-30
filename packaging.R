@@ -18,8 +18,8 @@ use_description(
     Version = "0.1.900",
     Description = "Multidimensional version of the iterative Kernel SHAP algorithm described in
     Ian Covert and Su-In Lee (2021) <http://proceedings.mlr.press/v130/covert21a>. 
-    Due to its iterative nature, standard errors of the SHAP values are provided
-    and convergence is monitored.
+    SHAP values are calculated iteratively until convergence,
+    along with approximate standard errors. 
     The package allows to work with any model that provides numeric predictions of 
     dimension one or higher.
     Examples include linear regression, logistic regression (logit or probability scale),
@@ -27,11 +27,13 @@ use_description(
     neural networks. The package plays well together with meta-learning packages
     like 'caret' or 'mlr3'. Visualizations can be done using the R package 'shapviz'.",
     `Authors@R` = "person('Michael', 'Mayer', email = 'mayermichael79@gmail.com', role = c('aut', 'cre'))",
-    Depends = "R (>= 3.2.0)",
-    LazyData = NULL
+    Depends = "R (>= 3.2.0)"
   ),
   roxygen = TRUE
 )
+
+source("Z_exact.R")
+use_data(Z_exact, overwrite = TRUE)
 
 use_package("stats", "Imports")
 use_package("utils", "Imports")
@@ -41,7 +43,7 @@ use_gpl_license(2)
 
 # Your files that do not belong to the package itself (others are added by "use_* function")
 use_build_ignore(c("^packaging.R$", "[.]Rproj$", "^compare_with_python.R$",
-                   "^cran-comments.md$", "^logo.png$"), escape = FALSE)
+                   "^cran-comments.md$", "^logo.png$", "^Z_exact.R$"), escape = FALSE)
 
 # If your code uses the pipe operator %>%
 # use_pipe()

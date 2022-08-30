@@ -3,7 +3,8 @@
 ## Major improvements
 
 - The package now supports multidimensional predictions. Hurray!
-- Major speed-up of data operations and minimization of calls to the prediction function.
+- Major speed-up.
+- For $2 \le p \le 5$ features, the algorithm now returns exact Kernel SHAP values. (For $p = 1$, *exact Shapley values* are returned.)
 - Besides `matrix`, `data.frames`, and `tibbles`, the package now also accepts `data.tables`.
 
 ## User visible changes

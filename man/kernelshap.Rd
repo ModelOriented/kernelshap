@@ -11,6 +11,7 @@ kernelshap(
   bg_w = NULL,
   paired_sampling = TRUE,
   m = "auto",
+  exact = TRUE,
   tol = 0.01,
   max_iter = 250,
   verbose = TRUE,
@@ -18,11 +19,11 @@ kernelshap(
 )
 }
 \arguments{
-\item{X}{A (n x p) matrix or data.frame of rows to be explained.
+\item{X}{A (n x p) matrix, data.frame, tibble or data.table of rows to be explained.
 Important: The columns should only represent model features, not the response.}
 
-\item{pred_fun}{A function that takes a data structure like \code{X} or \code{bg_X}
-and provides K >= 1 numeric prediction per row.
+\item{pred_fun}{A function that takes a data structure like \code{X}
+and provides K >= 1 numeric predictions per row.
 Example: If "fit" denotes a logistic regression fitted via \code{stats::glm},
 and SHAP values should be on the probability scale, then this argument is
 \code{function(X) predict(fit, X, type = "response")}.}
@@ -43,6 +44,10 @@ The default, "auto", equals \code{max(trunc(20*sqrt(p)), 5*p)}, where p is the
 number of features.
 For the paired sampling strategy, 2m evaluations are done per iteration.}
 
+\item{exact}{If \code{TRUE} (default) and the number of features p is at most 5,
+the algorithm will produce exact Kernel SHAP values. In this case, the arguments
+\code{m}, \code{paired_sampling}, \code{tol}, and \code{max_iter} are ignored.}
+
 \item{tol}{Tolerance determining when to stop. The algorithm keeps iterating until
 max(sigma_n) / diff(range(beta_n)) < tol, where the beta_n are the SHAP values
 of a given observation and sigma_n their standard errors. For multidimensional
@@ -51,7 +56,7 @@ predictions, the criterion must be satisfied for each dimension separately.}
 \item{max_iter}{If the stopping criterion (see \code{tol}) is not reached after
 \code{max_iter} iterations, then the algorithm stops.}
 
-\item{verbose}{Set to \code{FALSE} to suppress messages, warnings, and progress bar.}
+\item{verbose}{Set to \code{FALSE} to suppress messages, warnings, and the progress bar.}
 
 \item{...}{Currently unused.}
 }
@@ -71,10 +76,15 @@ a list of K such matrices.
 Implements a multidimensional version of the Kernel SHAP algorithm explained in detail in
 Covert and Lee (2021). It is an iterative refinement of the original Kernel SHAP algorithm
 of Lundberg and Lee (2017).
+The algorithm is applied to each row in \code{X}. Its behaviour depends on the number of features p:
+\itemize{
+\item 2 <= p <= 5: Exact Kernel SHAP values are returned.
+\item p > 5: Sampling version of Kernel SHAP. The algorithm iterates until Kernel SHAP values are sufficiently accurate.
+\item p = 1: Exact Shapley values are returned.
+}
+Thanks to the iterative nature of the algorithm, approximate standard errors of the SHAP values are returned.
 }
 \details{
-The algorithm is applied to each row in \code{X}. Due to its iterative nature, approximate
-standard errors of the resulting SHAP values are provided, and convergence is monitored.
 \code{X} should only contain feature columns required by the
 prediction function \code{pred_fun}. The latter is a function taking
 a data structure like \code{X} or \code{bg_X} and providing K >= 1 numeric

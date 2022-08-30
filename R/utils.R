@@ -8,9 +8,9 @@ solver <- function(A, b, v1, v0) {
 }
 
 # m permutations distributed according to Kernel SHAP weights -> (m x p) matrix
-make_Z <- function(m, p) {
-  if (p <= 1L) {
-    stop("p must be 2 or larger")
+sample_Z <- function(m, p) {
+  if (p == 1L) {
+    stop("Sampling impossible for p = 1")
   }
   S <- 1:(p - 1)
   # First draw number of elements in S
@@ -127,7 +127,7 @@ check_bg_size <- function(n) {
   }
 }
 
-# Case p = 1 is exact
+# Case p = 1 returns exact Shapley values
 case_p1 <- function(n, nms, v0, v1, X) {
   S <- v1 - v0[rep(1L, n), , drop = FALSE]
   SE <- matrix(numeric(n), dimnames = list(NULL, nms))
