@@ -1,4 +1,4 @@
-# This function creates z vectors and replicates them to match Kernel SHAP weights
+# Systematically creates all on/off vectors and replicates them to match Kernel SHAP weights
 create_exact_Z <- function(p) {
   stopifnot(p >= 2L, p <= 5)
 
