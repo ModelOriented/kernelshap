@@ -5,21 +5,22 @@ Authors@R:
     person("Michael", "Mayer", , "mayermichael79@gmail.com", role = c("aut", "cre"))
 Description: Multidimensional version of the iterative Kernel SHAP
     algorithm described in Ian Covert and Su-In Lee (2021)
-    <http://proceedings.mlr.press/v130/covert21a>.  Due to its iterative
-    nature, standard errors of the SHAP values are provided and
-    convergence is monitored.  The package allows to work with any model
-    that provides numeric predictions of dimension one or higher.
-    Examples include linear regression, logistic regression (logit or
-    probability scale), other generalized linear models, generalized
-    additive models, and neural networks. The package plays well together
-    with meta-learning packages like 'caret' or 'mlr3'. Visualizations can
-    be done using the R package 'shapviz'.
+    <http://proceedings.mlr.press/v130/covert21a>.  SHAP values are
+    calculated iteratively until convergence, along with approximate
+    standard errors.  The package allows to work with any model that
+    provides numeric predictions of dimension one or higher.  Examples
+    include linear regression, logistic regression (logit or probability
+    scale), other generalized linear models, generalized additive models,
+    and neural networks. The package plays well together with
+    meta-learning packages like 'caret' or 'mlr3'. Visualizations can be
+    done using the R package 'shapviz'.
 License: GPL (>= 2)
 Depends: 
     R (>= 3.2.0)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.1
+LazyData: true
 Imports: 
     MASS,
     stats,

@@ -19,6 +19,17 @@ ks
 # [1,] -2.180243 -0.2542866 0.109037 0.024558363
 # [2,] -2.364556 -0.1029186 0.109037 0.002575027
 
+ks <- kernelshap(
+  diamonds[1:2, x], function(z) predict(fit, z), bg_X = bg_data, exact = FALSE
+)
+ks
+
+# SHAP values of first 2 observations:
+#          carat    clarity    color         cut
+# [1,] -2.180243 -0.2542866 0.109037 0.024558363
+# [2,] -2.364556 -0.1029186 0.109037 0.002575027
+
+
 #========================
 # The same in Python
 #========================
