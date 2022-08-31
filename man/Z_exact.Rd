@@ -3,7 +3,7 @@
 \docType{data}
 \name{Z_exact}
 \alias{Z_exact}
-\title{List of weighted on/off matrices Z up to p = 4 features}
+\title{List of weighted on/off matrices Z features}
 \format{
 A list of matrices
 }
@@ -11,6 +11,6 @@ A list of matrices
 Z_exact
 }
 \description{
-List of weighted on/off matrices Z up to p = 4 features
+List of weighted on/off matrices Z features
 }
 \keyword{datasets}

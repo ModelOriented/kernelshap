@@ -117,18 +117,25 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
   
   # For p = 1, exact Shapley values are returned
   if (p == 1L) {
+    if (verbose) {
+      message("Calculating exact Shapley values")
+    }
     return(case_p1(n = n, nms = nms, v0 = v0, v1 = v1, X = X))
   }
 
   # Calculate m
-  if (exact) {
-    if (p <= length(Z_exact)) {
-      m <- nrow(Z_exact[[p]])
-      paired_sampling <- FALSE  
-    } else {
-      exact <- FALSE
+  if (exact && p <= length(Z_exact)) {
+    if (verbose) {
+      message("Calculating exact Kernel SHAP values")
     }
-  } 
+    m <- nrow(Z_exact[[p]])
+    paired_sampling <- FALSE  
+  } else {
+    if (verbose) {
+      message("Calculating Kernel SHAP values by iterative sampling")
+    }
+    exact <- FALSE
+  }
   if (m == "auto") {
     m <- max(trunc(20 * sqrt(p)), 5L * p)
   }
