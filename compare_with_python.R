@@ -6,29 +6,36 @@ ord <- c("clarity", "color", "cut")
 diamonds[, ord] <- lapply(diamonds[ord], factor, ordered = FALSE)
 
 # Fit model
-fit <- lm(log(price) ~ log(carat) * clarity + cut + color, data = diamonds)
+fit <- lm(log(price) ~ log(carat) * (clarity + color + cut), data = diamonds)
 
-# Apply Kernel SHAP to first two diamonds using every 500th diamond as background data
-x <- c("carat", ord)
-bg_data <- diamonds[seq(1, nrow(diamonds), 500), ]
-ks <- kernelshap(diamonds[1:2, x], function(z) predict(fit, z), bg_X = bg_data)
-ks
+# Subset of 270 diamonds
+X_small <- diamonds[seq(1, nrow(diamonds), 200), c("carat", ord)]
 
-# SHAP values of first 2 observations:
-#          carat    clarity    color         cut
-# [1,] -2.180243 -0.2542866 0.109037 0.024558363
-# [2,] -2.364556 -0.1029186 0.109037 0.002575027
-
-ks <- kernelshap(
-  diamonds[1:2, x], function(z) predict(fit, z), bg_X = bg_data, exact = FALSE
+# Exact KernelSHAP on X_small, using X_small as background data (3 seconds)
+system.time(
+  ks <- kernelshap(X_small, function(z) predict(fit, z), bg_X = X_small)  
 )
 ks
 
 # SHAP values of first 2 observations:
-#          carat    clarity    color         cut
-# [1,] -2.180243 -0.2542866 0.109037 0.024558363
-# [2,] -2.364556 -0.1029186 0.109037 0.002575027
+#             carat    clarity     color         cut
+# [1,] -2.09368837 -0.2875728 0.1165124  0.01496767
+# [2,]  0.01148493 -0.1191795 0.1115798 -0.02016471
 
+# Sampling version takes a bit longer (10 seconds)
+system.time(
+  ks2 <- kernelshap(X_small, function(z) predict(fit, z), bg_X = X_small, exact = FALSE)  
+)
+ks2
+
+# SHAP values of first 2 observations:
+#             carat    clarity     color         cut
+# [1,] -2.09368837 -0.2875728 0.1165124  0.01496767
+# [2,]  0.01148493 -0.1191795 0.1115798 -0.02016471
+
+library(shapviz)
+sv <- shapviz(ks)
+sv_dependence(sv, "carat", "auto")
 
 #========================
 # The same in Python
@@ -49,19 +56,22 @@ X = diamonds[x].to_numpy()
 
 # Fit model with interactions and dummy variables
 fit = ols(
-  "np.log(price) ~ np.log(carat) * C(clarity) + C(cut) + C(color)", 
+  "np.log(price) ~ np.log(carat) * (C(clarity) + C(cut) + C(color))", 
   data=diamonds
 ).fit()
 
-# Calculate SHAP values for first two obs using every 500th diamond
-# as background data. Predict function has to map numpy array to pd.Dataframe
+# Define subset of 270 diamonds
+X_small = X[0:len(X):200]
+
+# Calculate KernelSHAP values for X_small, using X_small as 
+# background data. Predict function has to map numpy array 
+# to pd.Dataframe
 ks = KernelExplainer(
   model=lambda X: fit.predict(pd.DataFrame(X, columns=x)), 
-  data = X[0:len(X):500]
+  data = X_small
 )
-sv = ks.shap_values(X[0:2])
-sv
+sv = ks.shap_values(X_small)  # 30 seconds
+sv[0:2]
 
-# array([[-2.18024332, -0.2542866 ,  0.10903704,  0.02455836],
-#        [-2.3645562 , -0.10291862,  0.10903704,  0.00257503]])
-
+# array([[-2.09368837, -0.28757279,  0.11651242,  0.01496767],
+#        [ 0.01148493, -0.1191795 ,  0.11157978, -0.02016471]])
