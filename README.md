@@ -6,11 +6,9 @@ SHAP values (Lundberg and Lee, 2017) decompose model predictions into additive c
 
 The "kernelshap" package implements a multidimensional version of the Kernel SHAP Algorithm 1 described in the supplement of Covert and Lee (2021). The behaviour depends on the number of features $p$:
 
-- $2 \le p \le 5$: Exact Kernel SHAP values are returned.
-- $p > 5$: Sampling version of Kernel SHAP. The algorithm iterates until Kernel SHAP values are sufficiently accurate. 
+- $2 \le p \le 5$: Exact Kernel SHAP values are returned. (Exact regarding the given background data.)
+- $p > 5$: Sampling version of Kernel SHAP. The algorithm iterates until Kernel SHAP values are sufficiently accurate. Approximate standard errors of the SHAP values are returned.
 - $p = 1$: Exact Shapley values are returned.
-
-Thanks to the iterative nature of the algorithm, approximate standard errors of the SHAP values are returned.
 
 The main function `kernelshap()` has three key arguments:
 
@@ -24,6 +22,8 @@ The main function `kernelshap()` has three key arguments:
   - mlr3: `function(X) fit$predict_newdata(X)$response`
   - caret: `function(X) predict(fit, X)`
 - `bg_X`: The background data used to integrate out "switched off" features. It should have similar column structure as `X`. A good size is around $50-200$ rows.
+
+Additional arguments of `kernelshap()` can be used to control details of the algorithm. Usually, the defaults do not need to be touched.
 
 **Remarks**
 

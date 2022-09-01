@@ -78,11 +78,11 @@ Covert and Lee (2021). It is an iterative refinement of the original Kernel SHAP
 of Lundberg and Lee (2017).
 The algorithm is applied to each row in \code{X}. Its behaviour depends on the number of features p:
 \itemize{
-\item 2 <= p <= 5: Exact Kernel SHAP values are returned.
+\item 2 <= p <= 5: Exact Kernel SHAP values are returned. (Exact regarding the given background data.)
 \item p > 5: Sampling version of Kernel SHAP. The algorithm iterates until Kernel SHAP values are sufficiently accurate.
+Approximate standard errors of the SHAP values are returned.
 \item p = 1: Exact Shapley values are returned.
 }
-Thanks to the iterative nature of the algorithm, approximate standard errors of the SHAP values are returned.
 }
 \details{
 \code{X} should only contain feature columns required by the
