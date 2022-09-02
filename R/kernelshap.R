@@ -48,6 +48,9 @@
 #' predictions, the criterion must be satisfied for each dimension separately.
 #' @param max_iter If the stopping criterion (see \code{tol}) is not reached after 
 #' \code{max_iter} iterations, then the algorithm stops.
+#' @param parallel If \code{TRUE}, use parallel \code{foreach} to loop over rows
+#' to be explained. Must register backend beforehand, e.g. via \code{doMC}. See
+#' example below. Parallelization automatically disables the progress bar.
 #' @param verbose Set to \code{FALSE} to suppress messages, warnings, and the progress bar.
 #' @param ... Currently unused.
 #' @return An object of class "kernelshap" with the following components:
@@ -61,6 +64,7 @@
 #'   \item \code{converged}: Logical vector of length n indicating convergence per row of \code{X}.
 #' }
 #' @export
+#' @import foreach
 #' @references
 #' \enumerate{
 #'   \item Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value Estimation Using Linear Regression. Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.
@@ -71,6 +75,12 @@
 #' pred_fun <- function(X) stats::predict(fit, X)
 #' s <- kernelshap(iris[1:2, -1], pred_fun = pred_fun, iris[, -1])
 #' s
+#' 
+#' # In parallel
+#' require(doMC)
+#' registerDoMC(cores = 4)
+#' system.time(kernelshap(iris[, -1], pred_fun = pred_fun, iris[, -1]))
+#' system.time(kernelshap(iris[, -1], pred_fun = pred_fun, iris[, -1], parallel = TRUE))
 #' 
 #' # Multioutput regression (or probabilistic classification)
 #' fit <- stats::lm(
@@ -88,7 +98,8 @@
 #' s
 kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL, 
                        paired_sampling = TRUE, m = "auto", exact = TRUE, 
-                       tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
+                       tol = 0.01, max_iter = 250, parallel = FALSE, 
+                       verbose = TRUE, ...) {
   stopifnot(
     is.matrix(X) || is.data.frame(X),
     is.matrix(bg_X) || is.data.frame(bg_X),
@@ -122,7 +133,7 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
     }
     return(case_p1(n = n, nms = nms, v0 = v0, v1 = v1, X = X))
   }
-
+  
   # Calculate m
   if (exact && p <= length(Z_exact)) {
     if (verbose) {
@@ -139,17 +150,13 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
   if (m == "auto") {
     m <- max(trunc(20 * sqrt(p)), 5L * p)
   }
-
+  
   # Allocate replicated version of the background data
   bg_Xm <- bg_X[rep(seq_len(bg_n), times = m * (1L + paired_sampling)), , drop = FALSE]
   
   # Real work: apply Kernel SHAP to each row of X
-  if (verbose && n >= 2L) {
-    pb <- utils::txtProgressBar(1L, n, style = 3)  
-  }
-  res <- vector("list", n)
-  for (i in seq_len(n)) {
-    res[[i]] <- kernelshap_one(
+  if (isTRUE(parallel)) {
+    res <- foreach(i = seq_len(n)) %dopar% kernelshap_one(
       X = X[rep(i, times = nrow(bg_Xm)), , drop = FALSE],
       pred_fun = pred_fun, 
       bg_X = bg_Xm, 
@@ -162,11 +169,31 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
       tol = tol,
       max_iter = max_iter
     )
+  } else {
     if (verbose && n >= 2L) {
-      utils::setTxtProgressBar(pb, i)
+      pb <- utils::txtProgressBar(1L, n, style = 3)  
+    }
+    res <- vector("list", n)
+    for (i in seq_len(n)) {
+      res[[i]] <- kernelshap_one(
+        X = X[rep(i, times = nrow(bg_Xm)), , drop = FALSE],
+        pred_fun = pred_fun, 
+        bg_X = bg_Xm, 
+        bg_w = bg_w, 
+        v0 = v0,
+        v1 = v1[i, , drop = FALSE],
+        paired = paired_sampling,
+        m = m,
+        exact = exact,
+        tol = tol,
+        max_iter = max_iter
+      )
+      if (verbose && n >= 2L) {
+        utils::setTxtProgressBar(pb, i)
+      }
     }
   }
-
+  
   # Organize output
   converged <- vapply(res, `[[`, "converged", FUN.VALUE = logical(1L))
   if (verbose && !all(converged)) {

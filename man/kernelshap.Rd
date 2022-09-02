@@ -14,6 +14,7 @@ kernelshap(
   exact = TRUE,
   tol = 0.01,
   max_iter = 250,
+  parallel = FALSE,
   verbose = TRUE,
   ...
 )
@@ -55,6 +56,10 @@ predictions, the criterion must be satisfied for each dimension separately.}
 
 \item{max_iter}{If the stopping criterion (see \code{tol}) is not reached after
 \code{max_iter} iterations, then the algorithm stops.}
+
+\item{parallel}{If \code{TRUE}, use parallel \code{foreach} to loop over rows
+to be explained. Must register backend beforehand, e.g. via \code{doMC}. See
+example below. Parallelization automatically disables the progress bar.}
 
 \item{verbose}{Set to \code{FALSE} to suppress messages, warnings, and the progress bar.}
 
@@ -100,6 +105,12 @@ fit <- stats::lm(Sepal.Length ~ ., data = iris)
 pred_fun <- function(X) stats::predict(fit, X)
 s <- kernelshap(iris[1:2, -1], pred_fun = pred_fun, iris[, -1])
 s
+
+# In parallel
+require(doMC)
+registerDoMC(cores = 4)
+system.time(kernelshap(iris[, -1], pred_fun = pred_fun, iris[, -1]))
+system.time(kernelshap(iris[, -1], pred_fun = pred_fun, iris[, -1], parallel = TRUE))
 
 # Multioutput regression (or probabilistic classification)
 fit <- stats::lm(
