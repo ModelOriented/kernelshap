@@ -8,11 +8,14 @@ solver <- function(A, b, v1, v0) {
 }
 
 # m permutations distributed according to Kernel SHAP weights -> (m x p) matrix
-sample_Z <- function(m, p) {
+sample_Z <- function(m, p, seed) {
   if (p == 1L) {
     stop("Sampling impossible for p = 1")
   }
   S <- 1:(p - 1)
+  if (!is.na(seed)) {
+    set.seed(seed)
+  }
   # First draw number of elements in S
   probs <- (p - 1) / (choose(p, S) * S * (p - S))
   len_S <- sample(S, m, replace = TRUE, prob = probs)
