@@ -13,7 +13,7 @@ X_small <- diamonds[seq(1, nrow(diamonds), 200), c("carat", ord)]
 
 # Exact KernelSHAP on X_small, using X_small as background data (3 seconds)
 system.time(
-  ks <- kernelshap(X_small, function(z) predict(fit, z), bg_X = X_small)  
+  ks <- kernelshap(fit, X_small, bg_X = X_small)  
 )
 ks
 
@@ -24,7 +24,7 @@ ks
 
 # Sampling version takes a bit longer (10 seconds)
 system.time(
-  ks2 <- kernelshap(X_small, function(z) predict(fit, z), bg_X = X_small, exact = FALSE)  
+  ks2 <- kernelshap(fit, X_small, bg_X = X_small, exact = FALSE)  
 )
 ks2
 

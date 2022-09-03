@@ -215,8 +215,7 @@ see Readme for an example.
 
 }}
 \examples{
-
-# A multiple linear regression
+# Linear regression
 fit <- stats::lm(Sepal.Length ~ ., data = iris)
 s <- kernelshap(fit, iris[1:2, -1], bg_X = iris[, -1])
 s
@@ -234,7 +233,6 @@ pred_fun <- function(fit, X) stats::predict(fit, as.data.frame(X))
 X <- data.matrix(iris[2:4])
 s <- kernelshap(fit, X[1:3, ], bg_X = X, pred_fun = pred_fun)
 s
-
 # Logistic regression
 fit <- stats::glm(
   I(Species == "virginica") ~ Sepal.Length + Sepal.Width, 
@@ -246,7 +244,7 @@ fit <- stats::glm(
 s <- kernelshap(fit, iris[1:2], bg_X = iris[1:2])
 s
 
-# On response (probability scale)
+# On scale of response (probability)
 s <- kernelshap(fit, iris[1:2], bg_X = iris[1:2], type = "response")
 s
 }

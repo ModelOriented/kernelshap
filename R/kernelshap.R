@@ -67,6 +67,40 @@
 #'   \item Scott M. Lundberg and Su-In Lee. A Unified Approach to Interpreting Model Predictions. Advances in Neural Information Processing Systems 30, 2017.
 #'}
 #' @export
+#' @examples
+#' # Linear regression
+#' fit <- stats::lm(Sepal.Length ~ ., data = iris)
+#' s <- kernelshap(fit, iris[1:2, -1], bg_X = iris[, -1])
+#' s
+#' 
+#' # Multivariate model
+#' fit <- stats::lm(
+#'   as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris
+#' )
+#' s <- kernelshap(fit, iris[1:4, 3:5], bg_X = iris)
+#' s
+#'
+#' # Matrix input works as well, and pred_fun can be overwritten
+#' fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
+#' pred_fun <- function(fit, X) stats::predict(fit, as.data.frame(X))
+#' X <- data.matrix(iris[2:4])
+#' s <- kernelshap(fit, X[1:3, ], bg_X = X, pred_fun = pred_fun)
+#' s
+
+#' # Logistic regression
+#' fit <- stats::glm(
+#'   I(Species == "virginica") ~ Sepal.Length + Sepal.Width, 
+#'   data = iris, 
+#'   family = binomial
+#' )
+#' 
+#' # On scale of linear predictor
+#' s <- kernelshap(fit, iris[1:2], bg_X = iris[1:2])
+#' s
+#' 
+#' # On scale of response (probability)
+#' s <- kernelshap(fit, iris[1:2], bg_X = iris[1:2], type = "response")
+#' s
 kernelshap <- function(object, ...){
   UseMethod("kernelshap")
 }
@@ -175,26 +209,6 @@ kernelshap.default <- function(object, X, bg_X, pred_fun, bg_w = NULL,
 
 #' @describeIn kernelshap Kernel SHAP method for "lm" models.
 #' @export
-#' @examples
-#' 
-#' # A multiple linear regression
-#' fit <- stats::lm(Sepal.Length ~ ., data = iris)
-#' s <- kernelshap(fit, iris[1:2, -1], bg_X = iris[, -1])
-#' s
-#' 
-#' # Multivariate model
-#' fit <- stats::lm(
-#'   as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris
-#' )
-#' s <- kernelshap(fit, iris[1:4, 3:5], bg_X = iris)
-#' s
-#'
-#' # Matrix input works as well, and pred_fun can be overwritten
-#' fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
-#' pred_fun <- function(fit, X) stats::predict(fit, as.data.frame(X))
-#' X <- data.matrix(iris[2:4])
-#' s <- kernelshap(fit, X[1:3, ], bg_X = X, pred_fun = pred_fun)
-#' s
 kernelshap.lm <- function(object, X, bg_X, pred_fun = stats::predict, bg_w = NULL, 
                           paired_sampling = TRUE, m = "auto", exact = TRUE, 
                           tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
@@ -216,22 +230,6 @@ kernelshap.lm <- function(object, X, bg_X, pred_fun = stats::predict, bg_w = NUL
 
 #' @describeIn kernelshap Kernel SHAP method for "glm" models.
 #' @export
-#' @examples
-#' 
-#' # Logistic regression
-#' fit <- stats::glm(
-#'   I(Species == "virginica") ~ Sepal.Length + Sepal.Width, 
-#'   data = iris, 
-#'   family = binomial
-#' )
-#' 
-#' # On scale of linear predictor
-#' s <- kernelshap(fit, iris[1:2], bg_X = iris[1:2])
-#' s
-#' 
-#' # On response (probability scale)
-#' s <- kernelshap(fit, iris[1:2], bg_X = iris[1:2], type = "response")
-#' s
 kernelshap.glm <- function(object, X, bg_X, pred_fun = stats::predict, bg_w = NULL, 
                            paired_sampling = TRUE, m = "auto", exact = TRUE, 
                            tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
