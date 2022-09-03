@@ -2,9 +2,7 @@
 fit <- stats::lm(Sepal.Length ~ poly(Petal.Width, 2) * Species, data = iris)
 x <- c("Petal.Width", "Species")
 preds <- unname(predict(fit, iris))
-s <- kernelshap(
-  fit, iris[c(1, 51, 101), x], pred_fun = stats::predict, bg_X = iris[, x]
-)
+s <- kernelshap(fit, iris[c(1, 51, 101), x], bg_X = iris[, x])
 
 test_that("Baseline equals average prediction on background data", {
   expect_equal(s$baseline, mean(iris$Sepal.Length))
@@ -15,28 +13,20 @@ test_that("SHAP + baseline = prediction", {
 })
 
 test_that("Non-exact calculation is similar to exact", {
-  s1 <- kernelshap(
-    fit, 
-    iris[c(1, 51, 101), x], 
-    pred_fun = stats::predict, 
-    bg_X = iris[, x], 
-    exact = FALSE
-  )
+  s1 <- kernelshap(fit, iris[c(1, 51, 101), x], bg_X = iris[, x], exact = FALSE)
   expect_equal(s$S, s1$S)
   expect_true(all(s$n_iter != s1$n_iter))
 })
 
 test_that("Decomposing a single row works", {
-  s <- kernelshap(fit, iris[1L, x], pred_fun = stats::predict, bg_X = iris[, x])
+  s <- kernelshap(fit, iris[1L, x], bg_X = iris[, x])
   
   expect_equal(s$baseline, mean(iris$Sepal.Length))
   expect_equal(rowSums(s$S) + s$baseline, preds[1])
 })
 
 test_that("Background data can contain additional columns", {
-  ks4 <- kernelshap(
-    fit, iris[1L, x], pred_fun = stats::predict, bg_X = cbind(d = 1, iris[, x])
-  )
+  ks4 <- kernelshap(fit, iris[1L, x], bg_X = cbind(d = 1, iris[, x]))
   expect_true(is.kernelshap(ks4))
 })
 
@@ -45,9 +35,7 @@ x <- "Petal.Width"
 preds <- unname(stats::predict(fit, iris[x]))
 
 test_that("Special case p = 1 works", {
-  s <- kernelshap(
-    fit, iris[1:5, x, drop = FALSE], pred_fun = stats::predict, bg_X = iris[x]
-  )
+  s <- kernelshap(fit, iris[1:5, x, drop = FALSE], bg_X = iris[x])
   expect_equal(s$baseline, mean(iris$Sepal.Length))
   expect_equal(rowSums(s$S) + s$baseline, preds[1:5])
   expect_equal(s$SE[1L], 0)
@@ -78,13 +66,7 @@ fit <- stats::lm(
 )
 x <- c("Petal.Width", "Species")
 preds <- unname(stats::predict(fit, iris))
-s <- kernelshap(
-  fit, 
-  iris[1:5, x], 
-  pred_fun = stats::predict, 
-  bg_X = iris[, x], 
-  bg_w = iris$Petal.Length
-)
+s <- kernelshap(fit, iris[1:5, x], bg_X = iris[, x], bg_w = iris$Petal.Length)
 
 test_that("Baseline equals weighted average prediction on background data", {
   expect_equal(s$baseline, stats::weighted.mean(iris$Sepal.Length, iris$Petal.Length))
@@ -95,13 +77,7 @@ test_that("SHAP + baseline = prediction works with case weights", {
 })
 
 test_that("Decomposing a single row works with case weights", {
-  s <- kernelshap(
-    fit, 
-    iris[1, x], 
-    pred_fun = stats::predict, 
-    bg_X = iris[, x], 
-    bg_w = iris$Petal.Length
-  )
+  s <- kernelshap(fit, iris[1, x], bg_X = iris[, x], bg_w = iris$Petal.Length)
   expect_equal(s$baseline, stats::weighted.mean(iris$Sepal.Length, iris$Petal.Length))
   expect_equal(rowSums(s$S) + s$baseline, preds[1])
 })
@@ -114,11 +90,7 @@ preds <- unname(stats::predict(fit, iris[x]))
 
 test_that("Special case p = 1 works with case weights", {
   s <- kernelshap(
-    fit,
-    iris[1:5, x, drop = FALSE], 
-    pred_fun = stats::predict, 
-    bg_X = iris[x], 
-    bg_w = iris$Petal.Length
+    fit, iris[1:5, x, drop = FALSE], bg_X = iris[x], bg_w = iris$Petal.Length
   )
   
   expect_equal(s$baseline, weighted.mean(iris$Sepal.Length, iris$Petal.Length))
@@ -144,7 +116,7 @@ test_that("kernelshap works for large p", {
   X <- data.frame(matrix(rnorm(20000L), ncol = 100L))
   y <- rnorm(200L)
   fit <- lm(y ~ ., data = cbind(y = y, X))
-  s <- kernelshap(fit, X[1L, ], pred_fun = stats::predict, bg_X = X)
+  s <- kernelshap(fit, X[1L, ], bg_X = X)
 
   expect_equal(s$baseline, mean(y))
   expect_equal(rowSums(s$S) + s$baseline, unname(stats::predict(fit, X[1L, ])))

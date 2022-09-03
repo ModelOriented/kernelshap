@@ -14,8 +14,8 @@ x <- c("Petal.Width", "Species")
 predsy <- unname(stats::predict(fity, iris))
 predsY <- unname(stats::predict(fitY, iris))
 
-sy <- kernelshap(fity, iris[1:5, x], pred_fun = stats::predict, bg_X = iris[, x])
-sY <- kernelshap(fitY, iris[1:5, x], pred_fun = stats::predict, bg_X = iris[, x])
+sy <- kernelshap(fity, iris[1:5, x], bg_X = iris[, x])
+sY <- kernelshap(fitY, iris[1:5, x], bg_X = iris[, x])
 
 test_that("Baseline equals average prediction on background data", {
   expect_equal(sY$baseline, unname(colMeans(Y)))
@@ -32,7 +32,7 @@ test_that("First dimension of multioutput model equals single output (approx)", 
 })
 
 test_that("Decomposing a single row works", {
-  sY <- kernelshap(fitY, iris[1L, x], pred_fun = stats::predict, bg_X = iris[, x])
+  sY <- kernelshap(fitY, iris[1L, x], bg_X = iris[, x])
   
   expect_equal(sY$baseline, unname(colMeans(Y)))
   expect_equal(rowSums(sY$S[[1L]]) + sY$baseline[1L], predsY[1L, 1L])
@@ -44,9 +44,7 @@ x <- "Petal.Width"
 predsY <- unname(stats::predict(fitY, iris[x]))
 
 test_that("Special case p = 1 works", {
-  sY <- kernelshap(
-    fitY, iris[1:5, x, drop = FALSE], pred_fun = stats::predict, bg_X = iris[x]
-  )
+  sY <- kernelshap(fitY, iris[1:5, x, drop = FALSE], bg_X = iris[x])
   
   expect_equal(sY$baseline, unname(colMeans(Y)))
   expect_equal(unname(rowSums(sY$S[[2L]]) + sY$baseline[2L]), predsY[1:5, 2L])

@@ -18,7 +18,7 @@ Is object of class "kernelshap"?
 }
 \examples{
 fit <- stats::lm(Sepal.Length ~ ., data = iris)
-s <- kernelshap(fit, iris[1:2, -1], pred_fun = stats::predict, bg_X = iris[-1])
+s <- kernelshap(fit, iris[1:2, -1], bg_X = iris[-1])
 is.kernelshap(s)
 is.kernelshap("a")
 }

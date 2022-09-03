@@ -1,3 +1,55 @@
+# Kernel SHAP algorithm for a single row x with paired sampling
+kernelshap_one <- function(object, X, bg_X, pred_fun, bg_w, v0, v1, 
+                           paired, m, exact, tol, max_iter, ...) {
+  p <- ncol(X)
+  est_m = list()
+  converged <- FALSE
+  n_iter <- 0L
+  Asum <- matrix(0, nrow = p, ncol = p)                           #  (p x p)
+  bsum <- matrix(0, nrow = p, ncol = ncol(v0))                    #  (p x K)
+  n_Z <- m * (1L + paired)
+  v0_ext <- v0[rep(1L, n_Z), , drop = FALSE]                      #  (n_Z x K)
+  
+  while(!isTRUE(converged) && n_iter < max_iter) {
+    n_iter <- n_iter + 1L
+    
+    # Create Z matrix of dimension ->                             #  (n_Z x p)
+    if (exact) {
+      Z <- Z_exact[[p]]
+    } else {
+      Z <- sample_Z(m = m, p = p)
+      if (paired) {
+        Z <- rbind(Z, 1 - Z)
+      }
+    }
+    
+    # Calling get_vz() is expensive                               #  (n_Z x K)
+    vz <- get_vz(
+      X = X, bg = bg_X, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
+    )
+    
+    # Least-squares with constraint that beta_1 + ... + beta_p = v_1 - v_0. 
+    # The additional constraint beta_0 = v_0 is dealt via offset
+    Atemp <- crossprod(Z) / n_Z                                   #  (p x p)
+    btemp <- crossprod(Z, (vz - v0_ext)) / n_Z                    #  (p x K)
+    Asum <- Asum + Atemp                                          #  (p x p)
+    bsum <- bsum + btemp                                          #  (p x K)
+    est_m[[n_iter]] <- R <- solver(Atemp, btemp, v1, v0)          #  (p x K)
+    
+    if (exact) {
+      return(list(beta = R, sigma = 0 * R, n_iter = 1L, converged = TRUE))
+    }
+    
+    # Covariance calculation would fail in the first iteration
+    if (n_iter >= 2L) {
+      beta_n <- solver(Asum / n_iter, bsum / n_iter, v1, v0)      #  (p x K)
+      sigma_n <- get_sigma(est_m, iter = n_iter)                  #  (p x K)
+      converged <- all(conv_crit(sigma_n, beta_n) < tol)
+    }
+  }
+  list(beta = beta_n, sigma = sigma_n, n_iter = n_iter, converged = converged)
+}
+
 # Calculates regression coefficients
 solver <- function(A, b, v1, v0) {
   p <- ncol(A)
@@ -31,7 +83,7 @@ sample_Z <- function(m, p) {
 get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
   n_Z <- nrow(Z)
   not_Z <- !Z
-  n_bg <- nrow(bg) / n_Z   # Remember that bg was replicated n_Z times
+  n_bg <- nrow(bg) / n_Z   # because bg was replicated n_Z times
   
   # Replicate not_Z, so that X, bg, not_Z are all of dimension (n_Z*n_bg x p)
   g <- rep(seq_len(n_Z), each = n_bg)

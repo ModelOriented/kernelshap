@@ -2,7 +2,18 @@
 
 ## Breaking change
 
-ToDo
+The interface of `kernelshap()` is now more natural and user-friendly:
+
+The old signature 
+```
+kernelshap(X, pred_fun = function(X) predict(object, X), bg_X)
+``` 
+has been replaced by object oriented dispatch on the fitted model `object`: 
+```
+kernelshap(object, X, bg_X, pred_fun = function(object, X, ...))
+```
+
+For some model classes (lm, glm, gam, ranger, caret, mlr3), the `pred_fun` is implied by the class (but can be overwritten). Additional arguments to `pred_fun` can be passed via `...` of `kernelshap()`.
 
 ## Major improvements
 

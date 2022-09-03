@@ -2,13 +2,95 @@
 % Please edit documentation in R/kernelshap.R
 \name{kernelshap}
 \alias{kernelshap}
+\alias{kernelshap.default}
+\alias{kernelshap.lm}
+\alias{kernelshap.glm}
+\alias{kernelshap.ranger}
+\alias{kernelshap.Learner}
 \title{Kernel SHAP}
 \usage{
-kernelshap(
+kernelshap(object, ...)
+
+\method{kernelshap}{default}(
   object,
   X,
-  pred_fun,
   bg_X,
+  pred_fun,
+  bg_w = NULL,
+  paired_sampling = TRUE,
+  m = "auto",
+  exact = TRUE,
+  tol = 0.01,
+  max_iter = 250,
+  verbose = TRUE,
+  ...
+)
+
+\method{kernelshap}{lm}(
+  object,
+  X,
+  bg_X,
+  pred_fun = stats::predict,
+  bg_w = NULL,
+  paired_sampling = TRUE,
+  m = "auto",
+  exact = TRUE,
+  tol = 0.01,
+  max_iter = 250,
+  verbose = TRUE,
+  ...
+)
+
+\method{kernelshap}{glm}(
+  object,
+  X,
+  bg_X,
+  pred_fun = stats::predict,
+  bg_w = NULL,
+  paired_sampling = TRUE,
+  m = "auto",
+  exact = TRUE,
+  tol = 0.01,
+  max_iter = 250,
+  verbose = TRUE,
+  ...
+)
+
+\method{kernelshap}{ranger}(
+  object,
+  X,
+  bg_X,
+  pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
+  bg_w = NULL,
+  paired_sampling = TRUE,
+  m = "auto",
+  exact = TRUE,
+  tol = 0.01,
+  max_iter = 250,
+  verbose = TRUE,
+  ...
+)
+
+\method{kernelshap}{ranger}(
+  object,
+  X,
+  bg_X,
+  pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
+  bg_w = NULL,
+  paired_sampling = TRUE,
+  m = "auto",
+  exact = TRUE,
+  tol = 0.01,
+  max_iter = 250,
+  verbose = TRUE,
+  ...
+)
+
+\method{kernelshap}{Learner}(
+  object,
+  X,
+  bg_X,
+  pred_fun = function(m, X, ...) m$predict_newdata(X)$response,
   bg_w = NULL,
   paired_sampling = TRUE,
   m = "auto",
@@ -20,29 +102,22 @@ kernelshap(
 )
 }
 \arguments{
-\item{object}{A fitted model object.}
+\item{object}{Model object.}
+
+\item{...}{Additional arguments passed to \code{pred_fun()}.}
 
 \item{X}{A (n x p) matrix, data.frame, tibble or data.table of rows to be explained.
 Important: The columns should only represent model features, not the response.}
 
-\item{pred_fun}{The "predict" function of the form \code{function(object, X, ...)}
-providing K >= 1 numeric predictions per row. Its first argument represents the
-model \code{object}, its second argument a data structure like \code{X}. Additional
-arguments are passed via \code{...}. Some examples:
-\itemize{
-\item Linear regression fitted with \code{stats::lm()}: In this case, set
-\code{pred_fun = predict}.
-\item Binary logistic regression fitted with \code{stats::glm()}, and SHAP values
-should be on the probability scale: Specify \code{pred_fun = predict, type = "response"}
-or \code{pred_fun = function(m, X) predict(m, X, type = "response")}.
-\item Random forest regression fitted with \code{ranger}: Set
-\code{pred_fun = function(m, X) predict(m, X)$predictions}.
-}}
-
-\item{bg_X}{The background data used to integrate out "switched off" features.
+\item{bg_X}{Background data used to integrate out "switched off" features.
 It should contain the same columns as \code{X}. A good size is around 50 to 200 rows.
 Columns not in \code{X} are silently dropped and the columns are arranged into
 the order as they appear in \code{X}.}
+
+\item{pred_fun}{Prediction function of the form \code{function(object, X, ...)}
+providing K >= 1 numeric predictions per row. Its first argument represents the
+model \code{object}, its second argument a data structure like \code{X}. Additional
+arguments are passed via \code{...}.}
 
 \item{bg_w}{Optional vector of case weights for each row of \code{bg_X}.}
 
@@ -70,8 +145,6 @@ on the same scale.}
 \code{max_iter} iterations, the algorithm stops.}
 
 \item{verbose}{Set to \code{FALSE} to suppress messages, warnings, and the progress bar.}
-
-\item{...}{Additional arguments passed to \code{pred_fun()}.}
 }
 \value{
 An object of class "kernelshap" with the following components:
@@ -105,24 +178,54 @@ standard error of the SHAP values is small enough relative to the range of the S
 This stopping criterion was suggested in Covert and Lee (2021). In the multi-output case,
 the criterion must be fulfilled for each dimension separately until iteration stops.
 }
+\section{Methods (by class)}{
+\itemize{
+\item \code{kernelshap(default)}: Default Kernel SHAP method.
+
+\item \code{kernelshap(lm)}: Kernel SHAP method for "lm" models.
+
+\item \code{kernelshap(glm)}: Kernel SHAP method for "glm" models.
+
+\item \code{kernelshap(ranger)}: Kernel SHAP method for "ranger" models.
+
+\item \code{kernelshap(ranger)}: Kernel SHAP method for "ranger" models, see Readme for an example.
+
+\item \code{kernelshap(Learner)}: Kernel SHAP method for "mlr3" models, see Readme for an example.
+
+}}
 \examples{
-fit <- stats::lm(Sepal.Length ~ ., data = iris)
-s <- kernelshap(fit, iris[1:2, -1], pred_fun = stats::predict, bg_X = iris[, -1])
-s
-
-# Multioutput regression (or probabilistic classification)
-fit <- stats::lm(
-  as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris
-)
-fit
-s <- kernelshap(fit, iris[1:4, 3:5], pred_fun = stats::predict, bg_X = iris[, 3:5])
-s
-
 # Matrix input works as well, and pred_fun may contain preprocessing steps
 fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
 pred_fun <- function(fit, X) stats::predict(fit, as.data.frame(X))
 X <- data.matrix(iris[2:4])
-s <- kernelshap(fit, X[1:3, ], pred_fun = pred_fun, bg_X = X)
+s <- kernelshap(fit, X[1:3, ], bg_X = X, pred_fun = pred_fun)
+s
+
+# A multiple linear regression
+fit <- stats::lm(Sepal.Length ~ ., data = iris)
+s <- kernelshap(fit, iris[1:2, -1], bg_X = iris[, -1])
+s
+
+# Multivariate model
+fit <- stats::lm(
+  as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris
+)
+s <- kernelshap(fit, iris[1:4, 3:5], bg_X = iris)
+s
+
+# Logistic regression
+fit <- stats::glm(
+  I(Species == "virginica") ~ Sepal.Length + Sepal.Width, 
+  data = iris, 
+  family = binomial
+)
+
+# On scale of linear predictor
+s <- kernelshap(fit, iris[1:2], bg_X = iris[1:2])
+s
+
+# On response (probability scale)
+s <- kernelshap(fit, iris[1:2], bg_X = iris[1:2], type = "response")
 s
 }
 \references{

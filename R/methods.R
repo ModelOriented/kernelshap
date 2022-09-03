@@ -9,7 +9,7 @@
 #' @export
 #' @examples
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
-#' s <- kernelshap(fit, iris[1:3, -1], pred_fun = stats::predict, bg_X = iris[-1])
+#' s <- kernelshap(fit, iris[1:3, -1], bg_X = iris[-1])
 #' s
 #' @seealso \code{\link{kernelshap}}.
 print.kernelshap <- function(x, compact = FALSE, n = 2L, ...) {
@@ -55,7 +55,7 @@ print.kernelshap <- function(x, compact = FALSE, n = 2L, ...) {
 #' @export
 #' @examples
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
-#' s <- kernelshap(fit, iris[1:2, -1], pred_fun = stats::predict, bg_X = iris[-1])
+#' s <- kernelshap(fit, iris[1:2, -1], bg_X = iris[-1])
 #' is.kernelshap(s)
 #' is.kernelshap("a")
 is.kernelshap <- function(object){
@@ -79,7 +79,7 @@ ks_extract <- function(object, ...){
 #' @export
 #' @examples
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
-#' s <- kernelshap(fit, iris[1:2, -1], pred_fun = stats::predict, bg_X = iris[-1])
+#' s <- kernelshap(fit, iris[1:2, -1], bg_X = iris[-1])
 #' ks_extract(s, what = "S")
 ks_extract.kernelshap = function(object, 
                                  what = c("S", "X", "baseline", "SE", "n_iter", "converged"), 
