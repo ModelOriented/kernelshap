@@ -1,5 +1,9 @@
 # kernelshap 0.1.900 DEVEL
 
+## Breaking change
+
+ToDo
+
 ## Major improvements
 
 - The package now supports multidimensional predictions. Hurray!

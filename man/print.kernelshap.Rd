@@ -9,7 +9,8 @@
 \arguments{
 \item{x}{An object of class "kernelshap".}
 
-\item{compact}{Set to \code{TRUE} to hide printing the top n SHAP values, standard errors and feature values.}
+\item{compact}{Set to \code{TRUE} to hide printing the top n SHAP values,
+standard errors and feature values.}
 
 \item{n}{Maximum number of rows of SHAP values, standard errors and feature values to print.}
 
@@ -23,8 +24,7 @@ Prints "kernelshap" Object
 }
 \examples{
 fit <- stats::lm(Sepal.Length ~ ., data = iris)
-pred_fun <- function(X) stats::predict(fit, X)
-s <- kernelshap(iris[1:3, -1], pred_fun = pred_fun, iris[-1])
+s <- kernelshap(fit, iris[1:3, -1], pred_fun = stats::predict, bg_X = iris[-1])
 s
 }
 \seealso{

@@ -10,15 +10,15 @@ is.kernelshap(object)
 \item{object}{An R object.}
 }
 \value{
-Returns \code{TRUE} if \code{object} has "\code{kernelshap}" among its classes, and \code{FALSE} otherwise.
+Returns \code{TRUE} if \code{object} has "\code{kernelshap}" among its classes,
+and \code{FALSE} otherwise.
 }
 \description{
 Is object of class "kernelshap"?
 }
 \examples{
 fit <- stats::lm(Sepal.Length ~ ., data = iris)
-pred_fun <- function(X) stats::predict(fit, X)
-s <- kernelshap(iris[1:2, -1], pred_fun = pred_fun, iris[-1])
+s <- kernelshap(fit, iris[1:2, -1], pred_fun = stats::predict, bg_X = iris[-1])
 is.kernelshap(s)
 is.kernelshap("a")
 }

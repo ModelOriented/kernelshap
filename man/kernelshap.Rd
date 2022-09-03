@@ -5,6 +5,7 @@
 \title{Kernel SHAP}
 \usage{
 kernelshap(
+  object,
   X,
   pred_fun,
   bg_X,
@@ -19,14 +20,24 @@ kernelshap(
 )
 }
 \arguments{
+\item{object}{A fitted model object.}
+
 \item{X}{A (n x p) matrix, data.frame, tibble or data.table of rows to be explained.
 Important: The columns should only represent model features, not the response.}
 
-\item{pred_fun}{A function that takes a data structure like \code{X}
-and provides K >= 1 numeric predictions per row.
-Example: If "fit" denotes a logistic regression fitted via \code{stats::glm},
-and SHAP values should be on the probability scale, then this argument is
-\code{function(X) predict(fit, X, type = "response")}.}
+\item{pred_fun}{The "predict" function of the form \code{function(object, X, ...)}
+providing K >= 1 numeric predictions per row. Its first argument represents the
+model \code{object}, its second argument a data structure like \code{X}. Additional
+arguments are passed via \code{...}. Some examples:
+\itemize{
+\item Linear regression fitted with \code{stats::lm()}: In this case, set
+\code{pred_fun = predict}.
+\item Binary logistic regression fitted with \code{stats::glm()}, and SHAP values
+should be on the probability scale: Specify \code{pred_fun = predict, type = "response"}
+or \code{pred_fun = function(m, X) predict(m, X, type = "response")}.
+\item Random forest regression fitted with \code{ranger}: Set
+\code{pred_fun = function(m, X) predict(m, X)$predictions}.
+}}
 
 \item{bg_X}{The background data used to integrate out "switched off" features.
 It should contain the same columns as \code{X}. A good size is around 50 to 200 rows.
@@ -51,14 +62,16 @@ the algorithm will produce exact Kernel SHAP values. In this case, the arguments
 \item{tol}{Tolerance determining when to stop. The algorithm keeps iterating until
 max(sigma_n) / diff(range(beta_n)) < tol, where the beta_n are the SHAP values
 of a given observation and sigma_n their standard errors. For multidimensional
-predictions, the criterion must be satisfied for each dimension separately.}
+predictions, the criterion must be satisfied for each dimension separately.
+The stopping criterion uses the fact that standard errors and SHAP values are all
+on the same scale.}
 
 \item{max_iter}{If the stopping criterion (see \code{tol}) is not reached after
-\code{max_iter} iterations, then the algorithm stops.}
+\code{max_iter} iterations, the algorithm stops.}
 
 \item{verbose}{Set to \code{FALSE} to suppress messages, warnings, and the progress bar.}
 
-\item{...}{Currently unused.}
+\item{...}{Additional arguments passed to \code{pred_fun()}.}
 }
 \value{
 An object of class "kernelshap" with the following components:
@@ -73,32 +86,28 @@ a list of K such matrices.
 }
 }
 \description{
-Implements a multidimensional version of the Kernel SHAP algorithm explained in detail in
-Covert and Lee (2021). It is an iterative refinement of the original Kernel SHAP algorithm
-of Lundberg and Lee (2017).
-The algorithm is applied to each row in \code{X}. Its behaviour depends on the number of features p:
+Implements a multidimensional version of the Kernel SHAP algorithm explained in
+detail in Covert and Lee (2021). It is an iterative refinement of the original
+Kernel SHAP algorithm of Lundberg and Lee (2017). The algorithm is applied to each
+row in \code{X}. Its behaviour depends on the number of features p:
 \itemize{
-\item 2 <= p <= 5: Exact Kernel SHAP values are returned. (Exact regarding the given background data.)
-\item p > 5: Sampling version of Kernel SHAP. The algorithm iterates until Kernel SHAP values are sufficiently accurate.
+\item 2 <= p <= 5: Exact Kernel SHAP values are returned.
+(Exact regarding the given background data.)
+\item p > 5: Sampling version of Kernel SHAP.
+The algorithm iterates until Kernel SHAP values are sufficiently accurate.
 Approximate standard errors of the SHAP values are returned.
 \item p = 1: Exact Shapley values are returned.
 }
 }
 \details{
-\code{X} should only contain feature columns required by the
-prediction function \code{pred_fun}. The latter is a function taking
-a data structure like \code{X} or \code{bg_X} and providing K >= 1 numeric
-predictions per row. The background data \code{bg_X} must contain the same column names
-as \code{X} (additional columns are silently dropped).
 During each iteration, \code{m} feature subsets are evaluated until the worst
 standard error of the SHAP values is small enough relative to the range of the SHAP values.
-This stopping criterion was suggested in Covert and Lee (2021). In the multioutput case,
+This stopping criterion was suggested in Covert and Lee (2021). In the multi-output case,
 the criterion must be fulfilled for each dimension separately until iteration stops.
 }
 \examples{
 fit <- stats::lm(Sepal.Length ~ ., data = iris)
-pred_fun <- function(X) stats::predict(fit, X)
-s <- kernelshap(iris[1:2, -1], pred_fun = pred_fun, iris[, -1])
+s <- kernelshap(fit, iris[1:2, -1], pred_fun = stats::predict, bg_X = iris[, -1])
 s
 
 # Multioutput regression (or probabilistic classification)
@@ -106,14 +115,14 @@ fit <- stats::lm(
   as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris
 )
 fit
-s <- kernelshap(iris[1:4, 3:5], pred_fun = pred_fun, iris[, 3:5])
+s <- kernelshap(fit, iris[1:4, 3:5], pred_fun = stats::predict, bg_X = iris[, 3:5])
 s
 
 # Matrix input works as well, and pred_fun may contain preprocessing steps
 fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
-pred_fun <- function(X) stats::predict(fit, as.data.frame(X))
+pred_fun <- function(fit, X) stats::predict(fit, as.data.frame(X))
 X <- data.matrix(iris[2:4])
-s <- kernelshap(X[1:3, ], pred_fun = pred_fun, X)
+s <- kernelshap(fit, X[1:3, ], pred_fun = pred_fun, bg_X = X)
 s
 }
 \references{

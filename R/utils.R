@@ -28,7 +28,7 @@ sample_Z <- function(m, p) {
 }
 
 # Calculates all vz of an iteration and thus takes time
-get_vz <- function(X, bg, Z, pred_fun, w) {
+get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
   n_Z <- nrow(Z)
   not_Z <- !Z
   n_bg <- nrow(bg) / n_Z   # Remember that bg was replicated n_Z times
@@ -45,7 +45,7 @@ get_vz <- function(X, bg, Z, pred_fun, w) {
       X[[j]][s] <- bg[[j]][s]
     }
   }
-  preds <- check_pred(pred_fun(X), n = nrow(X))
+  preds <- check_pred(pred_fun(object, X, ...), n = nrow(X))
   
   # Aggregate
   if (is.null(w)) {

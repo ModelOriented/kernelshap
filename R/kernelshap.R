@@ -1,32 +1,38 @@
 #' Kernel SHAP
 #'
-#' Implements a multidimensional version of the Kernel SHAP algorithm explained in detail in 
-#' Covert and Lee (2021). It is an iterative refinement of the original Kernel SHAP algorithm 
-#' of Lundberg and Lee (2017).
-#' The algorithm is applied to each row in \code{X}. Its behaviour depends on the number of features p:
+#' Implements a multidimensional version of the Kernel SHAP algorithm explained in 
+#' detail in Covert and Lee (2021). It is an iterative refinement of the original 
+#' Kernel SHAP algorithm of Lundberg and Lee (2017). The algorithm is applied to each 
+#' row in \code{X}. Its behaviour depends on the number of features p:
 #' \itemize{
-#'   \item 2 <= p <= 5: Exact Kernel SHAP values are returned. (Exact regarding the given background data.)
-#'   \item p > 5: Sampling version of Kernel SHAP. The algorithm iterates until Kernel SHAP values are sufficiently accurate. 
+#'   \item 2 <= p <= 5: Exact Kernel SHAP values are returned. 
+#'   (Exact regarding the given background data.)
+#'   \item p > 5: Sampling version of Kernel SHAP. 
+#'   The algorithm iterates until Kernel SHAP values are sufficiently accurate. 
 #'   Approximate standard errors of the SHAP values are returned. 
 #'   \item p = 1: Exact Shapley values are returned.
 #' }
 #' 
-#' \code{X} should only contain feature columns required by the
-#' prediction function \code{pred_fun}. The latter is a function taking
-#' a data structure like \code{X} or \code{bg_X} and providing K >= 1 numeric 
-#' predictions per row. The background data \code{bg_X} must contain the same column names
-#' as \code{X} (additional columns are silently dropped).
 #' During each iteration, \code{m} feature subsets are evaluated until the worst 
 #' standard error of the SHAP values is small enough relative to the range of the SHAP values. 
-#' This stopping criterion was suggested in Covert and Lee (2021). In the multioutput case,
+#' This stopping criterion was suggested in Covert and Lee (2021). In the multi-output case,
 #' the criterion must be fulfilled for each dimension separately until iteration stops.
+#' @param object A fitted model object.
 #' @param X A (n x p) matrix, data.frame, tibble or data.table of rows to be explained. 
 #' Important: The columns should only represent model features, not the response.
-#' @param pred_fun A function that takes a data structure like \code{X} 
-#' and provides K >= 1 numeric predictions per row.
-#' Example: If "fit" denotes a logistic regression fitted via \code{stats::glm}, 
-#' and SHAP values should be on the probability scale, then this argument is
-#' \code{function(X) predict(fit, X, type = "response")}.
+#' @param pred_fun The "predict" function of the form \code{function(object, X, ...)} 
+#' providing K >= 1 numeric predictions per row. Its first argument represents the
+#' model \code{object}, its second argument a data structure like \code{X}. Additional
+#' arguments are passed via \code{...}. Some examples:
+#' \itemize{
+#'   \item Linear regression fitted with \code{stats::lm()}: In this case, set 
+#'   \code{pred_fun = predict}.
+#'   \item Binary logistic regression fitted with \code{stats::glm()}, and SHAP values 
+#'   should be on the probability scale: Specify \code{pred_fun = predict, type = "response"} 
+#'   or \code{pred_fun = function(m, X) predict(m, X, type = "response")}.
+#'   \item Random forest regression fitted with \code{ranger}: Set 
+#'   \code{pred_fun = function(m, X) predict(m, X)$predictions}.
+#' }
 #' @param bg_X The background data used to integrate out "switched off" features. 
 #' It should contain the same columns as \code{X}. A good size is around 50 to 200 rows.
 #' Columns not in \code{X} are silently dropped and the columns are arranged into
@@ -46,10 +52,12 @@
 #' max(sigma_n) / diff(range(beta_n)) < tol, where the beta_n are the SHAP values 
 #' of a given observation and sigma_n their standard errors. For multidimensional
 #' predictions, the criterion must be satisfied for each dimension separately.
+#' The stopping criterion uses the fact that standard errors and SHAP values are all
+#' on the same scale.
 #' @param max_iter If the stopping criterion (see \code{tol}) is not reached after 
-#' \code{max_iter} iterations, then the algorithm stops.
+#' \code{max_iter} iterations, the algorithm stops.
 #' @param verbose Set to \code{FALSE} to suppress messages, warnings, and the progress bar.
-#' @param ... Currently unused.
+#' @param ... Additional arguments passed to \code{pred_fun()}.
 #' @return An object of class "kernelshap" with the following components:
 #' \itemize{
 #'   \item \code{S}: (n x p) matrix with SHAP values or, if the model output has dimension K > 1,
@@ -68,8 +76,7 @@
 #'}
 #' @examples
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
-#' pred_fun <- function(X) stats::predict(fit, X)
-#' s <- kernelshap(iris[1:2, -1], pred_fun = pred_fun, iris[, -1])
+#' s <- kernelshap(fit, iris[1:2, -1], pred_fun = stats::predict, bg_X = iris[, -1])
 #' s
 #' 
 #' # Multioutput regression (or probabilistic classification)
@@ -77,16 +84,16 @@
 #'   as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris
 #' )
 #' fit
-#' s <- kernelshap(iris[1:4, 3:5], pred_fun = pred_fun, iris[, 3:5])
+#' s <- kernelshap(fit, iris[1:4, 3:5], pred_fun = stats::predict, bg_X = iris[, 3:5])
 #' s
 #' 
 #' # Matrix input works as well, and pred_fun may contain preprocessing steps
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
-#' pred_fun <- function(X) stats::predict(fit, as.data.frame(X))
+#' pred_fun <- function(fit, X) stats::predict(fit, as.data.frame(X))
 #' X <- data.matrix(iris[2:4])
-#' s <- kernelshap(X[1:3, ], pred_fun = pred_fun, X)
+#' s <- kernelshap(fit, X[1:3, ], pred_fun = pred_fun, bg_X = X)
 #' s
-kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL, 
+kernelshap <- function(object, X, pred_fun, bg_X, bg_w = NULL, 
                        paired_sampling = TRUE, m = "auto", exact = TRUE, 
                        tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
   stopifnot(
@@ -111,9 +118,9 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
   
   # Calculate v0 and v1
   bg_X <- bg_X[, colnames(X), drop = FALSE]
-  bg_preds <- check_pred(pred_fun(bg_X), n = bg_n)
-  v0 <- weighted_colMeans(bg_preds, bg_w)  # Average pred of background data: 1 x K
-  v1 <- check_pred(pred_fun(X), n = n)     # Predictions on X:                n x K
+  bg_preds <- check_pred(pred_fun(object, bg_X, ...), n = bg_n)
+  v0 <- weighted_colMeans(bg_preds, bg_w)            # Average pred of bg data: 1 x K
+  v1 <- check_pred(pred_fun(object, X, ...), n = n)  # Predictions on X:        n x K
   
   # For p = 1, exact Shapley values are returned
   if (p == 1L) {
@@ -150,6 +157,7 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
   res <- vector("list", n)
   for (i in seq_len(n)) {
     res[[i]] <- kernelshap_one(
+      object = object,
       X = X[rep(i, times = nrow(bg_Xm)), , drop = FALSE],
       pred_fun = pred_fun, 
       bg_X = bg_Xm, 
@@ -160,7 +168,8 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
       m = m,
       exact = exact,
       tol = tol,
-      max_iter = max_iter
+      max_iter = max_iter,
+      ...
     )
     if (verbose && n >= 2L) {
       utils::setTxtProgressBar(pb, i)
@@ -185,8 +194,8 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
 }
 
 # Kernel SHAP algorithm for a single row x with paired sampling
-kernelshap_one <- function(X, pred_fun, bg_X, bg_w, v0, v1, 
-                           paired, m, exact, tol, max_iter) {
+kernelshap_one <- function(object, X, pred_fun, bg_X, bg_w, v0, v1, 
+                           paired, m, exact, tol, max_iter, ...) {
   p <- ncol(X)
   est_m = list()
   converged <- FALSE
@@ -210,7 +219,9 @@ kernelshap_one <- function(X, pred_fun, bg_X, bg_w, v0, v1,
     }
     
     # Calling get_vz() is expensive                               #  (n_Z x K)
-    vz <- get_vz(X = X, bg = bg_X, Z = Z, pred_fun = pred_fun, w = bg_w)
+    vz <- get_vz(
+      X = X, bg = bg_X, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
+    )
     
     # Least-squares with constraint that beta_1 + ... + beta_p = v_1 - v_0. 
     # The additional constraint beta_0 = v_0 is dealt via offset

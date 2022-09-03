@@ -46,10 +46,9 @@ library(kernelshap)
 library(shapviz)
 
 fit <- lm(Sepal.Length ~ ., data = iris)
-pred_fun <- function(X) predict(fit, X)
 
 # Crunch SHAP values (1 second)
-s <- kernelshap(iris[-1], pred_fun = pred_fun, bg_X = iris[-1])
+s <- kernelshap(fit, iris[-1], pred_fun = predict, bg_X = iris[-1])
 s
 
 # Output (partly)
@@ -85,10 +84,9 @@ library(shapviz)
 fit <- glm(
   I(Species == "virginica") ~ Sepal.Length + Sepal.Width, data = iris, family = binomial
 )
-pred_fun <- function(X) predict(fit, X, type = "response")
 
 # Crunch SHAP values
-s <- kernelshap(iris[1:2], pred_fun = pred_fun, bg_X = iris[1:2])
+s <- kernelshap(fit, iris[1:2], pred_fun = predict, bg_X = iris[1:2], type = "response")
 
 # Plot with shapviz
 shp <- shapviz(s)
@@ -124,11 +122,11 @@ model %>%
   )
 
 X <- data.matrix(iris[2:4])
-pred_fun <- function(X) predict(model, X, batch_size = nrow(X))
+pred_fun <- function(m, X) predict(m, X, batch_size = nrow(X))
 
 # Crunch SHAP values (8 seconds)
 system.time(
-  s <- kernelshap(X, pred_fun = pred_fun, bg_X = X)
+  s <- kernelshap(model, X, pred_fun = pred_fun, bg_X = X)
 )
 
 # Plot with shapviz (results depend on neural net seed)
@@ -157,7 +155,7 @@ tsk("iris")
 task_iris <- TaskRegr$new(id = "iris", backend = iris, target = "Sepal.Length")
 fit_lm <- lrn("regr.lm")
 fit_lm$train(task_iris)
-s <- kernelshap(iris, function(X) fit_lm$predict_newdata(X)$response, bg_X = iris)
+s <- kernelshap(fit_lm, iris, function(m, X) m$predict_newdata(X)$response, bg_X = iris)
 sv <- shapviz(s)
 sv_dependence(sv, "Species")
 ```
@@ -179,7 +177,7 @@ fit <- train(
   trControl = trainControl(method = "none")
 )
 
-s <- kernelshap(iris[1, -1], function(X) predict(fit, X), bg_X = iris[-1])
+s <- kernelshap(fit, iris[1, -1], predict, bg_X = iris[-1])
 sv <- shapviz(s)  # until shapviz 0.2.0: shapviz(s$S, s$X, s$baseline)
 sv_waterfall(sv, 1)
 ```
@@ -196,7 +194,10 @@ set.seed(1)
 fit <- ranger(Species ~ ., data = iris, probability = TRUE)
 
 s <- kernelshap(
-  iris[c(1, 51, 101), -5], function(X) predict(fit, X)$predictions, bg_X = iris[-5]
+  fit, 
+  iris[c(1, 51, 101), -5], 
+  function(m, X) predict(m, X)$predictions, 
+  bg_X = iris[-5]
 )
 s
 
