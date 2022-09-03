@@ -24,9 +24,8 @@ use_description(
     other generalized linear models, generalized additive models, and 
     neural networks. The package plays well together with meta-learning packages
     like 'caret' or 'mlr3'. Visualizations can be done using the R package 'shapviz'.",
-    `Authors@R` = 
-    "c(person('Michael', 'Mayer', email = 'mayermichael79@gmail.com', role = c('aut', 'cre')),
-       person('David', 'Watson', role = 'ctb')))",
+    `Authors@R` = "c(person('Michael', family = 'Mayer', role = c('aut', 'cre'), email = 'mayermichael79@gmail.com'),
+       person('David', family = 'Watson', role = 'ctb', email = 'david.s.watson11@gmail.com'))",
     Depends = "R (>= 3.2.0)"
   ),
   roxygen = TRUE

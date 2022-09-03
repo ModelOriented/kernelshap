@@ -1,8 +1,10 @@
 Package: kernelshap
 Title: Kernel SHAP
 Version: 0.1.900
-Authors@R: 
-    person("Michael", "Mayer", , "mayermichael79@gmail.com", role = c("aut", "cre"))
+Authors@R: c(
+    person("Michael", "Mayer", , "mayermichael79@gmail.com", role = c("aut", "cre")),
+    person("David", "Watson", , "david.s.watson11@gmail.com", role = "ctb")
+  )
 Description: Multidimensional version of the iterative Kernel SHAP
     algorithm described in Ian Covert and Su-In Lee (2021)
     <http://proceedings.mlr.press/v130/covert21a>.  SHAP values are

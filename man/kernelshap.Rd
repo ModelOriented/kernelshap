@@ -6,7 +6,9 @@
 \alias{kernelshap.lm}
 \alias{kernelshap.glm}
 \alias{kernelshap.ranger}
+\alias{kernelshap.gam}
 \alias{kernelshap.Learner}
+\alias{kernelshap.train}
 \title{Kernel SHAP}
 \usage{
 kernelshap(object, ...)
@@ -71,11 +73,11 @@ kernelshap(object, ...)
   ...
 )
 
-\method{kernelshap}{ranger}(
+\method{kernelshap}{gam}(
   object,
   X,
   bg_X,
-  pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
+  pred_fun = stats::predict,
   bg_w = NULL,
   paired_sampling = TRUE,
   m = "auto",
@@ -100,11 +102,26 @@ kernelshap(object, ...)
   verbose = TRUE,
   ...
 )
+
+\method{kernelshap}{train}(
+  object,
+  X,
+  bg_X,
+  pred_fun = stats::predict,
+  bg_w = NULL,
+  paired_sampling = TRUE,
+  m = "auto",
+  exact = TRUE,
+  tol = 0.01,
+  max_iter = 250,
+  verbose = TRUE,
+  ...
+)
 }
 \arguments{
-\item{object}{Model object.}
+\item{object}{Fitted model object.}
 
-\item{...}{Additional arguments passed to \code{pred_fun()}.}
+\item{...}{Additional arguments passed to \code{pred_fun(object, X, ...)}.}
 
 \item{X}{A (n x p) matrix, data.frame, tibble or data.table of rows to be explained.
 Important: The columns should only represent model features, not the response.}
@@ -117,7 +134,8 @@ the order as they appear in \code{X}.}
 \item{pred_fun}{Prediction function of the form \code{function(object, X, ...)}
 providing K >= 1 numeric predictions per row. Its first argument represents the
 model \code{object}, its second argument a data structure like \code{X}. Additional
-arguments are passed via \code{...}.}
+arguments are passed via \code{...}. For some \code{object} classes, this
+function is automatically proposed. Otherwise, it must be specified.}
 
 \item{bg_w}{Optional vector of case weights for each row of \code{bg_X}.}
 
@@ -186,20 +204,17 @@ the criterion must be fulfilled for each dimension separately until iteration st
 
 \item \code{kernelshap(glm)}: Kernel SHAP method for "glm" models.
 
-\item \code{kernelshap(ranger)}: Kernel SHAP method for "ranger" models.
-
 \item \code{kernelshap(ranger)}: Kernel SHAP method for "ranger" models, see Readme for an example.
+
+\item \code{kernelshap(gam)}: Kernel SHAP method for "gam" models of the "mgcv" package,
+see Readme for an example.
 
 \item \code{kernelshap(Learner)}: Kernel SHAP method for "mlr3" models, see Readme for an example.
 
+\item \code{kernelshap(train)}: Kernel SHAP method for "caret" models, see Readme for an example.
+
 }}
 \examples{
-# Matrix input works as well, and pred_fun may contain preprocessing steps
-fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
-pred_fun <- function(fit, X) stats::predict(fit, as.data.frame(X))
-X <- data.matrix(iris[2:4])
-s <- kernelshap(fit, X[1:3, ], bg_X = X, pred_fun = pred_fun)
-s
 
 # A multiple linear regression
 fit <- stats::lm(Sepal.Length ~ ., data = iris)
@@ -211,6 +226,13 @@ fit <- stats::lm(
   as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris
 )
 s <- kernelshap(fit, iris[1:4, 3:5], bg_X = iris)
+s
+
+# Matrix input works as well, and pred_fun can be overwritten
+fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
+pred_fun <- function(fit, X) stats::predict(fit, as.data.frame(X))
+X <- data.matrix(iris[2:4])
+s <- kernelshap(fit, X[1:3, ], bg_X = X, pred_fun = pred_fun)
 s
 
 # Logistic regression
