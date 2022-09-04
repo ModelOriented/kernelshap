@@ -64,8 +64,6 @@ example below. Parallelization automatically disables the progress bar.}
 
 \item{verbose}{Set to \code{FALSE} to suppress messages, warnings, and the progress bar.}
 
-\item{seed}{Optional seed for reproducibility when \code{exact = FALSE}.}
-
 \item{...}{Currently unused.}
 }
 \value{

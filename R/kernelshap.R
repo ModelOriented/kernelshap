@@ -52,7 +52,6 @@
 #' to be explained. Must register backend beforehand, e.g. via \code{doMC}. See
 #' example below. Parallelization automatically disables the progress bar.
 #' @param verbose Set to \code{FALSE} to suppress messages, warnings, and the progress bar.
-#' @param seed Optional seed for reproducibility when \code{exact = FALSE}.
 #' @param ... Currently unused.
 #' @return An object of class "kernelshap" with the following components:
 #' \itemize{
@@ -65,7 +64,7 @@
 #'   \item \code{converged}: Logical vector of length n indicating convergence per row of \code{X}.
 #' }
 #' @export
-#' @import foreach
+#' @import doRNG
 #' @references
 #' \enumerate{
 #'   \item Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value Estimation Using Linear Regression. Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.
@@ -157,7 +156,7 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
   
   # Real work: apply Kernel SHAP to each row of X
   if (isTRUE(parallel)) {
-    res <- foreach(i = seq_len(n)) %dopar% kernelshap_one(
+    res <- foreach(i = seq_len(n)) %dorng% kernelshap_one(
       X = X[rep(i, times = nrow(bg_Xm)), , drop = FALSE],
       pred_fun = pred_fun, 
       bg_X = bg_Xm, 
@@ -168,8 +167,7 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
       m = m,
       exact = exact,
       tol = tol,
-      max_iter = max_iter, 
-      seed = ifelse(is.null(seed), NA, seed + i)
+      max_iter = max_iter
     )
   } else {
     if (verbose && n >= 2L) {
@@ -188,8 +186,7 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
         m = m,
         exact = exact,
         tol = tol,
-        max_iter = max_iter, 
-        seed = ifelse(is.null(seed), NA, seed + i)
+        max_iter = max_iter
       )
       if (verbose && n >= 2L) {
         utils::setTxtProgressBar(pb, i)
@@ -216,7 +213,7 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
 
 # Kernel SHAP algorithm for a single row x with paired sampling
 kernelshap_one <- function(X, pred_fun, bg_X, bg_w, v0, v1, 
-                           paired, m, exact, tol, max_iter, seed) {
+                           paired, m, exact, tol, max_iter) {
   p <- ncol(X)
   est_m = list()
   converged <- FALSE
@@ -233,7 +230,7 @@ kernelshap_one <- function(X, pred_fun, bg_X, bg_w, v0, v1,
     if (exact) {
       Z <- Z_exact[[p]]
     } else {
-      Z <- sample_Z(m = m, p = p, seed = seed)
+      Z <- sample_Z(m = m, p = p)
       if (paired) {
         Z <- rbind(Z, 1 - Z)
       }
