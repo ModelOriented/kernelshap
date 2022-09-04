@@ -2,18 +2,26 @@
 
 ## Breaking change
 
-The interface of `kernelshap()` is now more natural and user-friendly:
+The interface of `kernelshap()` has been revised. Instead of specifying a predition function, it suffices now to pass the fitted model object. The default `pred_fun` is now `stats::predict`, which works in most cases. Some other cases are catched via model class ("ranger" and mlr3 "Learner"s). The `pred_fun` can be overwritten by a function of the form `function(object, X, ...)`.
 
-The old signature 
+Example: Logistic regression with predictions on logit scale
+
 ```
-kernelshap(X, pred_fun = function(X) predict(object, X), bg_X)
-``` 
-has been replaced by object oriented dispatch on the fitted model `object`: 
-```
-kernelshap(object, X, bg_X, pred_fun = function(object, X, ...))
+kernelshap(fit, X, bg_X)
 ```
 
-For some model classes (lm, glm, gam, ranger, caret, mlr3), the `pred_fun` is implied by the class (but can be overwritten). Additional arguments to `pred_fun` can be passed via `...` of `kernelshap()`.
+Example: Logistic regression with predictions on probability scale
+
+```
+kernelshap(fit, X, bg_X, type = "response")
+```
+
+Example: Log-linear regression to be evaluated on original scale.
+Here, the default predict function needs to be overwritten:
+
+```
+kernelshap(fit, X, bg_X, pred_fun = function(m, X) exp(predict(m, X)))
+```
 
 ## Major improvements
 

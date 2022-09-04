@@ -18,10 +18,13 @@ The main function `kernelshap()` has four key arguments:
 It should contain the same columns as `X`. A good size is around 50 to 200 rows.
 Columns not in `X` are silently dropped and the columns are arranged into
 the order as they appear in `X`.
-- `pred_fun`: Prediction function of the form `function(object, X, ...)`
+- `pred_fun`: Prediction function of the form `function(object, X, ...)`,
 providing K >= 1 numeric predictions per row. Its first argument represents the
-model `object`, its second argument a data structure like `X`. Additional
-arguments are passed via `...`. For some `object` classes ("lm", "glm", "gam", "ranger", "caret", "mlr3"), this function is automatically proposed. Otherwise, it must be specified.
+model `object`, its second argument a data structure like `X`.
+(The names of the first two arguments do not matter.) Additional (named)
+arguments are passed via `...`. The default, `stats::predict`, will
+work in most cases. Some exceptions (classes "ranger" and mlr3 "Learner")
+are handled separately. In other cases, the function must be specified manually.
 
 Additional arguments of `kernelshap()` can be used to control details of the algorithm. Usually, the defaults do not need to be touched.
 
@@ -120,11 +123,10 @@ model %>%
   )
 
 X <- data.matrix(iris[2:4])
-pred_fun <- function(m, X) predict(m, X, batch_size = nrow(X))
 
 # Crunch SHAP values (8 seconds)
 system.time(
-  s <- kernelshap(model, X, pred_fun = pred_fun, bg_X = X)
+  s <- kernelshap(model, X, pred_fun = pred_fun, bg_X = X, batch_size = 200)
 )
 
 # Plot with shapviz (results depend on neural net seed)

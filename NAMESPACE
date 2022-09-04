@@ -2,11 +2,7 @@
 
 S3method(kernelshap,Learner)
 S3method(kernelshap,default)
-S3method(kernelshap,gam)
-S3method(kernelshap,glm)
-S3method(kernelshap,lm)
 S3method(kernelshap,ranger)
-S3method(kernelshap,train)
 S3method(ks_extract,default)
 S3method(ks_extract,kernelshap)
 S3method(print,kernelshap)

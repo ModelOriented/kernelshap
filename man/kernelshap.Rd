@@ -3,47 +3,13 @@
 \name{kernelshap}
 \alias{kernelshap}
 \alias{kernelshap.default}
-\alias{kernelshap.lm}
-\alias{kernelshap.glm}
 \alias{kernelshap.ranger}
-\alias{kernelshap.gam}
 \alias{kernelshap.Learner}
-\alias{kernelshap.train}
 \title{Kernel SHAP}
 \usage{
 kernelshap(object, ...)
 
 \method{kernelshap}{default}(
-  object,
-  X,
-  bg_X,
-  pred_fun,
-  bg_w = NULL,
-  paired_sampling = TRUE,
-  m = "auto",
-  exact = TRUE,
-  tol = 0.01,
-  max_iter = 250,
-  verbose = TRUE,
-  ...
-)
-
-\method{kernelshap}{lm}(
-  object,
-  X,
-  bg_X,
-  pred_fun = stats::predict,
-  bg_w = NULL,
-  paired_sampling = TRUE,
-  m = "auto",
-  exact = TRUE,
-  tol = 0.01,
-  max_iter = 250,
-  verbose = TRUE,
-  ...
-)
-
-\method{kernelshap}{glm}(
   object,
   X,
   bg_X,
@@ -73,41 +39,11 @@ kernelshap(object, ...)
   ...
 )
 
-\method{kernelshap}{gam}(
-  object,
-  X,
-  bg_X,
-  pred_fun = stats::predict,
-  bg_w = NULL,
-  paired_sampling = TRUE,
-  m = "auto",
-  exact = TRUE,
-  tol = 0.01,
-  max_iter = 250,
-  verbose = TRUE,
-  ...
-)
-
 \method{kernelshap}{Learner}(
   object,
   X,
   bg_X,
-  pred_fun = function(m, X, ...) m$predict_newdata(X)$response,
-  bg_w = NULL,
-  paired_sampling = TRUE,
-  m = "auto",
-  exact = TRUE,
-  tol = 0.01,
-  max_iter = 250,
-  verbose = TRUE,
-  ...
-)
-
-\method{kernelshap}{train}(
-  object,
-  X,
-  bg_X,
-  pred_fun = stats::predict,
+  pred_fun = function(m, X) m$predict_newdata(X)$response,
   bg_w = NULL,
   paired_sampling = TRUE,
   m = "auto",
@@ -131,11 +67,13 @@ It should contain the same columns as \code{X}. A good size is around 50 to 200 
 Columns not in \code{X} are silently dropped and the columns are arranged into
 the order as they appear in \code{X}.}
 
-\item{pred_fun}{Prediction function of the form \code{function(object, X, ...)}
+\item{pred_fun}{Prediction function of the form \code{function(object, X, ...)},
 providing K >= 1 numeric predictions per row. Its first argument represents the
-model \code{object}, its second argument a data structure like \code{X}. Additional
-arguments are passed via \code{...}. For some \code{object} classes, this
-function is automatically proposed. Otherwise, it must be specified.}
+model \code{object}, its second argument a data structure like \code{X}.
+(The names of the first two arguments do not matter.) Additional (named)
+arguments are passed via \code{...}. The default, \code{stats::predict}, will
+work in most cases. Some exceptions (classes "ranger" and mlr3 "Learner")
+are handled separately. In other cases, the function must be specified manually.}
 
 \item{bg_w}{Optional vector of case weights for each row of \code{bg_X}.}
 
@@ -200,18 +138,9 @@ the criterion must be fulfilled for each dimension separately until iteration st
 \itemize{
 \item \code{kernelshap(default)}: Default Kernel SHAP method.
 
-\item \code{kernelshap(lm)}: Kernel SHAP method for "lm" models.
-
-\item \code{kernelshap(glm)}: Kernel SHAP method for "glm" models.
-
 \item \code{kernelshap(ranger)}: Kernel SHAP method for "ranger" models, see Readme for an example.
 
-\item \code{kernelshap(gam)}: Kernel SHAP method for "gam" models of the "mgcv" package,
-see Readme for an example.
-
 \item \code{kernelshap(Learner)}: Kernel SHAP method for "mlr3" models, see Readme for an example.
-
-\item \code{kernelshap(train)}: Kernel SHAP method for "caret" models, see Readme for an example.
 
 }}
 \examples{
@@ -233,6 +162,7 @@ pred_fun <- function(fit, X) stats::predict(fit, as.data.frame(X))
 X <- data.matrix(iris[2:4])
 s <- kernelshap(fit, X[1:3, ], bg_X = X, pred_fun = pred_fun)
 s
+
 # Logistic regression
 fit <- stats::glm(
   I(Species == "virginica") ~ Sepal.Length + Sepal.Width, 

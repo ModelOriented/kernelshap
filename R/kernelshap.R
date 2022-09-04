@@ -25,11 +25,13 @@
 #' It should contain the same columns as \code{X}. A good size is around 50 to 200 rows.
 #' Columns not in \code{X} are silently dropped and the columns are arranged into
 #' the order as they appear in \code{X}.
-#' @param pred_fun Prediction function of the form \code{function(object, X, ...)} 
+#' @param pred_fun Prediction function of the form \code{function(object, X, ...)},
 #' providing K >= 1 numeric predictions per row. Its first argument represents the
-#' model \code{object}, its second argument a data structure like \code{X}. Additional
-#' arguments are passed via \code{...}. For some \code{object} classes, this
-#' function is automatically proposed. Otherwise, it must be specified.
+#' model \code{object}, its second argument a data structure like \code{X}. 
+#' (The names of the first two arguments do not matter.) Additional (named)
+#' arguments are passed via \code{...}. The default, \code{stats::predict}, will
+#' work in most cases. Some exceptions (classes "ranger" and mlr3 "Learner")
+#' are handled separately. In other cases, the function must be specified manually.
 #' @param bg_w Optional vector of case weights for each row of \code{bg_X}.
 #' @param paired_sampling Logical flag indicating whether to use paired sampling.
 #' The default is \code{TRUE}. This means that with every feature subset S,
@@ -86,7 +88,7 @@
 #' X <- data.matrix(iris[2:4])
 #' s <- kernelshap(fit, X[1:3, ], bg_X = X, pred_fun = pred_fun)
 #' s
-
+#'
 #' # Logistic regression
 #' fit <- stats::glm(
 #'   I(Species == "virginica") ~ Sepal.Length + Sepal.Width, 
@@ -107,7 +109,7 @@ kernelshap <- function(object, ...){
 
 #' @describeIn kernelshap Default Kernel SHAP method.
 #' @export
-kernelshap.default <- function(object, X, bg_X, pred_fun, bg_w = NULL, 
+kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w = NULL, 
                                paired_sampling = TRUE, m = "auto", exact = TRUE, 
                                tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
   stopifnot(
@@ -207,48 +209,6 @@ kernelshap.default <- function(object, X, bg_X, pred_fun, bg_w = NULL,
   out
 }
 
-#' @describeIn kernelshap Kernel SHAP method for "lm" models.
-#' @export
-kernelshap.lm <- function(object, X, bg_X, pred_fun = stats::predict, bg_w = NULL, 
-                          paired_sampling = TRUE, m = "auto", exact = TRUE, 
-                          tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
-  kernelshap.default(
-    object = object, 
-    X = X, 
-    bg_X = bg_X, 
-    pred_fun = pred_fun, 
-    bg_w = bg_w, 
-    paired_sampling = paired_sampling, 
-    m = m, 
-    exact = exact, 
-    tol = tol, 
-    max_iter = max_iter,
-    verbose = verbose, 
-    ...
-  )
-}
-
-#' @describeIn kernelshap Kernel SHAP method for "glm" models.
-#' @export
-kernelshap.glm <- function(object, X, bg_X, pred_fun = stats::predict, bg_w = NULL, 
-                           paired_sampling = TRUE, m = "auto", exact = TRUE, 
-                           tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
-  kernelshap.default(
-    object = object, 
-    X = X, 
-    bg_X = bg_X, 
-    pred_fun = pred_fun, 
-    bg_w = bg_w, 
-    paired_sampling = paired_sampling, 
-    m = m, 
-    exact = exact, 
-    tol = tol, 
-    max_iter = max_iter,
-    verbose = verbose, 
-    ...
-  )
-}
-
 #' @describeIn kernelshap Kernel SHAP method for "ranger" models, see Readme for an example.
 #' @export
 kernelshap.ranger <- function(object, X, bg_X,
@@ -272,60 +232,13 @@ kernelshap.ranger <- function(object, X, bg_X,
   )
 }
 
-#' @describeIn kernelshap Kernel SHAP method for "gam" models of the "mgcv" package,
-#' see Readme for an example.
-#' @export
-kernelshap.gam <- function(object, X, bg_X,
-                           pred_fun = stats::predict, 
-                           bg_w = NULL, 
-                           paired_sampling = TRUE, m = "auto", exact = TRUE, 
-                           tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
-  kernelshap.default(
-    object = object, 
-    X = X, 
-    bg_X = bg_X, 
-    pred_fun = pred_fun, 
-    bg_w = bg_w, 
-    paired_sampling = paired_sampling, 
-    m = m, 
-    exact = exact, 
-    tol = tol, 
-    max_iter = max_iter,
-    verbose = verbose, 
-    ...
-  )
-}
-
 #' @describeIn kernelshap Kernel SHAP method for "mlr3" models, see Readme for an example.
 #' @export
 kernelshap.Learner <- function(object, X, bg_X,
-                               pred_fun = function(m, X, ...) m$predict_newdata(X)$response, 
+                               pred_fun = function(m, X) m$predict_newdata(X)$response, 
                                bg_w = NULL, 
                                paired_sampling = TRUE, m = "auto", exact = TRUE, 
                                tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
-  kernelshap.default(
-    object = object, 
-    X = X, 
-    bg_X = bg_X, 
-    pred_fun = pred_fun, 
-    bg_w = bg_w, 
-    paired_sampling = paired_sampling, 
-    m = m, 
-    exact = exact, 
-    tol = tol, 
-    max_iter = max_iter,
-    verbose = verbose, 
-    ...
-  )
-}
-
-#' @describeIn kernelshap Kernel SHAP method for "caret" models, see Readme for an example.
-#' @export
-kernelshap.train <- function(object, X, bg_X,
-                             pred_fun = stats::predict, 
-                             bg_w = NULL, 
-                             paired_sampling = TRUE, m = "auto", exact = TRUE, 
-                             tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
   kernelshap.default(
     object = object, 
     X = X, 
