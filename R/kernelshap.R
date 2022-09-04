@@ -21,10 +21,10 @@
 #' @param object Fitted model object.
 #' @param X A (n x p) matrix, data.frame, tibble or data.table of rows to be explained. 
 #' Important: The columns should only represent model features, not the response.
-#' @param bg_X Background data used to integrate out "switched off" features. 
-#' It should contain the same columns as \code{X}. A good size is around 50 to 200 rows.
-#' Columns not in \code{X} are silently dropped and the columns are arranged into
-#' the order as they appear in \code{X}.
+#' @param bg_X Background data used to integrate out "switched off" features, 
+#' often a subset of the training data (around 100 to 200 rows)
+#' It should contain the same columns as \code{X}. Columns not in \code{X} are silently 
+#' dropped and the columns are arranged into the order as they appear in \code{X}.
 #' @param pred_fun Prediction function of the form \code{function(object, X, ...)},
 #' providing K >= 1 numeric predictions per row. Its first argument represents the
 #' model \code{object}, its second argument a data structure like \code{X}. 

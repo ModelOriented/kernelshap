@@ -172,10 +172,10 @@ check_pred <- function(x, n) {
 # Informative warning if background data is small or large
 check_bg_size <- function(n) {
   if (n > 1000L) {
-    warning("Your background data 'bg_X' is large, which will slow down the process. Consider using 50-200 rows.")
+    warning("Your background data 'bg_X' is large, which will slow down the process. Consider using 100-200 rows.")
   }
-  if (n < 10L) {
-    warning("Your background data 'bg_X' is small, which might lead to imprecise SHAP values. Consider using 50-200 rows.")
+  if (n < 20L) {
+    warning("Your background data 'bg_X' is small, which might lead to imprecise SHAP values. Consider using 100-200 rows.")
   }
 }
 

@@ -14,8 +14,9 @@ The main function `kernelshap()` has four key arguments:
 
 - `object`: Fitted model object.
 - `X`: A (n x p) `matrix`, `data.frame`, `tibble` or `data.table` of rows to be explained. Important: The columns should only represent model features, not the response.
-- `bg_X`: Background data used to integrate out "switched off" features. 
-It should contain the same columns as `X`. A good size is around 50 to 200 rows.
+- `bg_X`: Background data used to integrate out "switched off" features, 
+often a subset of the training data (around 100 to 200 rows).
+It should contain the same columns as \code{X}.
 Columns not in `X` are silently dropped and the columns are arranged into
 the order as they appear in `X`.
 - `pred_fun`: Prediction function of the form `function(object, X, ...)`,
