@@ -33,6 +33,18 @@ ks2
 # [1,] -2.09368837 -0.2875728 0.1165124  0.01496767
 # [2,]  0.01148493 -0.1191795 0.1115798 -0.02016471
 
+# Using parallel backend (2 seconds)
+library("doFuture")
+
+registerDoFuture()
+plan(multisession, workers = 4)  ## Windows
+# plan(multicore, workers = 4)   ## Linux, macOS, Solaris
+
+system.time(
+  ks3 <- kernelshap(fit, X_small, bg_X = X_small, parallel = TRUE)  
+)
+ks3
+
 library(shapviz)
 sv <- shapviz(ks)
 sv_dependence(sv, "carat", "auto")

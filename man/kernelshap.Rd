@@ -20,6 +20,7 @@ kernelshap(object, ...)
   exact = TRUE,
   tol = 0.01,
   max_iter = 250,
+  parallel = FALSE,
   verbose = TRUE,
   ...
 )
@@ -99,6 +100,10 @@ on the same scale.}
 
 \item{max_iter}{If the stopping criterion (see \code{tol}) is not reached after
 \code{max_iter} iterations, the algorithm stops.}
+
+\item{parallel}{If \code{TRUE}, use parallel \code{foreach} to loop over rows
+to be explained. Must register backend beforehand, e.g. via \code{doFuture},
+see Readme for an example. Parallelization automatically disables the progress bar.}
 
 \item{verbose}{Set to \code{FALSE} to suppress messages, warnings, and the progress bar.}
 }
