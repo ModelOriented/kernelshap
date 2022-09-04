@@ -134,7 +134,7 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
     return(case_p1(n = n, nms = nms, v0 = v0, v1 = v1, X = X))
   }
   
-  # Calculate m
+  # Calculate m, S, probs
   if (exact && p <= length(Z_exact)) {
     if (verbose) {
       message("Calculating exact Kernel SHAP values")
@@ -150,6 +150,8 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
   if (m == "auto") {
     m <- max(trunc(20 * sqrt(p)), 5L * p)
   }
+  S <- 1:(d - 1)
+  probs <- (d - 1) / (choose(d, S) * S * (d - S))
   
   # Allocate replicated version of the background data
   bg_Xm <- bg_X[rep(seq_len(bg_n), times = m * (1L + paired_sampling)), , drop = FALSE]
@@ -165,6 +167,8 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
       v1 = v1[i, , drop = FALSE],
       paired = paired_sampling,
       m = m,
+      S = S,
+      probs = probs,
       exact = exact,
       tol = tol,
       max_iter = max_iter
@@ -184,6 +188,8 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
         v1 = v1[i, , drop = FALSE],
         paired = paired_sampling,
         m = m,
+        S = S,
+        probs = probs,
         exact = exact,
         tol = tol,
         max_iter = max_iter
@@ -213,7 +219,7 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
 
 # Kernel SHAP algorithm for a single row x with paired sampling
 kernelshap_one <- function(X, pred_fun, bg_X, bg_w, v0, v1, 
-                           paired, m, exact, tol, max_iter) {
+                           paired, m, S, probs, exact, tol, max_iter) {
   p <- ncol(X)
   est_m = list()
   converged <- FALSE
@@ -230,7 +236,7 @@ kernelshap_one <- function(X, pred_fun, bg_X, bg_w, v0, v1,
     if (exact) {
       Z <- Z_exact[[p]]
     } else {
-      Z <- sample_Z(m = m, p = p)
+      Z <- sample_Z(S, m, probs)
       if (paired) {
         Z <- rbind(Z, 1 - Z)
       }
