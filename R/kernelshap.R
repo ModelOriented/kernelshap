@@ -150,8 +150,8 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
   if (m == "auto") {
     m <- max(trunc(20 * sqrt(p)), 5L * p)
   }
-  S <- 1:(d - 1)
-  probs <- (d - 1) / (choose(d, S) * S * (d - S))
+  S <- 1:(p - 1)
+  probs <- (p - 1) / (choose(p, S) * S * (p - S))
   
   # Allocate replicated version of the background data
   bg_Xm <- bg_X[rep(seq_len(bg_n), times = m * (1L + paired_sampling)), , drop = FALSE]
