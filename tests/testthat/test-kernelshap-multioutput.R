@@ -9,16 +9,13 @@ Y <- as.matrix(iris[, c("Sepal.Length", "Sepal.Width")])
 fity <- stats::lm(y ~ poly(Petal.Width, 2) * Species, data = iris)
 fitY <- stats::lm(Y ~ poly(Petal.Width, 2) * Species, data = iris)
 
-pred_funy <- function(X) stats::predict(fity, X)
-pred_funY <- function(X) stats::predict(fitY, X)
-
 x <- c("Petal.Width", "Species")
 
-predsy <- unname(pred_funy(iris))
-predsY <- unname(pred_funY(iris))
+predsy <- unname(stats::predict(fity, iris))
+predsY <- unname(stats::predict(fitY, iris))
 
-sy <- kernelshap(iris[1:5, x], pred_fun = pred_funy, bg_X = iris[, x])
-sY <- kernelshap(iris[1:5, x], pred_fun = pred_funY, bg_X = iris[, x])
+sy <- kernelshap(fity, iris[1:5, x], bg_X = iris[, x])
+sY <- kernelshap(fitY, iris[1:5, x], bg_X = iris[, x])
 
 test_that("Baseline equals average prediction on background data", {
   expect_equal(sY$baseline, unname(colMeans(Y)))
@@ -35,7 +32,7 @@ test_that("First dimension of multioutput model equals single output (approx)", 
 })
 
 test_that("Decomposing a single row works", {
-  sY <- kernelshap(iris[1L, x], pred_fun = pred_funY, bg_X = iris[, x])
+  sY <- kernelshap(fitY, iris[1L, x], bg_X = iris[, x])
   
   expect_equal(sY$baseline, unname(colMeans(Y)))
   expect_equal(rowSums(sY$S[[1L]]) + sY$baseline[1L], predsY[1L, 1L])
@@ -44,10 +41,10 @@ test_that("Decomposing a single row works", {
 
 fitY <- stats::lm(Y ~ stats::poly(Petal.Width, 2), data = iris)
 x <- "Petal.Width"
-predsY <- unname(pred_funY(iris[x]))
+predsY <- unname(stats::predict(fitY, iris[x]))
 
 test_that("Special case p = 1 works", {
-  sY <- kernelshap(iris[1:5, x, drop = FALSE], pred_fun = pred_funY, bg_X = iris[x])
+  sY <- kernelshap(fitY, iris[1:5, x, drop = FALSE], bg_X = iris[x])
   
   expect_equal(sY$baseline, unname(colMeans(Y)))
   expect_equal(unname(rowSums(sY$S[[2L]]) + sY$baseline[2L]), predsY[1:5, 2L])
@@ -56,9 +53,9 @@ test_that("Special case p = 1 works", {
 
 fitY <- stats::lm(Y ~ Petal.Length + Petal.Width, data = iris[1:4])
 X <- data.matrix(iris[2:4])
-pred_fun2 <- function(X) stats::predict(fitY, as.data.frame(X))
-predsY <- unname(pred_fun2(X))
-sY <- kernelshap(X[1:3, ], pred_fun = pred_fun2, X)
+pred_fun <- function(fit, X) stats::predict(fit, as.data.frame(X))
+predsY <- unname(pred_fun(fitY, X))
+sY <- kernelshap(fitY, X[1:3, ], pred_fun = pred_fun, bg_X = X)
 
 test_that("Matrix input is fine", {
   expect_true(is.kernelshap(sY))
@@ -71,9 +68,13 @@ fitY <- stats::lm(
   Y ~ poly(Petal.Width, 2) * Species, data = iris, weights = Petal.Length
 )
 x <- c("Petal.Width", "Species")
-predsY <- unname(pred_funY(iris))
+predsY <- unname(stats::predict(fitY, iris))
 sY <- kernelshap(
-  iris[5:10, x], pred_fun = pred_funY, bg_X = iris[, x], bg_w = iris$Petal.Length
+  fitY, 
+  iris[5:10, x], 
+  pred_fun = stats::predict, 
+  bg_X = iris[, x], 
+  bg_w = iris$Petal.Length
 )
 
 test_that("Baseline equals weighted average prediction on background data", {

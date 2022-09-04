@@ -1,15 +1,15 @@
 #' Prints "kernelshap" Object
 #'
 #' @param x An object of class "kernelshap".
-#' @param compact Set to \code{TRUE} to hide printing the top n SHAP values, standard errors and feature values. 
+#' @param compact Set to \code{TRUE} to hide printing the top n SHAP values, 
+#' standard errors and feature values. 
 #' @param n Maximum number of rows of SHAP values, standard errors and feature values to print.
 #' @param ... Further arguments passed from other methods.
 #' @return Invisibly, the input is returned.
 #' @export
 #' @examples
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
-#' pred_fun <- function(X) stats::predict(fit, X)
-#' s <- kernelshap(iris[1:3, -1], pred_fun = pred_fun, iris[-1])
+#' s <- kernelshap(fit, iris[1:3, -1], bg_X = iris[-1])
 #' s
 #' @seealso \code{\link{kernelshap}}.
 print.kernelshap <- function(x, compact = FALSE, n = 2L, ...) {
@@ -50,12 +50,12 @@ print.kernelshap <- function(x, compact = FALSE, n = 2L, ...) {
 #' Is object of class "kernelshap"?
 #'
 #' @param object An R object.
-#' @return Returns \code{TRUE} if \code{object} has "\code{kernelshap}" among its classes, and \code{FALSE} otherwise.
+#' @return Returns \code{TRUE} if \code{object} has "\code{kernelshap}" among its classes, 
+#' and \code{FALSE} otherwise.
 #' @export
 #' @examples
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
-#' pred_fun <- function(X) stats::predict(fit, X)
-#' s <- kernelshap(iris[1:2, -1], pred_fun = pred_fun, iris[-1])
+#' s <- kernelshap(fit, iris[1:2, -1], bg_X = iris[-1])
 #' is.kernelshap(s)
 #' is.kernelshap("a")
 is.kernelshap <- function(object){
@@ -79,10 +79,11 @@ ks_extract <- function(object, ...){
 #' @export
 #' @examples
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
-#' pred_fun <- function(X) stats::predict(fit, X)
-#' s <- kernelshap(iris[1:2, -1], pred_fun = pred_fun, iris[-1])
+#' s <- kernelshap(fit, iris[1:2, -1], bg_X = iris[-1])
 #' ks_extract(s, what = "S")
-ks_extract.kernelshap = function(object, what = c("S", "X", "baseline", "SE", "n_iter", "converged"), ...) {
+ks_extract.kernelshap = function(object, 
+                                 what = c("S", "X", "baseline", "SE", "n_iter", "converged"), 
+                                 ...) {
   what <- match.arg(what)
   object[[what]]
 }

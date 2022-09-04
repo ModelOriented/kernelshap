@@ -1,36 +1,37 @@
 #' Kernel SHAP
 #'
-#' Implements a multidimensional version of the Kernel SHAP algorithm explained in detail in 
-#' Covert and Lee (2021). It is an iterative refinement of the original Kernel SHAP algorithm 
-#' of Lundberg and Lee (2017).
-#' The algorithm is applied to each row in \code{X}. Its behaviour depends on the number of features p:
+#' Implements a multidimensional version of the Kernel SHAP algorithm explained in 
+#' detail in Covert and Lee (2021). It is an iterative refinement of the original 
+#' Kernel SHAP algorithm of Lundberg and Lee (2017). The algorithm is applied to each 
+#' row in \code{X}. Its behaviour depends on the number of features p:
 #' \itemize{
-#'   \item 2 <= p <= 5: Exact Kernel SHAP values are returned. (Exact regarding the given background data.)
-#'   \item p > 5: Sampling version of Kernel SHAP. The algorithm iterates until Kernel SHAP values are sufficiently accurate. 
+#'   \item 2 <= p <= 5: Exact Kernel SHAP values are returned. 
+#'   (Exact regarding the given background data.)
+#'   \item p > 5: Sampling version of Kernel SHAP. 
+#'   The algorithm iterates until Kernel SHAP values are sufficiently accurate. 
 #'   Approximate standard errors of the SHAP values are returned. 
 #'   \item p = 1: Exact Shapley values are returned.
 #' }
 #' 
-#' \code{X} should only contain feature columns required by the
-#' prediction function \code{pred_fun}. The latter is a function taking
-#' a data structure like \code{X} or \code{bg_X} and providing K >= 1 numeric 
-#' predictions per row. The background data \code{bg_X} must contain the same column names
-#' as \code{X} (additional columns are silently dropped).
 #' During each iteration, \code{m} feature subsets are evaluated until the worst 
 #' standard error of the SHAP values is small enough relative to the range of the SHAP values. 
-#' This stopping criterion was suggested in Covert and Lee (2021). In the multioutput case,
+#' This stopping criterion was suggested in Covert and Lee (2021). In the multi-output case,
 #' the criterion must be fulfilled for each dimension separately until iteration stops.
+#'
+#' @param object Fitted model object.
 #' @param X A (n x p) matrix, data.frame, tibble or data.table of rows to be explained. 
 #' Important: The columns should only represent model features, not the response.
-#' @param pred_fun A function that takes a data structure like \code{X} 
-#' and provides K >= 1 numeric predictions per row.
-#' Example: If "fit" denotes a logistic regression fitted via \code{stats::glm}, 
-#' and SHAP values should be on the probability scale, then this argument is
-#' \code{function(X) predict(fit, X, type = "response")}.
-#' @param bg_X The background data used to integrate out "switched off" features. 
-#' It should contain the same columns as \code{X}. A good size is around 50 to 200 rows.
-#' Columns not in \code{X} are silently dropped and the columns are arranged into
-#' the order as they appear in \code{X}.
+#' @param bg_X Background data used to integrate out "switched off" features, 
+#' often a subset of the training data (around 100 to 200 rows)
+#' It should contain the same columns as \code{X}. Columns not in \code{X} are silently 
+#' dropped and the columns are arranged into the order as they appear in \code{X}.
+#' @param pred_fun Prediction function of the form \code{function(object, X, ...)},
+#' providing K >= 1 numeric predictions per row. Its first argument represents the
+#' model \code{object}, its second argument a data structure like \code{X}. 
+#' (The names of the first two arguments do not matter.) Additional (named)
+#' arguments are passed via \code{...}. The default, \code{stats::predict}, will
+#' work in most cases. Some exceptions (classes "ranger" and mlr3 "Learner")
+#' are handled separately. In other cases, the function must be specified manually.
 #' @param bg_w Optional vector of case weights for each row of \code{bg_X}.
 #' @param paired_sampling Logical flag indicating whether to use paired sampling.
 #' The default is \code{TRUE}. This means that with every feature subset S,
@@ -46,10 +47,12 @@
 #' max(sigma_n) / diff(range(beta_n)) < tol, where the beta_n are the SHAP values 
 #' of a given observation and sigma_n their standard errors. For multidimensional
 #' predictions, the criterion must be satisfied for each dimension separately.
+#' The stopping criterion uses the fact that standard errors and SHAP values are all
+#' on the same scale.
 #' @param max_iter If the stopping criterion (see \code{tol}) is not reached after 
-#' \code{max_iter} iterations, then the algorithm stops.
+#' \code{max_iter} iterations, the algorithm stops.
 #' @param verbose Set to \code{FALSE} to suppress messages, warnings, and the progress bar.
-#' @param ... Currently unused.
+#' @param ... Additional arguments passed to \code{pred_fun(object, X, ...)}.
 #' @return An object of class "kernelshap" with the following components:
 #' \itemize{
 #'   \item \code{S}: (n x p) matrix with SHAP values or, if the model output has dimension K > 1,
@@ -60,35 +63,55 @@
 #'   \item \code{n_iter}: Integer vector of length n providing the number of iterations per row of \code{X}.
 #'   \item \code{converged}: Logical vector of length n indicating convergence per row of \code{X}.
 #' }
-#' @export
 #' @references
 #' \enumerate{
 #'   \item Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value Estimation Using Linear Regression. Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.
 #'   \item Scott M. Lundberg and Su-In Lee. A Unified Approach to Interpreting Model Predictions. Advances in Neural Information Processing Systems 30, 2017.
 #'}
+#' @export
 #' @examples
+#' # Linear regression
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
-#' pred_fun <- function(X) stats::predict(fit, X)
-#' s <- kernelshap(iris[1:2, -1], pred_fun = pred_fun, iris[, -1])
+#' s <- kernelshap(fit, iris[1:2, -1], bg_X = iris[, -1])
 #' s
 #' 
-#' # Multioutput regression (or probabilistic classification)
+#' # Multivariate model
 #' fit <- stats::lm(
 #'   as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris
 #' )
-#' fit
-#' s <- kernelshap(iris[1:4, 3:5], pred_fun = pred_fun, iris[, 3:5])
+#' s <- kernelshap(fit, iris[1:4, 3:5], bg_X = iris)
+#' s
+#'
+#' # Matrix input works as well, and pred_fun can be overwritten
+#' fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
+#' pred_fun <- function(fit, X) stats::predict(fit, as.data.frame(X))
+#' X <- data.matrix(iris[2:4])
+#' s <- kernelshap(fit, X[1:3, ], bg_X = X, pred_fun = pred_fun)
+#' s
+#'
+#' # Logistic regression
+#' fit <- stats::glm(
+#'   I(Species == "virginica") ~ Sepal.Length + Sepal.Width, 
+#'   data = iris, 
+#'   family = binomial
+#' )
+#' 
+#' # On scale of linear predictor
+#' s <- kernelshap(fit, iris[1:2], bg_X = iris[1:2])
 #' s
 #' 
-#' # Matrix input works as well, and pred_fun may contain preprocessing steps
-#' fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
-#' pred_fun <- function(X) stats::predict(fit, as.data.frame(X))
-#' X <- data.matrix(iris[2:4])
-#' s <- kernelshap(X[1:3, ], pred_fun = pred_fun, X)
+#' # On scale of response (probability)
+#' s <- kernelshap(fit, iris[1:2], bg_X = iris[1:2], type = "response")
 #' s
-kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL, 
-                       paired_sampling = TRUE, m = "auto", exact = TRUE, 
-                       tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
+kernelshap <- function(object, ...){
+  UseMethod("kernelshap")
+}
+
+#' @describeIn kernelshap Default Kernel SHAP method.
+#' @export
+kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w = NULL, 
+                               paired_sampling = TRUE, m = "auto", exact = TRUE, 
+                               tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
   stopifnot(
     is.matrix(X) || is.data.frame(X),
     is.matrix(bg_X) || is.data.frame(bg_X),
@@ -111,9 +134,9 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
   
   # Calculate v0 and v1
   bg_X <- bg_X[, colnames(X), drop = FALSE]
-  bg_preds <- check_pred(pred_fun(bg_X), n = bg_n)
-  v0 <- weighted_colMeans(bg_preds, bg_w)  # Average pred of background data: 1 x K
-  v1 <- check_pred(pred_fun(X), n = n)     # Predictions on X:                n x K
+  bg_preds <- check_pred(pred_fun(object, bg_X, ...), n = bg_n)
+  v0 <- weighted_colMeans(bg_preds, bg_w)            # Average pred of bg data: 1 x K
+  v1 <- check_pred(pred_fun(object, X, ...), n = n)  # Predictions on X:        n x K
   
   # For p = 1, exact Shapley values are returned
   if (p == 1L) {
@@ -150,9 +173,10 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
   res <- vector("list", n)
   for (i in seq_len(n)) {
     res[[i]] <- kernelshap_one(
+      object = object,
       X = X[rep(i, times = nrow(bg_Xm)), , drop = FALSE],
-      pred_fun = pred_fun, 
-      bg_X = bg_Xm, 
+      bg_X = bg_Xm,
+      pred_fun = pred_fun,
       bg_w = bg_w, 
       v0 = v0,
       v1 = v1[i, , drop = FALSE],
@@ -160,7 +184,8 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
       m = m,
       exact = exact,
       tol = tol,
-      max_iter = max_iter
+      max_iter = max_iter,
+      ...
     )
     if (verbose && n >= 2L) {
       utils::setTxtProgressBar(pb, i)
@@ -184,52 +209,49 @@ kernelshap <- function(X, pred_fun, bg_X, bg_w = NULL,
   out
 }
 
-# Kernel SHAP algorithm for a single row x with paired sampling
-kernelshap_one <- function(X, pred_fun, bg_X, bg_w, v0, v1, 
-                           paired, m, exact, tol, max_iter) {
-  p <- ncol(X)
-  est_m = list()
-  converged <- FALSE
-  n_iter <- 0L
-  Asum <- matrix(0, nrow = p, ncol = p)                           #  (p x p)
-  bsum <- matrix(0, nrow = p, ncol = ncol(v0))                    #  (p x K)
-  n_Z <- m * (1L + paired)
-  v0_ext <- v0[rep(1L, n_Z), , drop = FALSE]                      #  (n_Z x K)
-  
-  while(!isTRUE(converged) && n_iter < max_iter) {
-    n_iter <- n_iter + 1L
-    
-    # Create Z matrix of dimension ->                             #  (n_Z x p)
-    if (exact) {
-      Z <- Z_exact[[p]]
-    } else {
-      Z <- sample_Z(m = m, p = p)
-      if (paired) {
-        Z <- rbind(Z, 1 - Z)
-      }
-    }
-    
-    # Calling get_vz() is expensive                               #  (n_Z x K)
-    vz <- get_vz(X = X, bg = bg_X, Z = Z, pred_fun = pred_fun, w = bg_w)
-    
-    # Least-squares with constraint that beta_1 + ... + beta_p = v_1 - v_0. 
-    # The additional constraint beta_0 = v_0 is dealt via offset
-    Atemp <- crossprod(Z) / n_Z                                   #  (p x p)
-    btemp <- crossprod(Z, (vz - v0_ext)) / n_Z                    #  (p x K)
-    Asum <- Asum + Atemp                                          #  (p x p)
-    bsum <- bsum + btemp                                          #  (p x K)
-    est_m[[n_iter]] <- R <- solver(Atemp, btemp, v1, v0)          #  (p x K)
-    
-    if (exact) {
-      return(list(beta = R, sigma = 0 * R, n_iter = 1L, converged = TRUE))
-    }
-    
-    # Covariance calculation would fail in the first iteration
-    if (n_iter >= 2L) {
-      beta_n <- solver(Asum / n_iter, bsum / n_iter, v1, v0)      #  (p x K)
-      sigma_n <- get_sigma(est_m, iter = n_iter)                  #  (p x K)
-      converged <- all(conv_crit(sigma_n, beta_n) < tol)
-    }
-  }
-  list(beta = beta_n, sigma = sigma_n, n_iter = n_iter, converged = converged)
+#' @describeIn kernelshap Kernel SHAP method for "ranger" models, see Readme for an example.
+#' @export
+kernelshap.ranger <- function(object, X, bg_X,
+                              pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions, 
+                              bg_w = NULL, 
+                              paired_sampling = TRUE, m = "auto", exact = TRUE, 
+                              tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
+  kernelshap.default(
+    object = object, 
+    X = X, 
+    bg_X = bg_X, 
+    pred_fun = pred_fun, 
+    bg_w = bg_w, 
+    paired_sampling = paired_sampling, 
+    m = m, 
+    exact = exact, 
+    tol = tol, 
+    max_iter = max_iter,
+    verbose = verbose, 
+    ...
+  )
 }
+
+#' @describeIn kernelshap Kernel SHAP method for "mlr3" models, see Readme for an example.
+#' @export
+kernelshap.Learner <- function(object, X, bg_X,
+                               pred_fun = function(m, X) m$predict_newdata(X)$response, 
+                               bg_w = NULL, 
+                               paired_sampling = TRUE, m = "auto", exact = TRUE, 
+                               tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
+  kernelshap.default(
+    object = object, 
+    X = X, 
+    bg_X = bg_X, 
+    pred_fun = pred_fun, 
+    bg_w = bg_w, 
+    paired_sampling = paired_sampling, 
+    m = m, 
+    exact = exact, 
+    tol = tol, 
+    max_iter = max_iter,
+    verbose = verbose, 
+    ...
+  )
+}
+
