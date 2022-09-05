@@ -1,6 +1,6 @@
 Package: kernelshap
 Title: Kernel SHAP
-Version: 0.1.900
+Version: 0.2.0
 Authors@R: c(
     person("Michael", "Mayer", , "mayermichael79@gmail.com", role = c("aut", "cre")),
     person("David", "Watson", , "david.s.watson11@gmail.com", role = "ctb")
@@ -13,9 +13,9 @@ Description: Multidimensional version of the iterative Kernel SHAP
     provides numeric predictions of dimension one or higher.  Examples
     include linear regression, logistic regression (logit or probability
     scale), other generalized linear models, generalized additive models,
-    and neural networks. The package plays well together with
-    meta-learning packages like 'caret' or 'mlr3'. Visualizations can be
-    done using the R package 'shapviz'.
+    and neural networks.  The package plays well together with
+    meta-learning packages like 'tidymodels', 'caret' or 'mlr3'.
+    Visualizations can be done using the R package 'shapviz'.
 License: GPL (>= 2)
 Depends: 
     R (>= 3.2.0)

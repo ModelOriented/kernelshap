@@ -15,15 +15,15 @@ library(usethis)
 use_description(
   fields = list(
     Title = "Kernel SHAP",
-    Version = "0.1.900",
+    Version = "0.2.0",
     Description = "Multidimensional version of the iterative Kernel SHAP algorithm described in
     Ian Covert and Su-In Lee (2021) <http://proceedings.mlr.press/v130/covert21a>. 
     SHAP values are calculated iteratively until convergence, along with approximate standard errors. 
     The package allows to work with any model that provides numeric predictions of dimension one or higher.
     Examples include linear regression, logistic regression (logit or probability scale),
-    other generalized linear models, generalized additive models, and 
-    neural networks. The package plays well together with meta-learning packages
-    like 'caret' or 'mlr3'. Visualizations can be done using the R package 'shapviz'.",
+    other generalized linear models, generalized additive models, and neural networks. 
+    The package plays well together with meta-learning packages like 'tidymodels', 'caret' or 'mlr3'. 
+    Visualizations can be done using the R package 'shapviz'.",
     `Authors@R` = "c(person('Michael', family = 'Mayer', role = c('aut', 'cre'), email = 'mayermichael79@gmail.com'),
        person('David', family = 'Watson', role = 'ctb', email = 'david.s.watson11@gmail.com'))",
     Depends = "R (>= 3.2.0)"

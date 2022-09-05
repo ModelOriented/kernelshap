@@ -157,6 +157,12 @@ reorganize_list <- function(alist, nms) {
 
 # Checks and reshapes predictions to (n x K) matrix
 check_pred <- function(x, n) {
+  if (!is.vector(x) && !is.matrix(x) && !is.data.frame(x)) {
+    stop("Predictions must be a vector, matrix, or data.frame")
+  }
+  if (is.data.frame(x)) {
+    x <- as.matrix(x)
+  }
   if (!is.numeric(x)) {
     stop("Predictions must be numeric")
   }
@@ -166,7 +172,7 @@ check_pred <- function(x, n) {
   if (length(x) == n) {
     return(matrix(x, nrow = n))
   }
-  stop("Predictions must be a length n vector or a matrix with n rows.")
+  stop("Predictions must be a length n vector or a matrix/data.frame with n rows.")
 }
 
 # Informative warning if background data is small or large
