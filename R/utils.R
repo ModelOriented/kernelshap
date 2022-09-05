@@ -61,13 +61,12 @@ solver <- function(A, b, v1, v0) {
 
 # m permutations distributed according to Kernel SHAP weights -> (m x p) matrix
 sample_Z <- function(m, p) {
-  if (p == 1L) {
-    stop("Sampling impossible for p = 1")
+  if (p < 2L) {
+    stop("Sampling impossible for p < 2")
   }
-  S <- 1:(p - 1)
+
   # First draw number of elements in S
-  probs <- (p - 1) / (choose(p, S) * S * (p - S))
-  len_S <- sample(S, m, replace = TRUE, prob = probs)
+  len_S <- sample(1:(p - 1L), m, replace = TRUE, prob = kernel_weights(p))
   
   # Then, conditional on that number, set random positions to 1
   # Can this be done without loop/vapply?
@@ -207,5 +206,15 @@ case_p1 <- function(n, nms, v0, v1, X) {
   )
   class(out) <- "kernelshap"
   out
+}
+
+# Kernel weights (renormalized without infinite weights for 0 and p)
+kernel_weights <- function(p) {
+  if (p < 2L) {
+    stop("p must be at least two")
+  }
+  S <- 1:(p - 1L)
+  probs <- (p - 1L) / (choose(p, S) * S * (p - S))
+  probs / sum(probs)
 }
 
