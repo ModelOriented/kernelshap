@@ -103,48 +103,64 @@ sv_dependence(shp, "Sepal.Length")
 
 ![](man/figures/README-glm-dep.svg)
 
-### Keras neural net
+### Probability random forest (multivariate predictions)
 
 ```r
+library(ranger)
 library(kernelshap)
-library(keras)
-library(shapviz)
 
-model <- keras_model_sequential()
-model %>% 
-  layer_dense(units = 6, activation = "tanh", input_shape = 3) %>% 
-  layer_dense(units = 1)
+set.seed(1)
+fit <- ranger(Species ~ ., data = iris, probability = TRUE)
 
-model %>% 
-  compile(loss = "mse", optimizer = optimizer_nadam(0.005))
+s <- kernelshap(fit, iris[c(1, 51, 101), -5], bg_X = iris)
+s
 
-model %>% 
-  fit(
-    x = data.matrix(iris[2:4]), 
-    y = iris[, 1],
-    epochs = 50,
-    batch_size = 30
-  )
-
-X <- data.matrix(iris[2:4])
-
-# Crunch SHAP values
-system.time(
-  s <- kernelshap(model, X, bg_X = X, batch_size = 1000)
-)
-
-# Plot with shapviz (results depend on neural net seed)
-shp <- shapviz(s)
-sv_waterfall(shp, 1)
-sv_importance(shp)
-sv_dependence(shp, "Petal.Length")
+# 'kernelshap' object representing 
+#   - 3 SHAP matrices of dimension 3 x 4 
+#   - feature data.frame/matrix of dimension 3 x 4 
+#   - baseline: 0.3332606 0.3347014 0.332038 
+#   - average iterations: 2 
+#   - rows not converged: 0
+# 
+# SHAP values of first 2 observations:
+# [[1]]
+#      Sepal.Length  Sepal.Width Petal.Length Petal.Width
+# [1,]   0.02299032  0.008345772    0.3168792   0.3185242
+# [2,]  -0.01479279 -0.002066122   -0.1585125  -0.1578892
+# 
+# [[2]]
+#      Sepal.Length  Sepal.Width Petal.Length Petal.Width
+# [1,]   0.00190803 -0.004574378   -0.1615047  -0.1705303
+# [2,]   0.02443698  0.006684421    0.3157610   0.2942638
+# 
+# [[3]]
+#      Sepal.Length  Sepal.Width Petal.Length Petal.Width
+# [1,] -0.024898347 -0.003771394   -0.1553745  -0.1479938
+# [2,] -0.009644196 -0.004618300   -0.1572485  -0.1363747
 ```
 
-![](man/figures/README-nn-waterfall.svg)
+### tidymodels
 
-![](man/figures/README-nn-imp.svg)
+```r
+library(tidymodels)
+library(kernelshap)
 
-![](man/figures/README-nn-dep.svg)
+iris_recipe <- iris %>%
+  recipe(Sepal.Length ~ .)
+
+reg <- linear_reg() %>%
+  set_engine("lm")
+  
+iris_wf <- workflow() %>%
+  add_recipe(iris_recipe) %>%
+  add_model(reg)
+
+fit <- iris_wf %>%
+  fit(iris)
+  
+ks <- kernelshap(fit, iris[, -1], bg_X = iris)
+ks
+```
 
 ### mlr3
 
@@ -188,47 +204,54 @@ sv_waterfall(sv, 1)
 
 ![](man/figures/README-caret-waterfall.svg)
 
-### Probability random forest (multivariate predictions)
+### Keras neural net
 
 ```r
-library(ranger)
 library(kernelshap)
+library(keras)
+library(shapviz)
 
-set.seed(1)
-fit <- ranger(Species ~ ., data = iris, probability = TRUE)
+model <- keras_model_sequential()
+model %>% 
+  layer_dense(units = 6, activation = "tanh", input_shape = 3) %>% 
+  layer_dense(units = 1)
 
-s <- kernelshap(fit, iris[c(1, 51, 101), -5], bg_X = iris)
-s
+model %>% 
+  compile(loss = "mse", optimizer = optimizer_nadam(0.005))
 
-# 'kernelshap' object representing 
-#   - 3 SHAP matrices of dimension 3 x 4 
-#   - feature data.frame/matrix of dimension 3 x 4 
-#   - baseline: 0.3332606 0.3347014 0.332038 
-#   - average iterations: 2 
-#   - rows not converged: 0
-# 
-# SHAP values of first 2 observations:
-# [[1]]
-#      Sepal.Length  Sepal.Width Petal.Length Petal.Width
-# [1,]   0.02299032  0.008345772    0.3168792   0.3185242
-# [2,]  -0.01479279 -0.002066122   -0.1585125  -0.1578892
-# 
-# [[2]]
-#      Sepal.Length  Sepal.Width Petal.Length Petal.Width
-# [1,]   0.00190803 -0.004574378   -0.1615047  -0.1705303
-# [2,]   0.02443698  0.006684421    0.3157610   0.2942638
-# 
-# [[3]]
-#      Sepal.Length  Sepal.Width Petal.Length Petal.Width
-# [1,] -0.024898347 -0.003771394   -0.1553745  -0.1479938
-# [2,] -0.009644196 -0.004618300   -0.1572485  -0.1363747
+model %>% 
+  fit(
+    x = data.matrix(iris[2:4]), 
+    y = iris[, 1],
+    epochs = 50,
+    batch_size = 30
+  )
+
+X <- data.matrix(iris[2:4])
+
+# Crunch SHAP values
+system.time(
+  s <- kernelshap(model, X, bg_X = X, batch_size = 1000)
+)
+
+# Plot with shapviz (results depend on neural net seed)
+shp <- shapviz(s)
+sv_waterfall(shp, 1)
+sv_importance(shp)
+sv_dependence(shp, "Petal.Length")
 ```
+
+![](man/figures/README-nn-waterfall.svg)
+
+![](man/figures/README-nn-imp.svg)
+
+![](man/figures/README-nn-dep.svg)
 
 ## Parallel computing
 
 As long as you have set up a parallel processing backend, parallel computing is supported via `foreach` and `%dorng`. The latter ensures that `set.seed()` will lead to reproducible results.
 
-### Example: Linear regression
+### Linear regression
 
 ```r
 library(kernelshap)

@@ -102,11 +102,11 @@ on the same scale.}
 \item{max_iter}{If the stopping criterion (see \code{tol}) is not reached after
 \code{max_iter} iterations, the algorithm stops.}
 
-\item{parallel}{If \code{TRUE}, use parallel \code{foreach} to loop over rows
-to be explained. Must register backend beforehand, e.g. via \code{doFuture},
+\item{parallel}{If \code{TRUE}, use parallel \code{foreach::foreach()} to loop over rows
+to be explained. Must register backend beforehand, e.g. via "doFuture" package,
 see Readme for an example. Parallelization automatically disables the progress bar.}
 
-\item{parallel_args}{A named list of arguments passed to \code{foreach()}, see
+\item{parallel_args}{A named list of arguments passed to \code{foreach::foreach()}, see
 \code{?foreach::foreach}. Ideally, this is \code{NULL} (default). Only relevant
 if \code{parallel = TRUE}. Example on Windows: if \code{object} is a generalized
 additive model fitted with package "mgcv", then one might need to set

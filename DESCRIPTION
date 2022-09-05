@@ -13,9 +13,9 @@ Description: Multidimensional version of the iterative Kernel SHAP
     provides numeric predictions of dimension one or higher.  Examples
     include linear regression, logistic regression (logit or probability
     scale), other generalized linear models, generalized additive models,
-    and neural networks. The package plays well together with
-    meta-learning packages like 'caret' or 'mlr3'. Visualizations can be
-    done using the R package 'shapviz'.
+    and neural networks.  The package plays well together with
+    meta-learning packages like 'tidymodels', 'caret' or 'mlr3'.
+    Visualizations can be done using the R package 'shapviz'.
 License: GPL (>= 2)
 Depends: 
     R (>= 3.2.0)

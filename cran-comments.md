@@ -6,6 +6,7 @@ Large update:
 - Much faster, actually much faster than Python's KernelExplainer()
 - Support for parallel computing
 - Multidimensional predictions are supported
+- Direct support of tidymodels models
 
 Plus small stuff
 
