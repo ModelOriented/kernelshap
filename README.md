@@ -16,24 +16,25 @@ The main function `kernelshap()` has four key arguments:
 - `X`: A (n x p) `matrix`, `data.frame`, `tibble` or `data.table` of rows to be explained. Important: The columns should only represent model features, not the response.
 - `bg_X`: Background data used to integrate out "switched off" features, 
 often a subset of the training data (around 100 to 200 rows).
-It should contain the same columns as \code{X}.
+It should contain the same columns as `X`.
 Columns not in `X` are silently dropped and the columns are arranged into
 the order as they appear in `X`.
 - `pred_fun`: Prediction function of the form `function(object, X, ...)`,
 providing K >= 1 numeric predictions per row. Its first argument represents the
 model `object`, its second argument a data structure like `X`.
 (The names of the first two arguments do not matter.) Additional (named)
-arguments are passed via `...`. The default, `stats::predict`, will
+arguments are passed via `...` of `kernelshap()`. The default, `stats::predict`, will
 work in most cases. Some exceptions (classes "ranger" and mlr3 "Learner")
 are handled separately. In other cases, the function must be specified manually.
 
-Additional arguments of `kernelshap()` can be used to control details of the algorithm. Usually, the defaults do not need to be touched.
+Additional arguments of `kernelshap()` can be used to control details of the algorithm and to activate parallel processing.
 
 **Remarks**
 
 - To visualize the result, you can use R package "shapviz".
 - Passing `bg_w` allows to weight background data according to case weights.
 - The algorithm tends to run faster if `X` is a matrix or tibble.
+- In order to use parallel processing, the backend must be set up beforehand.
 
 ## Installation
 
@@ -77,6 +78,32 @@ sv_dependence(shp, "Petal.Length")
 ![](man/figures/README-lm-imp.svg)
 
 ![](man/figures/README-lm-dep.svg)
+
+## Example: parallel computing
+
+As long as you have set up a parallel processing backend, parallel computing is supported.
+
+```r
+library(kernelshap)
+library(doFuture)
+
+# Set up parallel backend
+registerDoFuture()
+plan(multisession, workers = 2)  ## Windows
+# plan(multicore, workers = 2)   ## Linux, macOS, Solaris
+
+fit <- stats::lm(Sepal.Length ~ ., data = iris)
+
+# Without parallel computing (1 second)
+system.time(
+  s <- kernelshap(fit, iris[, -1], bg_X = iris[, -1])
+)
+
+# With parallel computing (0.5 seconds)
+system.time(
+  s <- kernelshap(fit, iris[, -1], bg_X = iris[, -1], parallel = TRUE)
+)
+```
 
 ## Example: logistic regression on probability scale
 
@@ -127,7 +154,7 @@ X <- data.matrix(iris[2:4])
 
 # Crunch SHAP values (8 seconds)
 system.time(
-  s <- kernelshap(model, X, pred_fun = pred_fun, bg_X = X, batch_size = 200)
+  s <- kernelshap(model, X, bg_X = X, batch_size = 1000)
 )
 
 # Plot with shapviz (results depend on neural net seed)
@@ -227,9 +254,7 @@ s
 library(mgcv)
 library(kernelshap)
 
-set.seed(1)
 fit <- gam(Sepal.Length ~ s(Sepal.Width) + Species, data = iris)
-
 s <- kernelshap(fit, iris[-1], bg_X = iris)
 s
 

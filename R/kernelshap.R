@@ -17,7 +17,8 @@
 #' standard error of the SHAP values is small enough relative to the range of the SHAP values. 
 #' This stopping criterion was suggested in Covert and Lee (2021). In the multi-output case,
 #' the criterion must be fulfilled for each dimension separately until iteration stops.
-#'
+#' 
+#' @importFrom doRNG %dorng%
 #' @param object Fitted model object.
 #' @param X A (n x p) matrix, data.frame, tibble or data.table of rows to be explained. 
 #' Important: The columns should only represent model features, not the response.
@@ -51,6 +52,14 @@
 #' on the same scale.
 #' @param max_iter If the stopping criterion (see \code{tol}) is not reached after 
 #' \code{max_iter} iterations, the algorithm stops.
+#' @param parallel If \code{TRUE}, use parallel \code{foreach} to loop over rows
+#' to be explained. Must register backend beforehand, e.g. via \code{doFuture}, 
+#' see Readme for an example. Parallelization automatically disables the progress bar.
+#' @param parallel_args A named list of arguments passed to \code{foreach()}, see
+#' \code{?foreach::foreach}. Ideally, this is \code{NULL} (default). Only relevant
+#' if \code{parallel = TRUE}. Example on Windows: if \code{object} is a generalized
+#' additive model fitted with package "mgcv", then one might need to set
+#' \code{parallel_args = list(.packages = "mgcv")}.
 #' @param verbose Set to \code{FALSE} to suppress messages, warnings, and the progress bar.
 #' @param ... Additional arguments passed to \code{pred_fun(object, X, ...)}.
 #' @return An object of class "kernelshap" with the following components:
@@ -103,6 +112,7 @@
 #' # On scale of response (probability)
 #' s <- kernelshap(fit, iris[1:2], bg_X = iris[1:2], type = "response")
 #' s
+#' 
 kernelshap <- function(object, ...){
   UseMethod("kernelshap")
 }
@@ -111,7 +121,8 @@ kernelshap <- function(object, ...){
 #' @export
 kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w = NULL, 
                                paired_sampling = TRUE, m = "auto", exact = TRUE, 
-                               tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
+                               tol = 0.01, max_iter = 250, parallel = FALSE, 
+                               parallel_args = NULL, verbose = TRUE, ...) {
   stopifnot(
     is.matrix(X) || is.data.frame(X),
     is.matrix(bg_X) || is.data.frame(bg_X),
@@ -167,12 +178,9 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
   bg_Xm <- bg_X[rep(seq_len(bg_n), times = m * (1L + paired_sampling)), , drop = FALSE]
   
   # Real work: apply Kernel SHAP to each row of X
-  if (verbose && n >= 2L) {
-    pb <- utils::txtProgressBar(1L, n, style = 3)  
-  }
-  res <- vector("list", n)
-  for (i in seq_len(n)) {
-    res[[i]] <- kernelshap_one(
+  if (isTRUE(parallel)) {
+    parallel_args <- c(list(i = seq_len(n)), parallel_args)
+    res <- do.call(foreach::foreach, parallel_args) %dorng% kernelshap_one(
       object = object,
       X = X[rep(i, times = nrow(bg_Xm)), , drop = FALSE],
       bg_X = bg_Xm,
@@ -187,8 +195,30 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
       max_iter = max_iter,
       ...
     )
+  } else {
     if (verbose && n >= 2L) {
-      utils::setTxtProgressBar(pb, i)
+      pb <- utils::txtProgressBar(1L, n, style = 3)  
+    }
+    res <- vector("list", n)
+    for (i in seq_len(n)) {
+      res[[i]] <- kernelshap_one(
+        object = object,
+        X = X[rep(i, times = nrow(bg_Xm)), , drop = FALSE],
+        bg_X = bg_Xm,
+        pred_fun = pred_fun,
+        bg_w = bg_w, 
+        v0 = v0,
+        v1 = v1[i, , drop = FALSE],
+        paired = paired_sampling,
+        m = m,
+        exact = exact,
+        tol = tol,
+        max_iter = max_iter,
+        ...
+      )
+      if (verbose && n >= 2L) {
+        utils::setTxtProgressBar(pb, i)
+      }
     }
   }
 
