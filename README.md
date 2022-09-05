@@ -264,7 +264,7 @@ plan(multisession, workers = 2)  # Windows
 
 fit <- stats::lm(Sepal.Length ~ ., data = iris)
 
-# With parallel computing (twice as fast)
+# With parallel computing
 system.time(
   s <- kernelshap(fit, iris[, -1], bg_X = iris, parallel = TRUE)
 )
