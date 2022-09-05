@@ -27,14 +27,14 @@ arguments are passed via `...` of `kernelshap()`. The default, `stats::predict`,
 work in most cases. Some exceptions (classes "ranger" and mlr3 "Learner")
 are handled separately. In other cases, the function must be specified manually.
 
-Additional arguments of `kernelshap()` can be used to control details of the algorithm. Usually, the defaults do not need to be touched.
+Additional arguments of `kernelshap()` can be used to control details of the algorithm and to activate parallel processing.
 
 **Remarks**
 
 - To visualize the result, you can use R package "shapviz".
 - Passing `bg_w` allows to weight background data according to case weights.
 - The algorithm tends to run faster if `X` is a matrix or tibble.
-- As long as a parallel backend is set up, parallel computation is supported.
+- In order to use parallel processing, the backend must be set up beforehand.
 
 ## Installation
 
@@ -254,9 +254,7 @@ s
 library(mgcv)
 library(kernelshap)
 
-set.seed(1)
 fit <- gam(Sepal.Length ~ s(Sepal.Width) + Species, data = iris)
-
 s <- kernelshap(fit, iris[-1], bg_X = iris)
 s
 

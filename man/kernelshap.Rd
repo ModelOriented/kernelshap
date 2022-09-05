@@ -21,6 +21,7 @@ kernelshap(object, ...)
   tol = 0.01,
   max_iter = 250,
   parallel = FALSE,
+  parallel_args = NULL,
   verbose = TRUE,
   ...
 )
@@ -105,6 +106,12 @@ on the same scale.}
 to be explained. Must register backend beforehand, e.g. via \code{doFuture},
 see Readme for an example. Parallelization automatically disables the progress bar.}
 
+\item{parallel_args}{A named list of arguments passed to \code{foreach()}, see
+\code{?foreach::foreach}. Ideally, this is \code{NULL} (default). Only relevant
+if \code{parallel = TRUE}. Example on Windows: if \code{object} is a generalized
+additive model fitted with package "mgcv", then one might need to set
+\code{parallel_args = list(.packages = "mgcv")}.}
+
 \item{verbose}{Set to \code{FALSE} to suppress messages, warnings, and the progress bar.}
 }
 \value{
@@ -182,6 +189,7 @@ s
 # On scale of response (probability)
 s <- kernelshap(fit, iris[1:2], bg_X = iris[1:2], type = "response")
 s
+
 }
 \references{
 \enumerate{

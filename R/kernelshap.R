@@ -55,6 +55,11 @@
 #' @param parallel If \code{TRUE}, use parallel \code{foreach} to loop over rows
 #' to be explained. Must register backend beforehand, e.g. via \code{doFuture}, 
 #' see Readme for an example. Parallelization automatically disables the progress bar.
+#' @param parallel_args A named list of arguments passed to \code{foreach()}, see
+#' \code{?foreach::foreach}. Ideally, this is \code{NULL} (default). Only relevant
+#' if \code{parallel = TRUE}. Example on Windows: if \code{object} is a generalized
+#' additive model fitted with package "mgcv", then one might need to set
+#' \code{parallel_args = list(.packages = "mgcv")}.
 #' @param verbose Set to \code{FALSE} to suppress messages, warnings, and the progress bar.
 #' @param ... Additional arguments passed to \code{pred_fun(object, X, ...)}.
 #' @return An object of class "kernelshap" with the following components:
@@ -107,6 +112,7 @@
 #' # On scale of response (probability)
 #' s <- kernelshap(fit, iris[1:2], bg_X = iris[1:2], type = "response")
 #' s
+#' 
 kernelshap <- function(object, ...){
   UseMethod("kernelshap")
 }
@@ -116,7 +122,7 @@ kernelshap <- function(object, ...){
 kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w = NULL, 
                                paired_sampling = TRUE, m = "auto", exact = TRUE, 
                                tol = 0.01, max_iter = 250, parallel = FALSE, 
-                               verbose = TRUE, ...) {
+                               parallel_args = NULL, verbose = TRUE, ...) {
   stopifnot(
     is.matrix(X) || is.data.frame(X),
     is.matrix(bg_X) || is.data.frame(bg_X),
@@ -173,7 +179,8 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
   
   # Real work: apply Kernel SHAP to each row of X
   if (isTRUE(parallel)) {
-    res <- foreach::foreach(i = seq_len(n)) %dorng% kernelshap_one(
+    parallel_args <- c(list(i = seq_len(n)), parallel_args)
+    res <- do.call(foreach::foreach, parallel_args) %dorng% kernelshap_one(
       object = object,
       X = X[rep(i, times = nrow(bg_Xm)), , drop = FALSE],
       bg_X = bg_Xm,

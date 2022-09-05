@@ -27,9 +27,9 @@ kernelshap(fit, X, bg_X, pred_fun = function(m, X) exp(predict(m, X)))
 
 - `kernelshap()` has received a more intuitive interface, see breaking change above.
 - The package now supports multidimensional predictions. Hurray!
-- Parallel computing is now supported thanks to David Watson. The user needs to set up the parallel backend before calling `kernelshap()`, i.e., using the "doFuture" package, and then set `parallel = TRUE`.
+- Thanks to David Watson, parallel computing is now supported. The user needs to set up the parallel backend before calling `kernelshap()`, i.e., using the "doFuture" package, and then set `parallel = TRUE`. Especially on Windows, sometimes not all global variables or packages are loaded in the parallel instances. These can be specified by `parallel_args`, a list of arguments passed to `foreach()`.
 - Even without parallel computing, `kernelshap()` has become much faster.
-- For $2 \le p \le 5$ features, the algorithm now returns exact Kernel SHAP values. (For $p = 1$, *exact Shapley values* are returned.)
+- For $2 \le p \le 5$ features, the algorithm now returns exact Kernel SHAP values with respect to the given background data. (For $p = 1$, exact *Shapley values* are returned.)
 - Besides `matrix`, `data.frame`s, and `tibble`s, the package now also accepts `data.table`s (if the prediction function can deal with them).
 
 ## User visible changes
