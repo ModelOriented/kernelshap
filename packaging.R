@@ -15,7 +15,7 @@ library(usethis)
 use_description(
   fields = list(
     Title = "Kernel SHAP",
-    Version = "0.1.900",
+    Version = "0.2.0",
     Description = "Multidimensional version of the iterative Kernel SHAP algorithm described in
     Ian Covert and Su-In Lee (2021) <http://proceedings.mlr.press/v130/covert21a>. 
     SHAP values are calculated iteratively until convergence, along with approximate standard errors. 

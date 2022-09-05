@@ -158,7 +158,7 @@ the criterion must be fulfilled for each dimension separately until iteration st
 \examples{
 # Linear regression
 fit <- stats::lm(Sepal.Length ~ ., data = iris)
-s <- kernelshap(fit, iris[1:2, -1], bg_X = iris[, -1])
+s <- kernelshap(fit, iris[1:2, -1], bg_X = iris)
 s
 
 # Multivariate model
@@ -183,11 +183,11 @@ fit <- stats::glm(
 )
 
 # On scale of linear predictor
-s <- kernelshap(fit, iris[1:2], bg_X = iris[1:2])
+s <- kernelshap(fit, iris[1:2], bg_X = iris)
 s
 
 # On scale of response (probability)
-s <- kernelshap(fit, iris[1:2], bg_X = iris[1:2], type = "response")
+s <- kernelshap(fit, iris[1:2], bg_X = iris, type = "response")
 s
 
 }

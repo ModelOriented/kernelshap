@@ -37,8 +37,8 @@ ks2
 library("doFuture")
 
 registerDoFuture()
-plan(multisession, workers = 4)  ## Windows
-# plan(multicore, workers = 4)   ## Linux, macOS, Solaris
+plan(multisession, workers = 4)  # Windows
+# plan(multicore, workers = 4)   # Linux, macOS, Solaris
 
 system.time(
   ks3 <- kernelshap(fit, X_small, bg_X = X_small, parallel = TRUE)  

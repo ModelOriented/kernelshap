@@ -1,4 +1,4 @@
-# kernelshap <a href='https://github.com/mayer79/kernelshap'><img src='man/figures/logo.png' align="right" height="138.5" /></a>
+# The "kernelshap" package <a href='https://github.com/mayer79/kernelshap'><img src='man/figures/logo.png' align="right" height="138.5" /></a>
 
 ## Introduction
 
@@ -43,7 +43,9 @@ Additional arguments of `kernelshap()` can be used to control details of the alg
 devtools::install_github("mayer79/kernelshap")
 ```
 
-## Example: linear regression
+## Examples
+
+### Linear regression
 
 ```r
 library(kernelshap)
@@ -51,8 +53,8 @@ library(shapviz)
 
 fit <- lm(Sepal.Length ~ ., data = iris)
 
-# Crunch SHAP values (1 second)
-s <- kernelshap(fit, iris[-1], bg_X = iris[-1])
+# Crunch SHAP values
+s <- kernelshap(fit, iris[-1], bg_X = iris)
 s
 
 # Output (partly)
@@ -79,33 +81,7 @@ sv_dependence(shp, "Petal.Length")
 
 ![](man/figures/README-lm-dep.svg)
 
-## Example: parallel computing
-
-As long as you have set up a parallel processing backend, parallel computing is supported.
-
-```r
-library(kernelshap)
-library(doFuture)
-
-# Set up parallel backend
-registerDoFuture()
-plan(multisession, workers = 2)  ## Windows
-# plan(multicore, workers = 2)   ## Linux, macOS, Solaris
-
-fit <- stats::lm(Sepal.Length ~ ., data = iris)
-
-# Without parallel computing (1 second)
-system.time(
-  s <- kernelshap(fit, iris[, -1], bg_X = iris[, -1])
-)
-
-# With parallel computing (0.5 seconds)
-system.time(
-  s <- kernelshap(fit, iris[, -1], bg_X = iris[, -1], parallel = TRUE)
-)
-```
-
-## Example: logistic regression on probability scale
+### Logistic regression on probability scale
 
 ```r
 library(kernelshap)
@@ -116,7 +92,7 @@ fit <- glm(
 )
 
 # Crunch SHAP values
-s <- kernelshap(fit, iris[1:2], bg_X = iris[1:2], type = "response")
+s <- kernelshap(fit, iris[1:2], bg_X = iris, type = "response")
 
 # Plot with shapviz
 shp <- shapviz(s)
@@ -127,7 +103,7 @@ sv_dependence(shp, "Sepal.Length")
 
 ![](man/figures/README-glm-dep.svg)
 
-## Example: Keras neural net
+### Keras neural net
 
 ```r
 library(kernelshap)
@@ -152,7 +128,7 @@ model %>%
 
 X <- data.matrix(iris[2:4])
 
-# Crunch SHAP values (8 seconds)
+# Crunch SHAP values
 system.time(
   s <- kernelshap(model, X, bg_X = X, batch_size = 1000)
 )
@@ -170,7 +146,7 @@ sv_dependence(shp, "Petal.Length")
 
 ![](man/figures/README-nn-dep.svg)
 
-## Example: mlr3
+### mlr3
 
 ```R
 library(mlr3)
@@ -190,7 +166,7 @@ sv_dependence(sv, "Species")
 
 ![](man/figures/README-mlr3-dep.svg)
 
-## Example: caret
+### caret
 
 ```r
 library(caret)
@@ -205,14 +181,14 @@ fit <- train(
   trControl = trainControl(method = "none")
 )
 
-s <- kernelshap(fit, iris[1, -1], predict, bg_X = iris[-1])
+s <- kernelshap(fit, iris[1, -1], predict, bg_X = iris)
 sv <- shapviz(s)
 sv_waterfall(sv, 1)
 ```
 
 ![](man/figures/README-caret-waterfall.svg)
 
-## Example: probability random forest
+### Probability random forest (multivariate predictions)
 
 ```r
 library(ranger)
@@ -221,7 +197,7 @@ library(kernelshap)
 set.seed(1)
 fit <- ranger(Species ~ ., data = iris, probability = TRUE)
 
-s <- kernelshap(fit, iris[c(1, 51, 101), -5], bg_X = iris[-5])
+s <- kernelshap(fit, iris[c(1, 51, 101), -5], bg_X = iris)
 s
 
 # 'kernelshap' object representing 
@@ -248,14 +224,47 @@ s
 # [2,] -0.009644196 -0.004618300   -0.1572485  -0.1363747
 ```
 
-## Example: GAM
+## Parallel computing
+
+As long as you have set up a parallel processing backend, parallel computing is supported via `foreach` and `%dorng`. The latter ensures that `set.seed()` will lead to reproducible results.
+
+### Example: Linear regression
+
+```r
+library(kernelshap)
+library(doFuture)
+
+# Set up parallel backend
+registerDoFuture()
+plan(multisession, workers = 2)  # Windows
+# plan(multicore, workers = 2)   # Linux, macOS, Solaris
+
+fit <- stats::lm(Sepal.Length ~ ., data = iris)
+
+# With parallel computing (twice as fast)
+system.time(
+  s <- kernelshap(fit, iris[, -1], bg_X = iris, parallel = TRUE)
+)
+```
+
+### GAM on Windows
+
+On Windows, sometimes not all packages or global objects are passed to the parallel sessions. In this case, the necessary instructions to `foreach` can be specified through a named list via `parallel_args`, see the following example:
 
 ```r
 library(mgcv)
 library(kernelshap)
+library(doFuture)
+
+# Set up parallel backend
+registerDoFuture()
+plan(multisession, workers = 2)
 
 fit <- gam(Sepal.Length ~ s(Sepal.Width) + Species, data = iris)
-s <- kernelshap(fit, iris[-1], bg_X = iris)
+
+s <- kernelshap(
+  fit, iris[-1], bg_X = iris, parallel = TRUE, parallel_args = list(.packages = "mgcv")
+)
 s
 
 SHAP values of first 2 observations:

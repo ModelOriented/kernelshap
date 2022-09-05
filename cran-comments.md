@@ -1,5 +1,17 @@
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
+Large update:
 
-* This is a new release.
+- Better interface
+- Much faster, actually much faster than Python's KernelExplainer()
+- Support for parallel computing
+- Multidimensional predictions are supported
+
+Plus small stuff
+
+## Checks seem okay
+
+- check(manual = TRUE, cran = TRUE)
+- check_win_devel()
+- check_rhub()
+
