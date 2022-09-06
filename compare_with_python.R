@@ -18,7 +18,7 @@ system.time(
 ks
 
 # SHAP values of first 2 observations:
-#             carat    clarity     color         cut
+#            carat    clarity     color         cut
 # [1,] -2.09368837 -0.2875728 0.1165124  0.01496767
 # [2,]  0.01148493 -0.1191795 0.1115798 -0.02016471
 
@@ -33,7 +33,7 @@ ks2
 # [1,] -2.09368837 -0.2875728 0.1165124  0.01496767
 # [2,]  0.01148493 -0.1191795 0.1115798 -0.02016471
 
-# Using parallel backend (2 seconds)
+# Using parallel backend (1 second)
 library("doFuture")
 
 registerDoFuture()
