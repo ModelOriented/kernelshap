@@ -34,7 +34,9 @@ kernelshap_one <- function(object, X, bg_X, pred_fun, bg_w, v0, v1,
     btemp <- crossprod(Z, (vz - v0_ext)) / n_Z                    #  (p x K)
     Asum <- Asum + Atemp                                          #  (p x p)
     bsum <- bsum + btemp                                          #  (p x K)
-    est_m[[n_iter]] <- R <- solver(Atemp, btemp, v1, v0)          #  (p x K)
+    
+    # Constrained regression -> parameter matrix                  #  (p x K)
+    est_m[[n_iter]] <- R <- solver(Atemp, btemp, constraint = v1 - v0)
     
     if (exact) {
       return(list(beta = R, sigma = 0 * R, n_iter = 1L, converged = TRUE))
@@ -42,21 +44,21 @@ kernelshap_one <- function(object, X, bg_X, pred_fun, bg_w, v0, v1,
     
     # Covariance calculation would fail in the first iteration
     if (n_iter >= 2L) {
-      beta_n <- solver(Asum / n_iter, bsum / n_iter, v1, v0)      #  (p x K)
-      sigma_n <- get_sigma(est_m, iter = n_iter)                  #  (p x K)
+      beta_n <- solver(Asum / n_iter, bsum / n_iter, constraint = v1 - v0)  # (p x K)
+      sigma_n <- get_sigma(est_m, iter = n_iter)                            # (p x K)
       converged <- all(conv_crit(sigma_n, beta_n) < tol)
     }
   }
   list(beta = beta_n, sigma = sigma_n, n_iter = n_iter, converged = converged)
 }
 
-# Calculates regression coefficients
-solver <- function(A, b, v1, v0) {
+# Regression coefficients given sum(beta) = constraint
+# A: (p x p), b: (p x k), constraint: (1 x K)
+solver <- function(A, b, constraint) {
   p <- ncol(A)
-  # Ainv <- solve(A)
   Ainv <- MASS::ginv(A)
-  s <- (matrix(colSums(Ainv %*% b), nrow = 1L) - v1 + v0) / sum(Ainv)  # (1 x K)
-  Ainv %*% (b - s[rep(1L, p), , drop = FALSE])                         # (p x K)
+  s <- (matrix(colSums(Ainv %*% b), nrow = 1L) - constraint) / sum(Ainv)  # (1 x K)
+  Ainv %*% (b - s[rep(1L, p), , drop = FALSE])                            # (p x K)
 }
 
 # m permutations distributed according to Kernel SHAP weights -> (m x p) matrix
