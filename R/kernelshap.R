@@ -5,9 +5,9 @@
 #' Kernel SHAP algorithm of Lundberg and Lee (2017). The algorithm is applied to each 
 #' row in \code{X}. Its behaviour depends on the number of features p:
 #' \itemize{
-#'   \item 2 <= p <= 5: Exact Kernel SHAP values are returned. 
+#'   \item 2 <= p <= 8: Exact Kernel SHAP values are returned. 
 #'   (Exact regarding the given background data.)
-#'   \item p > 5: Sampling version of Kernel SHAP. 
+#'   \item p > 8: Sampling version of Kernel SHAP. 
 #'   The algorithm iterates until Kernel SHAP values are sufficiently accurate. 
 #'   Approximate standard errors of the SHAP values are returned. 
 #'   \item p = 1: Exact Shapley values are returned.
@@ -37,21 +37,26 @@
 #' @param paired_sampling Logical flag indicating whether to use paired sampling.
 #' The default is \code{TRUE}. This means that with every feature subset S,
 #' also its complement is evaluated, which leads to considerably faster convergence.
+#' Ignored if exact calculations are done.
 #' @param m Number of feature subsets S to be evaluated during one iteration. 
 #' The default, "auto", equals \code{max(trunc(20*sqrt(p)), 5*p)}, where p is the
-#' number of features. 
+#' number of features. Ignored if exact calculations are done.
 #' For the paired sampling strategy, 2m evaluations are done per iteration.
-#' @param exact If \code{TRUE} (default) and the number of features p is at most 5,
-#' the algorithm will produce exact Kernel SHAP values. In this case, the arguments
-#' \code{m}, \code{paired_sampling}, \code{tol}, and \code{max_iter} are ignored.
+#' @param exact If \code{TRUE}, the algorithm will produce exact Kernel SHAP values
+#' with respect to the given background data. Note that the algorithm will work with large
+#' prediction data having (2^p-2) * nrow(bg_X) rows, where p is the number of features.
+#' Thus, if p > 10, we recommend to set \code{exact = FALSE}. The default \code{"auto"}
+#' uses \code{exact = TRUE} for up to eight features. If \code{TRUE},
+#' the arguments \code{m}, \code{paired_sampling}, \code{tol}, and \code{max_iter} 
+#' are ignored.
 #' @param tol Tolerance determining when to stop. The algorithm keeps iterating until
 #' max(sigma_n) / diff(range(beta_n)) < tol, where the beta_n are the SHAP values 
 #' of a given observation and sigma_n their standard errors. For multidimensional
 #' predictions, the criterion must be satisfied for each dimension separately.
 #' The stopping criterion uses the fact that standard errors and SHAP values are all
-#' on the same scale.
+#' on the same scale. Ignored if exact calculations are done.
 #' @param max_iter If the stopping criterion (see \code{tol}) is not reached after 
-#' \code{max_iter} iterations, the algorithm stops.
+#' \code{max_iter} iterations, the algorithm stops. Ignored if exact calculations are done.
 #' @param parallel If \code{TRUE}, use parallel \code{foreach::foreach()} to loop over rows
 #' to be explained. Must register backend beforehand, e.g. via "doFuture" package, 
 #' see Readme for an example. Parallelization automatically disables the progress bar.
@@ -60,7 +65,7 @@
 #' if \code{parallel = TRUE}. Example on Windows: if \code{object} is a generalized
 #' additive model fitted with package "mgcv", then one might need to set
 #' \code{parallel_args = list(.packages = "mgcv")}.
-#' @param verbose Set to \code{FALSE} to suppress messages, warnings, and the progress bar.
+#' @param verbose Set to \code{FALSE} to suppress messages and the progress bar.
 #' @param ... Additional arguments passed to \code{pred_fun(object, X, ...)}.
 #' @return An object of class "kernelshap" with the following components:
 #' \itemize{
@@ -120,7 +125,7 @@ kernelshap <- function(object, ...){
 #' @describeIn kernelshap Default Kernel SHAP method.
 #' @export
 kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w = NULL, 
-                               paired_sampling = TRUE, m = "auto", exact = TRUE, 
+                               paired_sampling = TRUE, m = "auto", exact = "auto", 
                                tol = 0.01, max_iter = 250, parallel = FALSE, 
                                parallel_args = NULL, verbose = TRUE, ...) {
   stopifnot(
@@ -157,22 +162,29 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
     return(case_p1(n = n, nms = nms, v0 = v0, v1 = v1, X = X))
   }
 
-  # Calculate m
-  if (exact && p <= length(Z_exact)) {
+  # Derive "exact" and "m"
+  if (exact == "auto") {
+    exact <- p <= 8L
+  } else if (exact && p > 10L) {
+    warning("Exact calculations with more than ten features might take long because 
+    prediction data sets have about 2^p * nrow(bg_X) rows. Consider setting exact = FALSE")
+  }
+  # Now, "exact" is either TRUE or FALSE
+  if (exact) {
     if (verbose) {
       message("Calculating exact Kernel SHAP values")
     }
-    m <- nrow(Z_exact[[p]])
-    paired_sampling <- FALSE  
+    m <- 2^p - 2
+    paired_sampling <- FALSE
   } else {
     if (verbose) {
       message("Calculating Kernel SHAP values by iterative sampling")
     }
-    exact <- FALSE
+    if (m == "auto") {
+      m <- max(trunc(20 * sqrt(p)), 5L * p)
+    }
   }
-  if (m == "auto") {
-    m <- max(trunc(20 * sqrt(p)), 5L * p)
-  }
+  ex <- if (exact) exact_input(p)
 
   # Allocate replicated version of the background data
   bg_Xm <- bg_X[rep(seq_len(bg_n), times = m * (1L + paired_sampling)), , drop = FALSE]
@@ -191,6 +203,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
       paired = paired_sampling,
       m = m,
       exact = exact,
+      ex = ex,
       tol = tol,
       max_iter = max_iter,
       ...
@@ -212,6 +225,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
         paired = paired_sampling,
         m = m,
         exact = exact,
+        ex = ex,
         tol = tol,
         max_iter = max_iter,
         ...

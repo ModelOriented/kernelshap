@@ -17,7 +17,7 @@ kernelshap(object, ...)
   bg_w = NULL,
   paired_sampling = TRUE,
   m = "auto",
-  exact = TRUE,
+  exact = "auto",
   tol = 0.01,
   max_iter = 250,
   parallel = FALSE,
@@ -81,26 +81,31 @@ are handled separately. In other cases, the function must be specified manually.
 
 \item{paired_sampling}{Logical flag indicating whether to use paired sampling.
 The default is \code{TRUE}. This means that with every feature subset S,
-also its complement is evaluated, which leads to considerably faster convergence.}
+also its complement is evaluated, which leads to considerably faster convergence.
+Ignored if exact calculations are done.}
 
 \item{m}{Number of feature subsets S to be evaluated during one iteration.
 The default, "auto", equals \code{max(trunc(20*sqrt(p)), 5*p)}, where p is the
-number of features.
+number of features. Ignored if exact calculations are done.
 For the paired sampling strategy, 2m evaluations are done per iteration.}
 
-\item{exact}{If \code{TRUE} (default) and the number of features p is at most 5,
-the algorithm will produce exact Kernel SHAP values. In this case, the arguments
-\code{m}, \code{paired_sampling}, \code{tol}, and \code{max_iter} are ignored.}
+\item{exact}{If \code{TRUE}, the algorithm will produce exact Kernel SHAP values
+with respect to the given background data. Note that the algorithm will work with large
+prediction data having (2^p-2) * nrow(bg_X) rows, where p is the number of features.
+Thus, if p > 10, we recommend to set \code{exact = FALSE}. The default \code{"auto"}
+uses \code{exact = TRUE} for up to eight features. If \code{TRUE},
+the arguments \code{m}, \code{paired_sampling}, \code{tol}, and \code{max_iter}
+are ignored.}
 
 \item{tol}{Tolerance determining when to stop. The algorithm keeps iterating until
 max(sigma_n) / diff(range(beta_n)) < tol, where the beta_n are the SHAP values
 of a given observation and sigma_n their standard errors. For multidimensional
 predictions, the criterion must be satisfied for each dimension separately.
 The stopping criterion uses the fact that standard errors and SHAP values are all
-on the same scale.}
+on the same scale. Ignored if exact calculations are done.}
 
 \item{max_iter}{If the stopping criterion (see \code{tol}) is not reached after
-\code{max_iter} iterations, the algorithm stops.}
+\code{max_iter} iterations, the algorithm stops. Ignored if exact calculations are done.}
 
 \item{parallel}{If \code{TRUE}, use parallel \code{foreach::foreach()} to loop over rows
 to be explained. Must register backend beforehand, e.g. via "doFuture" package,
@@ -112,7 +117,7 @@ if \code{parallel = TRUE}. Example on Windows: if \code{object} is a generalized
 additive model fitted with package "mgcv", then one might need to set
 \code{parallel_args = list(.packages = "mgcv")}.}
 
-\item{verbose}{Set to \code{FALSE} to suppress messages, warnings, and the progress bar.}
+\item{verbose}{Set to \code{FALSE} to suppress messages and the progress bar.}
 }
 \value{
 An object of class "kernelshap" with the following components:
@@ -132,9 +137,9 @@ detail in Covert and Lee (2021). It is an iterative refinement of the original
 Kernel SHAP algorithm of Lundberg and Lee (2017). The algorithm is applied to each
 row in \code{X}. Its behaviour depends on the number of features p:
 \itemize{
-\item 2 <= p <= 5: Exact Kernel SHAP values are returned.
+\item 2 <= p <= 8: Exact Kernel SHAP values are returned.
 (Exact regarding the given background data.)
-\item p > 5: Sampling version of Kernel SHAP.
+\item p > 8: Sampling version of Kernel SHAP.
 The algorithm iterates until Kernel SHAP values are sufficiently accurate.
 Approximate standard errors of the SHAP values are returned.
 \item p = 1: Exact Shapley values are returned.

@@ -26,13 +26,11 @@ use_description(
     Visualizations can be done using the R package 'shapviz'.",
     `Authors@R` = "c(person('Michael', family = 'Mayer', role = c('aut', 'cre'), email = 'mayermichael79@gmail.com'),
        person('David', family = 'Watson', role = 'ctb', email = 'david.s.watson11@gmail.com'))",
-    Depends = "R (>= 3.2.0)"
+    Depends = "R (>= 3.2.0)",
+    LazyData = NULL
   ),
   roxygen = TRUE
 )
-
-source("Z_exact.R")
-use_data(Z_exact, overwrite = TRUE)
 
 use_package("stats", "Imports")
 use_package("utils", "Imports")
