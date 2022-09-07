@@ -2,7 +2,7 @@
 
 ## Major improvements
 
-- Thanks to David Watson, exact calculations are now possible for $p>5$ features, although we do not recommend it for $p>8$. In the exact case with $p > 1$, `kernelshap()` does predicions on data sets with $(2^p-1)N$ rows, where $N$ is the number of rows of the background data. This explodes with large $p$.
+- Thanks to David Watson, exact calculations are now possible for $p>5$ features, although we do not recommend it for $p>8$. In the exact case with $p > 1$, `kernelshap()` does predicions on data sets with $(2^p-2)N$ rows, where $N$ is the number of rows of the background data. This explodes with large $p$.
 
 ## User visible changes
 
