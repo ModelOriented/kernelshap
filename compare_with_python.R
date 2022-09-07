@@ -11,18 +11,18 @@ fit <- lm(log(price) ~ log(carat) * (clarity + color + cut), data = diamonds)
 # Subset of 270 diamonds
 X_small <- diamonds[seq(1, nrow(diamonds), 200), c("carat", ord)]
 
-# Exact KernelSHAP on X_small, using X_small as background data (3 seconds)
+# Exact KernelSHAP on X_small, using X_small as background data (2 seconds)
 system.time(
   ks <- kernelshap(fit, X_small, bg_X = X_small)  
 )
 ks
 
 # SHAP values of first 2 observations:
-#             carat    clarity     color         cut
+#            carat    clarity     color         cut
 # [1,] -2.09368837 -0.2875728 0.1165124  0.01496767
 # [2,]  0.01148493 -0.1191795 0.1115798 -0.02016471
 
-# Sampling version takes a bit longer (10 seconds)
+# Sampling version takes a bit longer (12 seconds)
 system.time(
   ks2 <- kernelshap(fit, X_small, bg_X = X_small, exact = FALSE)  
 )
@@ -33,7 +33,7 @@ ks2
 # [1,] -2.09368837 -0.2875728 0.1165124  0.01496767
 # [2,]  0.01148493 -0.1191795 0.1115798 -0.02016471
 
-# Using parallel backend (2 seconds)
+# Using parallel backend (1 second)
 library("doFuture")
 
 registerDoFuture()

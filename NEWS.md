@@ -1,3 +1,19 @@
+# kernelshap 0.2.0.900 DEVEL
+
+## Major improvements
+
+- Thanks to David Watson, exact calculations are now possible for $p>5$ features, although we do not recommend it for $p>8$. In the exact case with $p > 1$, `kernelshap()` does predicions on data sets with $(2^p-1)N$ rows, where $N$ is the number of rows of the background data. This explodes with large $p$.
+
+## User visible changes
+
+- The default for `exact` argument is now `"auto"` instead of `TRUE`. This will use exact
+calculations up to $p=8$ features. For $p>8$, sampling is used.
+
+## Bug fixes
+
+- Predictions of `mgcv::gam()` would cause an error in `check_pred()` (they are 1D-arrays).
+- Fixed small mistakes in Readme (mlr3 and mgcv).
+
 # kernelshap 0.2.0
 
 ## Breaking change

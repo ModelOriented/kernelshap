@@ -6,8 +6,8 @@ SHAP values (Lundberg and Lee, 2017) decompose model predictions into additive c
 
 The "kernelshap" package implements a multidimensional version of the Kernel SHAP Algorithm 1 described in the supplement of Covert and Lee (2021). The behaviour depends on the number of features $p$:
 
-- $2 \le p \le 5$: Exact Kernel SHAP values are returned. (Exact regarding the given background data.)
-- $p > 5$: Sampling version of Kernel SHAP. The algorithm iterates until Kernel SHAP values are sufficiently accurate. Approximate standard errors of the SHAP values are returned.
+- $2 \le p \le 8$: Exact Kernel SHAP values are returned. (Exact regarding the given background data.)
+- $p > 8$: Sampling version of Kernel SHAP. The algorithm iterates until Kernel SHAP values are sufficiently accurate. Approximate standard errors of the SHAP values are returned.
 - $p = 1$: Exact Shapley values are returned.
 
 The main function `kernelshap()` has four key arguments:
@@ -175,7 +175,7 @@ tsk("iris")
 task_iris <- TaskRegr$new(id = "iris", backend = iris, target = "Sepal.Length")
 fit_lm <- lrn("regr.lm")
 fit_lm$train(task_iris)
-s <- kernelshap(fit_lm, iris, bg_X = iris)
+s <- kernelshap(fit_lm, iris[-1], bg_X = iris)
 sv <- shapviz(s)
 sv_dependence(sv, "Species")
 ```
@@ -286,14 +286,18 @@ plan(multisession, workers = 2)
 fit <- gam(Sepal.Length ~ s(Sepal.Width) + Species, data = iris)
 
 s <- kernelshap(
-  fit, iris[-1], bg_X = iris, parallel = TRUE, parallel_args = list(.packages = "mgcv")
+  fit, 
+  iris[c(2, 5)], 
+  bg_X = iris, 
+  parallel = TRUE, 
+  parallel_args = list(.packages = "mgcv")
 )
 s
 
 SHAP values of first 2 observations:
-     Sepal.Width  Petal.Length  Petal.Width   Species
-[1,]  0.35570963 -5.551115e-17 2.775558e-16 -1.135187
-[2,] -0.04607082  3.552714e-15 3.885781e-15 -1.135187
+     Sepal.Width   Species
+[1,]  0.35570963 -1.135187
+[2,] -0.04607082 -1.135187
 ```
 
 ## References
