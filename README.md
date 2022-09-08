@@ -4,7 +4,7 @@
 
 SHAP values (Lundberg and Lee, 2017) decompose model predictions into additive contributions of the features in a fair way. A model agnostic approach is called Kernel SHAP, introduced in Lundberg and Lee (2017), and investigated in detail in Covert and Lee (2021). 
 
-The "kernelshap" package implements a multidimensional version of the Kernel SHAP Algorithm 1 described in the supplement of Covert and Lee (2021). The behaviour depends on the number of features $p$:
+The "kernelshap" package implements a multidimensional version of the Kernel SHAP Algorithm 1 described in the supplement of Covert and Lee (2021). The default behaviour depends on the number of features $p$:
 
 - $2 \le p \le 8$: Exact Kernel SHAP values are returned. (Exact regarding the given background data.)
 - $p > 8$: Sampling version of Kernel SHAP. The algorithm iterates until Kernel SHAP values are sufficiently accurate. Approximate standard errors of the SHAP values are returned.
@@ -197,7 +197,7 @@ fit <- train(
   trControl = trainControl(method = "none")
 )
 
-s <- kernelshap(fit, iris[1, -1], predict, bg_X = iris)
+s <- kernelshap(fit, iris[, -1], predict, bg_X = iris)
 sv <- shapviz(s)
 sv_waterfall(sv, 1)
 ```
