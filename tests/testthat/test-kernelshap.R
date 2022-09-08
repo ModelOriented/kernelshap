@@ -13,7 +13,9 @@ test_that("SHAP + baseline = prediction", {
 })
 
 test_that("Non-exact calculation is similar to exact", {
-  s1 <- kernelshap(fit, iris[c(1, 51, 101), x], bg_X = iris[, x], exact = FALSE)
+  s1 <- kernelshap(
+    fit, iris[c(1, 51, 101), x], bg_X = iris[, x], sampling_strategy = "paired"
+  )
   expect_equal(s$S, s1$S)
   expect_true(all(s$n_iter != s1$n_iter))
 })

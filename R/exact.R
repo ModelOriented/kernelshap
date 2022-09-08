@@ -6,7 +6,7 @@
 #      the SHAP kernel distribution
 # - A: Exact matrix A = Z'wZ
 exact_input <- function(p) {
-  Z <- enumerate_Z(p)
+  Z <- exact_Z(p)
   w <- kernel_weights(p) / choose(p, 1:(p - 1L))
   list(Z = Z, w = w[rowSums(Z)], A = exact_A(p))
 }
@@ -23,7 +23,7 @@ exact_A <- function(p) {
 }
 
 # Creates (2^p-2) x p matrix with all on-off vectors z of length p
-enumerate_Z <- function(p) {
+exact_Z <- function(p) {
   Z <- as.matrix(do.call(expand.grid, replicate(p, 0:1, simplify = FALSE)))
   dimnames(Z) <- NULL
   Z[2:(nrow(Z) - 1L), , drop = FALSE]

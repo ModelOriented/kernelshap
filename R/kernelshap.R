@@ -37,20 +37,31 @@
 #' work in most cases. Some exceptions (classes "ranger" and mlr3 "Learner")
 #' are handled separately. In other cases, the function must be specified manually.
 #' @param bg_w Optional vector of case weights for each row of \code{bg_X}.
-#' @param paired_sampling Logical flag indicating whether to use paired sampling.
-#' The default is \code{TRUE}. This means that with every on-off vector,
-#' also its complement is evaluated, which leads to considerably faster convergence.
-#' Ignored if exact calculations are done.
+#' @param sampling_strategy Sampling strategy to draw m binary "on-off" vectors z of 
+#' length p used to calculate Kernel SHAP. Currently, one of:
+#' \itemize{
+#'   \item \code{"auto"} (default): "exact" for up to 8 features, and "paired" otherwise.
+#'   \item \code{"simple"}: Each z is drawn randomly according to Kernel SHAP weights.
+#'   This is done in two steps: First, the number s of "1" is drawn from the Kernel weight
+#'   distribution (normalized to the range from 1 to p-1), see Covert and Lee (2021). 
+#'   Then, the s random positions of a length p 0-vector are set to 1.
+#'   Note that this strategy is strictly worse than paired sampling, so there is 
+#'   virtually no reason to use it except for studying properties of Kernel SHAP.
+#'   \item \code{"paired"}: Here, m/2 vectors z are drawn as with the "simple" strategy. 
+#'   Then, all m/2 complements 1-z are added to the pool of vectors. 
+#'   This paired sampling strategy converges faster than the simple method, 
+#'   see Covert and Lee (2021).
+#'   \item \code{"exact"}: All possible binary vectors z are enumerated and weighted
+#'   according to the SHAP kernel weight distribution. This produces exact Kernel SHAP
+#'   values with respect to the given background data. The algorithm works with large
+#'   prediction data having (2^p-2) * nrow(bg_X) rows. Thus, we recommend this option
+#'   up to p=8.
+#' }
+#' @param paired_sampling Deprecated, set \code{sampling_strategy = "paired"}.
+#' @param exact Deprecated, set \code{sampling_strategy = "exact"}.
 #' @param m Number of on-off vectors to be evaluated during one iteration. 
-#' The default, "auto", equals \code{2*max(trunc(20*sqrt(p)), 5*p)}, where p is the
+#' The default, \code{NULL}, equals \code{2*max(trunc(20*sqrt(p)), 5*p)}, where p is the
 #' number of features. Ignored if exact calculations are done.
-#' @param exact If \code{TRUE}, the algorithm will produce exact Kernel SHAP values
-#' with respect to the given background data. Note that the algorithm works with large
-#' prediction data having (2^p-2) * nrow(bg_X) rows, where p is the number of features.
-#' Thus, if p > 10, we recommend to set \code{exact = FALSE}. The default \code{"auto"}
-#' uses \code{exact = TRUE} for up to eight features. If \code{TRUE},
-#' the arguments \code{m}, \code{paired_sampling}, \code{tol}, and \code{max_iter} 
-#' are ignored.
 #' @param tol Tolerance determining when to stop. The algorithm keeps iterating until
 #' max(sigma_n) / diff(range(beta_n)) < tol, where the beta_n are the SHAP values 
 #' of a given observation and sigma_n their standard errors. For multidimensional
@@ -128,9 +139,19 @@ kernelshap <- function(object, ...){
 #' @describeIn kernelshap Default Kernel SHAP method.
 #' @export
 kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w = NULL, 
-                               paired_sampling = TRUE, m = "auto", exact = "auto", 
-                               tol = 0.01, max_iter = 250, parallel = FALSE, 
+                               sampling_strategy = c("auto", "paired", "exact", "simple"),
+                               paired_sampling = NULL, exact = NULL,
+                               m = NULL, tol = 0.01, max_iter = 250, parallel = FALSE, 
                                parallel_args = NULL, verbose = TRUE, ...) {
+  sampling_strategy <- match.arg(sampling_strategy)
+  if (!is.null(paired_sampling)) {
+    warning("The argument 'paired_sampling' is deprecated. It is not used anymore 
+    and will be removed in version 0.4.0. Use sampling_strategy = 'paired' instead.")
+  }
+  if (!is.null(exact)) {
+    warning("The argument 'exact' is deprecated. It is not used anymore 
+    and will be removed in version 0.4.0. Use sampling_strategy = 'exact' instead.")
+  }
   stopifnot(
     is.matrix(X) || is.data.frame(X),
     is.matrix(bg_X) || is.data.frame(bg_X),
@@ -164,33 +185,35 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
     }
     return(case_p1(n = n, nms = nms, v0 = v0, v1 = v1, X = X))
   }
-
-  # Derive "exact" and "m"
-  if (exact == "auto") {
-    exact <- p <= 8L
-  } else if (exact && p > 10L) {
-    warning("Exact calculations with more than ten features might take long because 
-    prediction data sets have about 2^p * nrow(bg_X) rows. Consider setting exact = FALSE")
+  
+  # Set sampling_strategy and m
+  if (sampling_strategy == "auto") {
+    sampling_strategy <- if (p <= 8) "exact" else "paired"
   }
-  # Now, "exact" is either TRUE or FALSE
-  if (exact) {
+  if (sampling_strategy == "exact") {
     if (verbose) {
       message("Calculating exact Kernel SHAP values")
+    }
+    if (p > 10L) {
+      warning("Exact calculations with more than ten features might take long because 
+    prediction data sets have about 2^p * nrow(bg_X) rows. Consider setting exact = FALSE")  
     }
     m <- 2^p - 2
   } else {
     if (verbose) {
       message("Calculating Kernel SHAP values by iterative sampling")
     }
-    if (m == "auto") {
+    if (is.null(m)) {
       m <- 2L * max(trunc(20 * sqrt(p)), 5L * p)
     }
+    # Make sure that m / 2 is integer in the paired case
+    if (sampling_strategy == "paired") {
+      m <- 2 * trunc(m / 2)
+    }
   }
-  # Make sure that m / 2 is integer in the paired case
-  if (paired_sampling) {
-    m <- 2 * trunc(m / 2)
-  }
-  ex <- if (exact) exact_input(p)
+  
+  # Input for the exact case has to be calculated just once per row to explain
+  ex <- if (sampling_strategy == "exact") exact_input(p)
 
   # Allocate replicated version of the background data
   bg_Xm <- bg_X[rep(seq_len(bg_n), times = m), , drop = FALSE]
@@ -206,9 +229,8 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
       bg_w = bg_w, 
       v0 = v0,
       v1 = v1[i, , drop = FALSE],
-      paired = paired_sampling,
+      sampling_strategy = sampling_strategy,
       m = m,
-      exact = exact,
       ex = ex,
       tol = tol,
       max_iter = max_iter,
@@ -228,9 +250,8 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
         bg_w = bg_w, 
         v0 = v0,
         v1 = v1[i, , drop = FALSE],
-        paired = paired_sampling,
+        sampling_strategy = sampling_strategy,
         m = m,
-        exact = exact,
         ex = ex,
         tol = tol,
         max_iter = max_iter,
@@ -265,19 +286,24 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
 kernelshap.ranger <- function(object, X, bg_X,
                               pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions, 
                               bg_w = NULL, 
-                              paired_sampling = TRUE, m = "auto", exact = TRUE, 
-                              tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
+                              sampling_strategy = c("auto", "paired", "exact", "simple"),
+                              paired_sampling = NULL, exact = NULL,
+                              m = NULL, tol = 0.01, max_iter = 250, parallel = FALSE, 
+                              parallel_args = NULL, verbose = TRUE, ...) {
   kernelshap.default(
     object = object, 
     X = X, 
     bg_X = bg_X, 
     pred_fun = pred_fun, 
     bg_w = bg_w, 
-    paired_sampling = paired_sampling, 
+    sampling_strategy = sampling_strategy,
+    paired_sampling = paired_sampling,
+    exact = exact,
     m = m, 
-    exact = exact, 
     tol = tol, 
     max_iter = max_iter,
+    parallel = parallel,
+    parallel_args = parallel_args, 
     verbose = verbose, 
     ...
   )
@@ -288,19 +314,24 @@ kernelshap.ranger <- function(object, X, bg_X,
 kernelshap.Learner <- function(object, X, bg_X,
                                pred_fun = function(m, X) m$predict_newdata(X)$response, 
                                bg_w = NULL, 
-                               paired_sampling = TRUE, m = "auto", exact = TRUE, 
-                               tol = 0.01, max_iter = 250, verbose = TRUE, ...) {
+                               sampling_strategy = c("auto", "paired", "exact", "simple"),
+                               paired_sampling = NULL, exact = NULL,
+                               m = NULL, tol = 0.01, max_iter = 250, parallel = FALSE, 
+                               parallel_args = NULL, verbose = TRUE, ...) {
   kernelshap.default(
     object = object, 
     X = X, 
     bg_X = bg_X, 
     pred_fun = pred_fun, 
     bg_w = bg_w, 
-    paired_sampling = paired_sampling, 
+    sampling_strategy = sampling_strategy,
+    paired_sampling = paired_sampling,
+    exact = exact,
     m = m, 
-    exact = exact, 
     tol = tol, 
     max_iter = max_iter,
+    parallel = parallel,
+    parallel_args = parallel_args, 
     verbose = verbose, 
     ...
   )

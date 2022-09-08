@@ -1,10 +1,10 @@
 # Kernel SHAP algorithm for a single row x with paired sampling
 kernelshap_one <- function(object, X, bg_X, pred_fun, bg_w, v0, v1, 
-                           paired, m, exact, ex, tol, max_iter, ...) {
+                           sampling_strategy, m, ex, tol, max_iter, ...) {
   p <- ncol(X)
   v0_ext <- v0[rep(1L, m), , drop = FALSE]                        #  (m x K)
   
-  if (exact) {
+  if (sampling_strategy == "exact") {
     Z <- ex[["Z"]]                                                #  (m x p)
     vz <- get_vz(                                                 #  (m x K)
       X = X, bg = bg_X, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
@@ -20,14 +20,14 @@ kernelshap_one <- function(object, X, bg_X, pred_fun, bg_w, v0, v1,
   est_m = list()
   converged <- FALSE
   n_iter <- 0L
-  Asum <- matrix(0, nrow = p, ncol = p)                           #  (p x p)
-  bsum <- matrix(0, nrow = p, ncol = ncol(v0))                    #  (p x K)
+  Asum <- matrix(0, nrow = p, ncol = p)                                  #  (p x p)
+  bsum <- matrix(0, nrow = p, ncol = ncol(v0))                           #  (p x K)
   
   while(!isTRUE(converged) && n_iter < max_iter) {
     n_iter <- n_iter + 1L
-    Z <- sample_Z(m = m, p = p, paired = paired)                  #  (m x p)
+    Z <- sample_Z(m = m, p = p, paired = sampling_strategy == "paired")  #  (m x p)
 
-    # Expensive                                                   #  (m x K)
+    # Expensive                                                          #  (m x K)
     vz <- get_vz(
       X = X, bg = bg_X, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
     )

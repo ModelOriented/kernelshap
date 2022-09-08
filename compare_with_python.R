@@ -24,7 +24,7 @@ ks
 
 # Sampling version takes a bit longer (12 seconds)
 system.time(
-  ks2 <- kernelshap(fit, X_small, bg_X = X_small, exact = FALSE)  
+  ks2 <- kernelshap(fit, X_small, bg_X = X_small, sampling_strategy = "paired")  
 )
 ks2
 
@@ -33,7 +33,7 @@ ks2
 # [1,] -2.09368837 -0.2875728 0.1165124  0.01496767
 # [2,]  0.01148493 -0.1191795 0.1115798 -0.02016471
 
-# Using parallel backend (1 second)
+# Using parallel backend (1 second from the second call on)
 library("doFuture")
 
 registerDoFuture()

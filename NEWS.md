@@ -3,11 +3,12 @@
 ## Major improvements
 
 - Thanks to David Watson, exact calculations are now possible for $p>5$ features, although we do not recommend it for $p>8$. In the exact case with $p > 1$, `kernelshap()` does predicions on data sets with $(2^p-2)N$ rows, where $N$ is the number of rows of the background data. This explodes with large $p$.
+- The arguments `exact` and `paired_sampling` have been entangled and replaced by a new argument `strategy`. Its default is "auto", which will use `strategy = 'exact'` for up to eight features, and `strategy = 'paired'` for more features.
 
 ## User visible changes
 
-- The default for `exact` argument is now `"auto"` instead of `TRUE`. This will use exact
-calculations up to $p=8$ features. For $p>8$, sampling is used.
+- Arguments `exact` and `paired_sampling` are depreciated in favour of the new argument `strategy`, see above. They will be removed in version 0.4.0.
+- The default for `m` is now \code{NULL} instead of "auto".
 - Instead of doubling `m` with paired sampling, we now double the default value of `m` if `m = "auto"`. As a consequence, paired and unpaired sampling will use the same number of on-off vectors per iteration, which improves comparability of the two approaches. The change is backward compatible for the paired sampling case with `m = "auto"`.
 
 ## Bug fixes
