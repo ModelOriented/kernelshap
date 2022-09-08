@@ -13,12 +13,15 @@
 #'   \item p = 1: Exact Shapley values are returned.
 #' }
 #' 
-#' During each iteration, \code{m} feature subsets are evaluated until the worst 
-#' standard error of the SHAP values is small enough relative to the range of the SHAP values. 
-#' This stopping criterion was suggested in Covert and Lee (2021). In the multi-output case,
-#' the criterion must be fulfilled for each dimension separately until iteration stops.
+#' During each iteration, \code{m} on-off vectors (feature subsets) are evaluated until 
+#' the worst standard error of the SHAP values is small enough relative to the range of 
+#' the SHAP values. This stopping criterion was suggested in Covert and Lee (2021) and 
+#' uses the fact that SHAP values and their standard errors are all on the scale of the 
+#' predictions. In the multi-output case, the criterion must be fulfilled for each 
+#' dimension separately until iteration stops.
 #' 
 #' @importFrom doRNG %dorng%
+#' 
 #' @param object Fitted model object.
 #' @param X A (n x p) matrix, data.frame, tibble or data.table of rows to be explained. 
 #' Important: The columns should only represent model features, not the response.
@@ -35,15 +38,14 @@
 #' are handled separately. In other cases, the function must be specified manually.
 #' @param bg_w Optional vector of case weights for each row of \code{bg_X}.
 #' @param paired_sampling Logical flag indicating whether to use paired sampling.
-#' The default is \code{TRUE}. This means that with every feature subset S,
+#' The default is \code{TRUE}. This means that with every on-off vector,
 #' also its complement is evaluated, which leads to considerably faster convergence.
 #' Ignored if exact calculations are done.
-#' @param m Number of feature subsets S to be evaluated during one iteration. 
-#' The default, "auto", equals \code{max(trunc(20*sqrt(p)), 5*p)}, where p is the
+#' @param m Number of on-off vectors to be evaluated during one iteration. 
+#' The default, "auto", equals \code{2*max(trunc(20*sqrt(p)), 5*p)}, where p is the
 #' number of features. Ignored if exact calculations are done.
-#' For the paired sampling strategy, 2m evaluations are done per iteration.
 #' @param exact If \code{TRUE}, the algorithm will produce exact Kernel SHAP values
-#' with respect to the given background data. Note that the algorithm will work with large
+#' with respect to the given background data. Note that the algorithm works with large
 #' prediction data having (2^p-2) * nrow(bg_X) rows, where p is the number of features.
 #' Thus, if p > 10, we recommend to set \code{exact = FALSE}. The default \code{"auto"}
 #' uses \code{exact = TRUE} for up to eight features. If \code{TRUE},
@@ -76,6 +78,7 @@
 #'   \item \code{SE}: Standard errors corresponding to \code{S} (and organized like \code{S}).
 #'   \item \code{n_iter}: Integer vector of length n providing the number of iterations per row of \code{X}.
 #'   \item \code{converged}: Logical vector of length n indicating convergence per row of \code{X}.
+#'   \item \code{m}: Integer providing the effective number of on-off vectors used per iteration.
 #' }
 #' @references
 #' \enumerate{
@@ -175,19 +178,22 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
       message("Calculating exact Kernel SHAP values")
     }
     m <- 2^p - 2
-    paired_sampling <- FALSE
   } else {
     if (verbose) {
       message("Calculating Kernel SHAP values by iterative sampling")
     }
     if (m == "auto") {
-      m <- max(trunc(20 * sqrt(p)), 5L * p)
+      m <- 2L * max(trunc(20 * sqrt(p)), 5L * p)
     }
+  }
+  # Make sure that m / 2 is integer in the paired case
+  if (paired_sampling) {
+    m <- 2 * trunc(m / 2)
   }
   ex <- if (exact) exact_input(p)
 
   # Allocate replicated version of the background data
-  bg_Xm <- bg_X[rep(seq_len(bg_n), times = m * (1L + paired_sampling)), , drop = FALSE]
+  bg_Xm <- bg_X[rep(seq_len(bg_n), times = m), , drop = FALSE]
   
   # Real work: apply Kernel SHAP to each row of X
   if (isTRUE(parallel)) {
@@ -247,7 +253,8 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
     baseline = as.vector(v0), 
     SE = reorganize_list(lapply(res, `[[`, "sigma"), nms = nms), 
     n_iter = vapply(res, `[[`, "n_iter", FUN.VALUE = integer(1L)),
-    converged = converged
+    converged = converged,
+    m = m
   )
   class(out) <- "kernelshap"
   out

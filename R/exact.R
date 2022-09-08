@@ -47,7 +47,8 @@ case_p1 <- function(n, nms, v0, v1, X) {
     baseline = as.vector(v0), 
     SE = SE, 
     n_iter = integer(n), 
-    converged = rep(TRUE, n)
+    converged = rep(TRUE, n),
+    m = 0L
   )
   class(out) <- "kernelshap"
   out

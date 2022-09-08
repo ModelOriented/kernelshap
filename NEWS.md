@@ -8,6 +8,7 @@
 
 - The default for `exact` argument is now `"auto"` instead of `TRUE`. This will use exact
 calculations up to $p=8$ features. For $p>8$, sampling is used.
+- Instead of doubling `m` with paired sampling, we now double the default value of `m` if `m = "auto"`. As a consequence, paired and unpaired sampling will use the same number of on-off vectors per iteration, which improves comparability of the two approaches. The change is backward compatible for the paired sampling case with `m = "auto"`.
 
 ## Bug fixes
 
