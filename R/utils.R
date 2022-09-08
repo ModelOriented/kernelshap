@@ -2,12 +2,11 @@
 kernelshap_one <- function(object, X, bg_X, pred_fun, bg_w, v0, v1, 
                            paired, m, exact, ex, tol, max_iter, ...) {
   p <- ncol(X)
-  n_Z <- m * (1L + paired)
-  v0_ext <- v0[rep(1L, n_Z), , drop = FALSE]                      #  (n_Z x K)
+  v0_ext <- v0[rep(1L, m), , drop = FALSE]                        #  (m x K)
   
   if (exact) {
-    Z <- ex[["Z"]]                                                #  (n_Z x p)
-    vz <- get_vz(                                                 #  (n_Z x K)
+    Z <- ex[["Z"]]                                                #  (m x p)
+    vz <- get_vz(                                                 #  (m x K)
       X = X, bg = bg_X, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
     )
     # Note: w is correctly replicated along columns of (vz - v0_ext)
@@ -26,22 +25,17 @@ kernelshap_one <- function(object, X, bg_X, pred_fun, bg_w, v0, v1,
   
   while(!isTRUE(converged) && n_iter < max_iter) {
     n_iter <- n_iter + 1L
-    
-    # Create Z matrix of dimension ->                             #  (n_Z x p)
-    Z <- sample_Z(m = m, p = p)
-    if (paired) {
-      Z <- rbind(Z, 1 - Z)
-    }
-    
-    # Calling get_vz() is expensive                               #  (n_Z x K)
+    Z <- sample_Z(m = m, p = p, paired = paired)                  #  (m x p)
+
+    # Expensive                                                   #  (m x K)
     vz <- get_vz(
       X = X, bg = bg_X, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
     )
     
     # Least-squares with constraint that beta_1 + ... + beta_p = v_1 - v_0. 
     # The additional constraint beta_0 = v_0 is dealt via offset
-    Atemp <- crossprod(Z) / n_Z                                   #  (p x p)
-    btemp <- crossprod(Z, (vz - v0_ext)) / n_Z                    #  (p x K)
+    Atemp <- crossprod(Z) / m                                     #  (p x p)
+    btemp <- crossprod(Z, (vz - v0_ext)) / m                      #  (p x K)
     Asum <- Asum + Atemp                                          #  (p x p)
     bsum <- bsum + btemp                                          #  (p x K)
     
@@ -69,12 +63,12 @@ solver <- function(A, b, constraint) {
 
 # Calculates all vz of an iteration and thus takes time
 get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
-  n_Z <- nrow(Z)
+  m <- nrow(Z)
   not_Z <- !Z
-  n_bg <- nrow(bg) / n_Z   # because bg was replicated n_Z times
+  n_bg <- nrow(bg) / m   # because bg was replicated m times
   
-  # Replicate not_Z, so that X, bg, not_Z are all of dimension (n_Z*n_bg x p)
-  g <- rep(seq_len(n_Z), each = n_bg)
+  # Replicate not_Z, so that X, bg, not_Z are all of dimension (m*n_bg x p)
+  g <- rep(seq_len(m), each = n_bg)
   not_Z <- not_Z[g, , drop = FALSE]
   
   if (is.matrix(X)) {
@@ -91,7 +85,7 @@ get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
   if (is.null(w)) {
     return(rowsum(preds, group = g, reorder = FALSE) / n_bg)
   }
-  rowsum(preds * rep(w, times = n_Z), group = g, reorder = FALSE) / sum(w)
+  rowsum(preds * rep(w, times = m), group = g, reorder = FALSE) / sum(w)
 }
 
 # Weighted colMeans(). Always returns a (1 x ncol(x)) matrix
