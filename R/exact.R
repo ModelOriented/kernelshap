@@ -5,7 +5,7 @@
 # - w: Vector with row weights of Z ensuring that the distribution of sum(z) matches
 #      the SHAP kernel distribution
 # - A: Exact matrix A = Z'wZ
-input_exact <- function(p) {
+exact_input <- function(p) {
   Z <- exact_Z(p)
   w <- kernel_weights(p) / choose(p, 1:(p - 1L))
   list(Z = Z, w = w[rowSums(Z)], A = exact_A(p))

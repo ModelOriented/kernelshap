@@ -15,7 +15,7 @@ kernelshap(object, ...)
   bg_X,
   pred_fun = stats::predict,
   bg_w = NULL,
-  sampling_strategy = c("auto", "hybrid", "exact", "paired", "simple"),
+  sampling_strategy = c("auto", "paired", "exact", "simple"),
   paired_sampling = NULL,
   exact = NULL,
   m = NULL,
@@ -33,7 +33,7 @@ kernelshap(object, ...)
   bg_X,
   pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
   bg_w = NULL,
-  sampling_strategy = c("auto", "hybrid", "exact", "paired", "simple"),
+  sampling_strategy = c("auto", "paired", "exact", "simple"),
   paired_sampling = NULL,
   exact = NULL,
   m = NULL,
@@ -51,7 +51,7 @@ kernelshap(object, ...)
   bg_X,
   pred_fun = function(m, X) m$predict_newdata(X)$response,
   bg_w = NULL,
-  sampling_strategy = c("auto", "hybrid", "exact", "paired", "simple"),
+  sampling_strategy = c("auto", "paired", "exact", "simple"),
   paired_sampling = NULL,
   exact = NULL,
   m = NULL,
@@ -89,11 +89,11 @@ are handled separately. In other cases, the function must be specified manually.
 \item{sampling_strategy}{Sampling strategy to draw m binary "on-off" vectors z of
 length p used to calculate Kernel SHAP. Currently, one of:
 \itemize{
-\item \code{"auto"} (default): "exact" for up to 8 features, and "hybrid" otherwise.
+\item \code{"auto"} (default): "exact" for up to 8 features, and "paired" otherwise.
 \item \code{"simple"}: Each z is drawn randomly according to Kernel SHAP weights.
-This is done in two steps: First, the value s of sum(z) drawn from the Kernel weight
+This is done in two steps: First, the number s of "1" is drawn from the Kernel weight
 distribution (normalized to the range from 1 to p-1), see Covert and Lee (2021).
-Then, s random positions of z are set to 1.
+Then, the s random positions of a length p 0-vector are set to 1.
 Note that this strategy is strictly worse than paired sampling, so there is
 virtually no reason to use it except for studying properties of Kernel SHAP.
 \item \code{"paired"}: Here, m/2 vectors z are drawn as with the "simple" strategy.
@@ -104,19 +104,7 @@ see Covert and Lee (2021).
 according to the SHAP kernel weight distribution. This produces exact Kernel SHAP
 values with respect to the given background data. The algorithm works with large
 prediction data having (2^p-2) * nrow(bg_X) rows. Thus, we recommend this option
-up to p=10.
-\item \code{"hybrid"}: Sampling is done partly exact and partly via sampling.
-Kernel SHAP weighting puts >=75\% mass to "on-off" vectors z with sum(z) either 1
-or p-1. (Similarly, it puts >=92.7\% mass to vectors with sum(z) <= 2 or >= p-2.)
-For large p, the probabilities are even much closer to 1.
-Thus, random sampling from the Kernel weight distribution yields many identical z
-with sum(z) = 1 or sum(z) = p-1. This leaves only a few other z.
-The hybrid strategy improves this inefficient behaviour: it first creates all 2p
-vectors z with sum(z) equals to 1 or p-1 ("hybrid degree 1").
-Then, if m is large enough, it adds all p(1-p) vectors z with sum(z) = 2 or
-sum(z) = p-2 ("degree 2"). Finally, the remaining
-vectors are sampled according to the paired strategy. Convergence of this strategy
-is expected to be much faster than of paired sampling.
+up to p=8.
 }}
 
 \item{paired_sampling}{Deprecated, set \code{sampling_strategy = "paired"}.}
@@ -124,8 +112,8 @@ is expected to be much faster than of paired sampling.
 \item{exact}{Deprecated, set \code{sampling_strategy = "exact"}.}
 
 \item{m}{Number of on-off vectors to be evaluated during one iteration.
-The default, \code{NULL}, equals \code{max(30, pp*(pp+5), 4*p)}, where p is the
-number of features and pp is min(p, 14). Ignored if exact calculations are done.}
+The default, \code{NULL}, equals \code{2*max(trunc(20*sqrt(p)), 5*p)}, where p is the
+number of features. Ignored if exact calculations are done.}
 
 \item{tol}{Tolerance determining when to stop. The algorithm keeps iterating until
 max(sigma_n) / diff(range(beta_n)) < tol, where the beta_n are the SHAP values
@@ -166,15 +154,13 @@ a list of K such matrices.
 Implements a multidimensional version of the Kernel SHAP algorithm explained in
 detail in Covert and Lee (2021). It is an iterative refinement of the original
 Kernel SHAP algorithm of Lundberg and Lee (2017). The algorithm is applied to each
-row in \code{X}. Its default behaviour depends on the number of features p:
+row in \code{X}. Its behaviour depends on the number of features p:
 \itemize{
 \item 2 <= p <= 8: Exact Kernel SHAP values are returned.
 (Exact regarding the given background data.)
 \item p > 8: Sampling version of Kernel SHAP.
 The algorithm iterates until Kernel SHAP values are sufficiently accurate.
 Approximate standard errors of the SHAP values are returned.
-To improve convergence, a hybrid (partly-exact) sampling scheme to produce "on-off"
-vectors z is used.
 \item p = 1: Exact Shapley values are returned.
 }
 }

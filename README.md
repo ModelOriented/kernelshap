@@ -7,7 +7,7 @@ SHAP values (Lundberg and Lee, 2017) decompose model predictions into additive c
 The "kernelshap" package implements a multidimensional version of the Kernel SHAP Algorithm 1 described in the supplement of Covert and Lee (2021). The default behaviour depends on the number of features $p$:
 
 - $2 \le p \le 8$: Exact Kernel SHAP values are returned. (Exact regarding the given background data.)
-- $p > 8$: Sampling version of Kernel SHAP. The algorithm iterates until Kernel SHAP values are sufficiently accurate. Approximate standard errors of the SHAP values are returned. To improve convergence, a hybrid (partly exact) sampling scheme is used to produce "on-off" vectors $z$, see `?kernelshap` for details.
+- $p > 8$: Sampling version of Kernel SHAP. The algorithm iterates until Kernel SHAP values are sufficiently accurate. Approximate standard errors of the SHAP values are returned.
 - $p = 1$: Exact Shapley values are returned.
 
 The main function `kernelshap()` has four key arguments:
@@ -63,10 +63,10 @@ s
 # [1,]  0.21951350    -1.955357   0.3149451 0.5823533
 # [2,] -0.02843097    -1.955357   0.3149451 0.5823533
 # 
-#  Corresponding standard errors:
-#      Sepal.Width Petal.Length Petal.Width Species
-# [1,]           0            0           0       0
-# [2,]           0            0           0       0
+ Corresponding standard errors:
+     Sepal.Width Petal.Length Petal.Width Species
+[1,]           0            0           0       0
+[2,]           0            0           0       0
 
 # Plot with shapviz
 shp <- shapviz(s)
@@ -285,21 +285,19 @@ plan(multisession, workers = 2)
 
 fit <- gam(Sepal.Length ~ s(Sepal.Width) + Species, data = iris)
 
-system.time(
-  s <- kernelshap(
-    fit, 
-    iris[c(2, 5)], 
-    bg_X = iris, 
-    parallel = TRUE, 
-    parallel_args = list(.packages = "mgcv")
-  )
+s <- kernelshap(
+  fit, 
+  iris[c(2, 5)], 
+  bg_X = iris, 
+  parallel = TRUE, 
+  parallel_args = list(.packages = "mgcv")
 )
 s
 
-# SHAP values of first 2 observations:
-#      Sepal.Width   Species
-# [1,]  0.35570963 -1.135187
-# [2,] -0.04607082 -1.135187
+SHAP values of first 2 observations:
+     Sepal.Width   Species
+[1,]  0.35570963 -1.135187
+[2,] -0.04607082 -1.135187
 ```
 
 ## References

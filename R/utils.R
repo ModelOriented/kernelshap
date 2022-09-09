@@ -1,45 +1,46 @@
 # Kernel SHAP algorithm for a single row x with paired sampling
 kernelshap_one <- function(object, X, bg_X, pred_fun, bg_w, v0, v1, 
-                           sampling_strategy, m, precalc, tol, max_iter, ...) {
+                           sampling_strategy, m, ex, tol, max_iter, ...) {
   p <- ncol(X)
   v0_ext <- v0[rep(1L, m), , drop = FALSE]                        #  (m x K)
+  
+  if (sampling_strategy == "exact") {
+    Z <- ex[["Z"]]                                                #  (m x p)
+    vz <- get_vz(                                                 #  (m x K)
+      X = X, bg = bg_X, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
+    )
+    # Note: w is correctly replicated along columns of (vz - v0_ext)
+    b <- crossprod(Z, ex[["w"]] * (vz - v0_ext))                  #  (p x K)
+    beta <- solver(ex[["A"]], b, constraint = v1 - v0)            #  (p x K)
+    
+    return(list(beta = beta, sigma = 0 * beta, n_iter = 1L, converged = TRUE))
+  }
+  
+  # Now the sampling case
   est_m = list()
   converged <- FALSE
   n_iter <- 0L
-  Asum <- matrix(0, nrow = p, ncol = p)                           #  (p x p)
-  bsum <- matrix(0, nrow = p, ncol = ncol(v0))                    #  (p x K)
+  Asum <- matrix(0, nrow = p, ncol = p)                                  #  (p x p)
+  bsum <- matrix(0, nrow = p, ncol = ncol(v0))                           #  (p x K)
   
   while(!isTRUE(converged) && n_iter < max_iter) {
     n_iter <- n_iter + 1L
-    
-    # Get Z, w, A for any strategy
-    input <- switch(
-      sampling_strategy,
-      hybrid = input_hybrid(m = m, p = p, pairs = precalc),
-      simple = input_simple_paired(m = m, p = p, paired = FALSE),
-      paired = input_simple_paired(m = m, p = p, paired = TRUE),
-      exact = precalc
-    )
-    Z <- input[["Z"]]                                             #  (m x p)
-    
-    # Expensive step                                              #  (m x K)
+    Z <- sample_Z(m = m, p = p, paired = sampling_strategy == "paired")  #  (m x p)
+
+    # Expensive                                                          #  (m x K)
     vz <- get_vz(
       X = X, bg = bg_X, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
     )
     
     # Least-squares with constraint that beta_1 + ... + beta_p = v_1 - v_0. 
     # The additional constraint beta_0 = v_0 is dealt via offset
-    Atemp <- input[["A"]]                                         #  (p x p)
-    btemp <- crossprod(Z, input[["w"]] * (vz - v0_ext))           #  (p x K)
+    Atemp <- crossprod(Z) / m                                     #  (p x p)
+    btemp <- crossprod(Z, (vz - v0_ext)) / m                      #  (p x K)
     Asum <- Asum + Atemp                                          #  (p x p)
     bsum <- bsum + btemp                                          #  (p x K)
     
     # Constrained regression -> parameter matrix                  #  (p x K)
-    est_m[[n_iter]] <- beta <- solver(Atemp, btemp, constraint = v1 - v0)
-    
-    if (sampling_strategy == "exact") {
-      return(list(beta = beta, sigma = 0 * beta, n_iter = 1L, converged = TRUE))
-    }
+    est_m[[n_iter]] <- solver(Atemp, btemp, constraint = v1 - v0)
 
     # Covariance calculation would fail in the first iteration
     if (n_iter >= 2L) {
@@ -92,7 +93,11 @@ weighted_colMeans <- function(x, w = NULL, ...) {
   if (!is.matrix(x)) {
     stop("x must be a matrix")
   }
-  out <- if (is.null(w)) colMeans(x, ...) else colSums(x * w, ...) / sum(w)
+  if (is.null(w)) {
+    out <- colMeans(x, ...)
+  } else {
+    out <- colSums(x * w, ...) / sum(w)  
+  }
   matrix(out, nrow = 1L)
 }
 
@@ -154,67 +159,12 @@ check_bg_size <- function(n) {
   }
 }
 
-# Function to choose or modify m, based on p and the sampling_strategy
-fix_m <- function(sampling_strategy, p, m = NULL) {
-  if (sampling_strategy == "exact") {
-    return(as.integer(2^p - 2))
+# Kernel weights (renormalized without infinite weights for 0 and p)
+kernel_weights <- function(p) {
+  if (p < 2L) {
+    stop("p must be at least two")
   }
-  if (!is.null(m)) { # Make even
-    if (sampling_strategy %in% c("paired", "hybrid")) {
-      m <- 2 * ceiling(m / 2)
-    }
-  } else {
-    pp <- min(14L, p)
-    m <- max(30, pp * (pp + 5), 4 * p)  
-  }
-  as.integer(m)
-}
-
-# Degree of the hybrid approach: 1 means that all z with sum(z) in {1, p-1} are possible, 
-# 2 means that also all z with sum(z) in {2, p-2} are possible (both with fair rest)
-hybrid_degree <- function(p, m) {
-  if (p <= 5) {
-    stop("Hybrid case implemented for p >= 6. Use exact strategy")
-  }
-  kw <- kernel_weights(p)
-  if (m >= p * (p + 1) / (2 * sum(kw[1:2]))) {
-    return(2L)
-  }
-  if (m >= p / kw[1L]) {
-    return(1L)
-  }
-  0L
-}
-
-# Describe type of strategy
-
-summarize_strategy <- function(sampling_strategy, p, m) {
-  if (sampling_strategy == "exact") {
-    txt <- paste0("Exact Kernel SHAP values", " (m = ", m, ")")
-  } else {
-    if (sampling_strategy %in% c("simple", "paired")) {
-      txt <- paste("Kernel SHAP values by iterative", sampling_strategy, "sampling")
-    } else if (sampling_strategy == "hybrid") {
-      deg <- hybrid_degree(p = p, m = m)
-      txt <- sprintf(
-        "Kernel SHAP values by iterative %s sampling of degree %s", 
-        sampling_strategy, 
-        deg
-      )
-    }
-    txt <- paste0(txt, " (m = ", m, "/iter)")
-  }
-  txt
-}
-
-# Kernel weights normalized to a non-empty subset S of {1, ..., p-1}
-kernel_weights <- function(p, S = seq_len(p - 1L)) {
-  if (length(S) == 0L) {
-    stop("S must be non-empty")
-  }
-  if (!all(S %in% 1:(p - 1L))) {
-    stop("S must be subset of 1:(p-1)")
-  }
+  S <- 1:(p - 1L)
   probs <- (p - 1L) / (choose(p, S) * S * (p - S))
   probs / sum(probs)
 }

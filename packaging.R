@@ -87,7 +87,6 @@ build()
 # build(binary = TRUE)
 install(upgrade = FALSE)
 
-
 # Run only if package is public(!) and should go to CRAN
 if (FALSE) {
   check_win_devel()
