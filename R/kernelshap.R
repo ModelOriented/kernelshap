@@ -3,13 +3,15 @@
 #' Implements a multidimensional version of the Kernel SHAP algorithm explained in 
 #' detail in Covert and Lee (2021). It is an iterative refinement of the original 
 #' Kernel SHAP algorithm of Lundberg and Lee (2017). The algorithm is applied to each 
-#' row in \code{X}. Its behaviour depends on the number of features p:
+#' row in \code{X}. Its default behaviour depends on the number of features p:
 #' \itemize{
 #'   \item 2 <= p <= 8: Exact Kernel SHAP values are returned. 
 #'   (Exact regarding the given background data.)
 #'   \item p > 8: Sampling version of Kernel SHAP. 
 #'   The algorithm iterates until Kernel SHAP values are sufficiently accurate. 
 #'   Approximate standard errors of the SHAP values are returned. 
+#'   To improve convergence, a hybrid (partly-exact) sampling scheme to produce "on-off" 
+#'   vectors z is used.
 #'   \item p = 1: Exact Shapley values are returned.
 #' }
 #' 
@@ -42,9 +44,9 @@
 #' \itemize{
 #'   \item \code{"auto"} (default): "exact" for up to 8 features, and "hybrid" otherwise.
 #'   \item \code{"simple"}: Each z is drawn randomly according to Kernel SHAP weights.
-#'   This is done in two steps: First, the number s of "1" is drawn from the Kernel weight
+#'   This is done in two steps: First, the value s of sum(z) drawn from the Kernel weight
 #'   distribution (normalized to the range from 1 to p-1), see Covert and Lee (2021). 
-#'   Then, the s random positions of a length p 0-vector are set to 1.
+#'   Then, s random positions of z are set to 1.
 #'   Note that this strategy is strictly worse than paired sampling, so there is 
 #'   virtually no reason to use it except for studying properties of Kernel SHAP.
 #'   \item \code{"paired"}: Here, m/2 vectors z are drawn as with the "simple" strategy. 
@@ -55,26 +57,25 @@
 #'   according to the SHAP kernel weight distribution. This produces exact Kernel SHAP
 #'   values with respect to the given background data. The algorithm works with large
 #'   prediction data having (2^p-2) * nrow(bg_X) rows. Thus, we recommend this option
-#'   up to p=8.
+#'   up to p=10.
 #'   \item \code{"hybrid"}: Sampling is done partly exact and partly via sampling.
-#'   Kernel SHAP weighting puts >=75% mass to vectors z with sum(z) either 1 or p-1.
-#'   Similarly, it puts >=92.7% mass to vectors with sum(z) <= 2 or >= p-2. Random 
-#'   sampling from the Kernel weight distribution thus yields many identical z with 
-#'   sum(z) = 1 or p-1. and 
-#'   leaving only a few 
-#'   other. The psedoexact strategy improves this inefficient behaviour: it first 
-#'   creates all 2p 
-#'   vectors z with sum(z) equals to 1 or p-1. Then, if m is large enough, it creates
-#'   all p(1-p) vectors z with sum(z) = 2 or p-2. Finally, the remaining m-2p-p(p-1)
-#'   vectors are 
-#'   sampled according to the paired strategy. Convergence of this strategy is expected to be much
-#'   faster than paired sampling. 
+#'   Kernel SHAP weighting puts >=75% mass to "on-off" vectors z with sum(z) either 1 
+#'   or p-1. (Similarly, it puts >=92.7% mass to vectors with sum(z) <= 2 or >= p-2.)
+#'   For large p, the probabilities are even much closer to 1.
+#'   Thus, random sampling from the Kernel weight distribution yields many identical z 
+#'   with sum(z) = 1 or sum(z) = p-1. This leaves only a few other z. 
+#'   The hybrid strategy improves this inefficient behaviour: it first creates all 2p 
+#'   vectors z with sum(z) equals to 1 or p-1 ("hybrid degree 1"). 
+#'   Then, if m is large enough, it adds all p(1-p) vectors z with sum(z) = 2 or 
+#'   sum(z) = p-2 ("degree 2"). Finally, the remaining 
+#'   vectors are sampled according to the paired strategy. Convergence of this strategy 
+#'   is expected to be much faster than of paired sampling.
 #' }
 #' @param paired_sampling Deprecated, set \code{sampling_strategy = "paired"}.
 #' @param exact Deprecated, set \code{sampling_strategy = "exact"}.
 #' @param m Number of on-off vectors to be evaluated during one iteration. 
-#' The default, \code{NULL}, equals \code{2*max(trunc(20*sqrt(p)), 5*p)}, where p is the
-#' number of features. Ignored if exact calculations are done.
+#' The default, \code{NULL}, equals \code{max(30, pp*(pp+5), 4*p)}, where p is the
+#' number of features and pp is min(p, 14). Ignored if exact calculations are done.
 #' @param tol Tolerance determining when to stop. The algorithm keeps iterating until
 #' max(sigma_n) / diff(range(beta_n)) < tol, where the beta_n are the SHAP values 
 #' of a given observation and sigma_n their standard errors. For multidimensional
@@ -199,43 +200,34 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
     return(case_p1(n = n, nms = nms, v0 = v0, v1 = v1, X = X))
   }
   
-  # Set sampling_strategy and m
-  precalc <- NULL
+  # Select strategy "auto"
   if (sampling_strategy == "auto") {
     sampling_strategy <- if (p <= 8) "exact" else "hybrid"
   }
-  if (sampling_strategy == "exact") {
-    if (verbose) {
-      message("Calculating exact Kernel SHAP values")
-    }
-    if (p > 10L) {
-      warning("Exact calculations with more than ten features might take long because 
+  
+  m <- fix_m(sampling_strategy, p = p, m = m)
+  
+  if (sampling_strategy == "exact" && p > 10L) {
+    warning("Exact calculations with more than ten features might take long because 
     prediction data sets have about 2^p * nrow(bg_X) rows. Consider setting exact = FALSE")  
-    }
-    m <- 2^p - 2
-    precalc <- input_exact(p)
-  } else {
-    if (verbose) {
-      message("Calculating Kernel SHAP values by iterative sampling")
-    }
-    if (is.null(m)) {
-      m <- 2L * max(trunc(20 * sqrt(p)), 5L * p)
-    }
-    # Make sure that m / 2 is integer in the paired case
-    if (sampling_strategy %in% c("paired", "hybrid")) {
-      m <- 2 * trunc(m / 2)
-    }
-    # Make sure that m is sufficiently large in the hybrid case
-    if (sampling_strategy == "hybrid") {
-      precalc <- all_pairs(p)
-      if (p > m * kernel_weights(p)[1L]) {
-        stop("m is too small for the hybrid strategy, please make it larger")
-      }
-    }
   }
-
-  # Allocate replicated version of the background data
+  
+  if (sampling_strategy == "hybrid" && hybrid_degree(p = p, m = m) == 0L) {
+    stop("m is too small for the hybrid strategy, please make it larger")
+  }
+  
+  if (verbose) {
+    message(summarize_strategy(sampling_strategy, p = p, m = m))
+  }
+  
+  # Precalculate certain objects that are identical for each row of X
   bg_Xm <- bg_X[rep(seq_len(bg_n), times = m), , drop = FALSE]
+  precalc <- switch(
+    sampling_strategy,
+    exact = input_exact(p),
+    hybrid = all_pairs(p),
+    NULL
+  )
   
   # Real work: apply Kernel SHAP to each row of X
   if (isTRUE(parallel)) {
