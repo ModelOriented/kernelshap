@@ -41,7 +41,7 @@ library("doFuture")
 
 registerDoFuture()
 plan(multisession, workers = 2)  # Windows
-# plan(multicore, workers = 3)   # Linux, macOS, Solaris
+# plan(multicore, workers = 2)   # Linux, macOS, Solaris
 
 # 3 seconds
 system.time(
@@ -72,7 +72,7 @@ system.time(
 ks
 
 # SHAP values of first 2 observations:
-#   carat        cut     color     clarity         depth         table          x           y            z
+#          carat        cut     color     clarity         depth         table          x           y            z
 # [1,] -1.842799 0.01424231 0.1266108 -0.27033874 -0.0007084443  0.0017787647 -0.1720782 0.001330275 -0.006445693
 # [2,] -1.876709 0.03856957 0.1266546  0.03932912 -0.0004202636 -0.0004871776 -0.1739880 0.001397792 -0.006560624
 
@@ -89,28 +89,40 @@ from shap import KernelExplainer
 # Turn categoricals into integers because, inconveniently, kernel SHAP
 # requires numpy array as input
 ord = ["clarity", "color", "cut"]
+# x = ["carat"] + ord + ["table", "depth", "x", "y", "z"]
 x = ["carat"] + ord
 diamonds[ord] = diamonds[ord].apply(lambda x: x.cat.codes)
 X = diamonds[x].to_numpy()
 
 # Fit model with interactions and dummy variables
 fit = ols(
-  "np.log(price) ~ np.log(carat) * (C(clarity) + C(cut) + C(color))", 
+  "np.log(price) ~ np.log(carat) * (C(clarity) + C(cut) + C(color))", # + x + y + z + table + depth", 
   data=diamonds
 ).fit()
 
-# Define subset of 270 diamonds
-X_small = X[0:len(X):200]
+# Background data (120 rows)
+bg_X = X[0:len(X):450]
 
-# Calculate KernelSHAP values for X_small, using X_small as 
-# background data. Predict function has to map numpy array 
-# to pd.Dataframe
+# Define subset of 1018 diamonds to explain
+X_small = X[0:len(X):53]
+
+# Calculate KernelSHAP values
 ks = KernelExplainer(
   model=lambda X: fit.predict(pd.DataFrame(X, columns=x)), 
-  data = X_small
+  data = bg_X
 )
-sv = ks.shap_values(X_small)  # 30 seconds
+sv = ks.shap_values(X_small)  # 11 minutes
 sv[0:2]
 
-# array([[-2.09368837, -0.28757279,  0.11651242,  0.01496767],
-#        [ 0.01148493, -0.1191795 ,  0.11157978, -0.02016471]])
+# Output for four features (exact calculations, 1 minute)
+# array([[-2.05007406, -0.28048747,  0.12812216,  0.01587382],
+#        [-2.0858379 ,  0.04050415,  0.12830103,  0.03731644]])
+
+
+# Output for nine features (exact calculations, 13 minutes)
+# array([[-1.84279897e+00, -2.70338744e-01,  1.26610769e-01,
+#         1.42423108e-02,  1.77876470e-03, -7.08444295e-04,
+#         -1.72078182e-01,  1.33027467e-03, -6.44569296e-03],
+#        [-1.87670887e+00,  3.93291219e-02,  1.26654599e-01,
+#         3.85695742e-02, -4.87177593e-04, -4.20263565e-04,
+#         -1.73988040e-01,  1.39779179e-03, -6.56062359e-03]])
