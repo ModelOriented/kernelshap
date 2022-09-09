@@ -57,13 +57,18 @@
 #'   prediction data having (2^p-2) * nrow(bg_X) rows. Thus, we recommend this option
 #'   up to p=8.
 #'   \item \code{"hybrid"}: Sampling is done partly exact and partly via sampling.
-#'   Kernel SHAP weighting puts at least 75% of the total mass to vectors z with 
-#'   sum(z) either 1 or p-1, yielding many identical such z and leaving only a few 
-#'   other. The hybrid strategy improves this inefficient behaviour: it creates all 2p 
-#'   vectors z with sum(z) equals to 1 or p-1. Then, the remaining m-2p vectors are 
-#'   sampled according to the paired strategy, using SHAP kernel weights renormalized 
-#'   to the values from 2 to p-2. Convergence of this strategy is expected to be much
-#'   faster than paired sampling.
+#'   Kernel SHAP weighting puts >=75% mass to vectors z with sum(z) either 1 or p-1.
+#'   Similarly, it puts >=92.7% mass to vectors with sum(z) <= 2 or >= p-2. Random 
+#'   sampling from the Kernel weight distribution thus yields many identical z with 
+#'   sum(z) = 1 or p-1. and 
+#'   leaving only a few 
+#'   other. The psedoexact strategy improves this inefficient behaviour: it first 
+#'   creates all 2p 
+#'   vectors z with sum(z) equals to 1 or p-1. Then, if m is large enough, it creates
+#'   all p(1-p) vectors z with sum(z) = 2 or p-2. Finally, the remaining m-2p-p(p-1)
+#'   vectors are 
+#'   sampled according to the paired strategy. Convergence of this strategy is expected to be much
+#'   faster than paired sampling. 
 #' }
 #' @param paired_sampling Deprecated, set \code{sampling_strategy = "paired"}.
 #' @param exact Deprecated, set \code{sampling_strategy = "exact"}.
@@ -195,6 +200,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
   }
   
   # Set sampling_strategy and m
+  precalc <- NULL
   if (sampling_strategy == "auto") {
     sampling_strategy <- if (p <= 8) "exact" else "hybrid"
   }
@@ -207,6 +213,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
     prediction data sets have about 2^p * nrow(bg_X) rows. Consider setting exact = FALSE")  
     }
     m <- 2^p - 2
+    precalc <- input_exact(p)
   } else {
     if (verbose) {
       message("Calculating Kernel SHAP values by iterative sampling")
@@ -220,14 +227,12 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
     }
     # Make sure that m is sufficiently large in the hybrid case
     if (sampling_strategy == "hybrid") {
+      precalc <- all_pairs(p)
       if (p > m * kernel_weights(p)[1L]) {
         stop("m is too small for the hybrid strategy, please make it larger")
       }
     }
   }
-  
-  # Input for the exact case has to be calculated just once per row to explain
-  exact <- if (sampling_strategy == "exact") input_exact(p)
 
   # Allocate replicated version of the background data
   bg_Xm <- bg_X[rep(seq_len(bg_n), times = m), , drop = FALSE]
@@ -245,7 +250,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
       v1 = v1[i, , drop = FALSE],
       sampling_strategy = sampling_strategy,
       m = m,
-      exact = exact,
+      precalc = precalc,
       tol = tol,
       max_iter = max_iter,
       ...
@@ -266,7 +271,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
         v1 = v1[i, , drop = FALSE],
         sampling_strategy = sampling_strategy,
         m = m,
-        exact = exact,
+        precalc = precalc,
         tol = tol,
         max_iter = max_iter,
         ...

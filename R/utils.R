@@ -1,6 +1,6 @@
 # Kernel SHAP algorithm for a single row x with paired sampling
 kernelshap_one <- function(object, X, bg_X, pred_fun, bg_w, v0, v1, 
-                           sampling_strategy, m, exact, tol, max_iter, ...) {
+                           sampling_strategy, m, precalc, tol, max_iter, ...) {
   p <- ncol(X)
   v0_ext <- v0[rep(1L, m), , drop = FALSE]                        #  (m x K)
   est_m = list()
@@ -15,10 +15,10 @@ kernelshap_one <- function(object, X, bg_X, pred_fun, bg_w, v0, v1,
     # Get Z, w, A for any strategy
     input <- switch(
       sampling_strategy,
-      hybrid = input_hybrid(m = m, p = p),
-      simple = input_simple(m = m, p = p),
-      paired = input_paired(m = m, p = p),
-      exact = exact
+      hybrid = input_hybrid(m = m, p = p, pairs = precalc),
+      simple = input_simple_paired(m = m, p = p, paired = FALSE),
+      paired = input_simple_paired(m = m, p = p, paired = TRUE),
+      exact = precalc
     )
     Z <- input[["Z"]]                                             #  (m x p)
     
