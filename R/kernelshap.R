@@ -68,7 +68,8 @@
 #'   Then, if m is large enough, it adds all p(1-p) vectors z with sum(z) = 2 or 
 #'   sum(z) = p-2 ("degree 2"). Finally, the remaining 
 #'   vectors are sampled according to the paired strategy. Convergence of this strategy 
-#'   is expected to be much faster than of paired sampling.
+#'   is expected to be much faster than of paired sampling. Up to p = 5, the results
+#'   will agree with the exact strategy (but two iterations are needed to check convergence).
 #' }
 #' @param paired_sampling Deprecated, set \code{sampling_strategy = "paired"}.
 #' @param exact Deprecated, set \code{sampling_strategy = "exact"}.
