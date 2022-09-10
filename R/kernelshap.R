@@ -10,7 +10,7 @@
 #'   \item p > 8: Sampling version of Kernel SHAP. 
 #'   The algorithm iterates until Kernel SHAP values are sufficiently accurate. 
 #'   Approximate standard errors of the SHAP values are returned. 
-#'   To improve convergence, a hybrid (partly-exact) sampling scheme to produce "on-off" 
+#'   To improve convergence, a hybrid (partly exact) sampling scheme to produce "on-off" 
 #'   vectors z is used.
 #'   \item p = 1: Exact Shapley values are returned.
 #' }
@@ -155,7 +155,7 @@ kernelshap <- function(object, ...){
 kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w = NULL, 
                                sampling_strategy = c("auto", "hybrid", "exact", "paired", "simple"),
                                paired_sampling = NULL, exact = NULL,
-                               m = NULL, tol = 0.01, max_iter = 250, parallel = FALSE, 
+                               m = NULL, tol = 0.005, max_iter = 250, parallel = FALSE, 
                                parallel_args = NULL, verbose = TRUE, ...) {
   sampling_strategy <- match.arg(sampling_strategy)
   if (!is.null(paired_sampling)) {
@@ -299,7 +299,7 @@ kernelshap.ranger <- function(object, X, bg_X,
                               bg_w = NULL, 
                               sampling_strategy = c("auto", "hybrid", "exact", "paired", "simple"),
                               paired_sampling = NULL, exact = NULL,
-                              m = NULL, tol = 0.01, max_iter = 250, parallel = FALSE, 
+                              m = NULL, tol = 0.005, max_iter = 250, parallel = FALSE, 
                               parallel_args = NULL, verbose = TRUE, ...) {
   kernelshap.default(
     object = object, 
@@ -327,7 +327,7 @@ kernelshap.Learner <- function(object, X, bg_X,
                                bg_w = NULL, 
                                sampling_strategy = c("auto", "hybrid", "exact", "paired", "simple"),
                                paired_sampling = NULL, exact = NULL,
-                               m = NULL, tol = 0.01, max_iter = 250, parallel = FALSE, 
+                               m = NULL, tol = 0.005, max_iter = 250, parallel = FALSE, 
                                parallel_args = NULL, verbose = TRUE, ...) {
   kernelshap.default(
     object = object, 

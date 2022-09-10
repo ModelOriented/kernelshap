@@ -15,9 +15,9 @@ kernelshap_one <- function(object, X, bg_X, pred_fun, bg_w, v0, v1,
     # Get Z, w, A for any strategy
     input <- switch(
       sampling_strategy,
-      hybrid = input_hybrid(m = m, p = p, pairs = precalc),
-      simple = input_simple_paired(m = m, p = p, paired = FALSE),
-      paired = input_simple_paired(m = m, p = p, paired = TRUE),
+      hybrid = input_hybrid(p = p, m = m, pairs = precalc),
+      simple = input_simple_paired(p = p, m = m, paired = FALSE),
+      paired = input_simple_paired(p = p, m = m, paired = TRUE),
       exact = precalc
     )
     Z <- input[["Z"]]                                             #  (m x p)
@@ -156,7 +156,7 @@ check_bg_size <- function(n) {
 
 # Function to choose or modify m, based on p and the sampling_strategy
 fix_m <- function(sampling_strategy, p, m = NULL) {
-  if (sampling_strategy == "exact") {
+  if (sampling_strategy == "exact" || (sampling_strategy == "hybrid" && p %in% 3:5)) {
     return(as.integer(2^p - 2))
   }
   if (!is.null(m)) { # Make even
@@ -173,9 +173,14 @@ fix_m <- function(sampling_strategy, p, m = NULL) {
 # Degree of the hybrid approach: 1 means that all z with sum(z) in {1, p-1} are possible, 
 # 2 means that also all z with sum(z) in {2, p-2} are possible (both with fair rest)
 hybrid_degree <- function(p, m) {
-  if (p <= 5) {
-    stop("Hybrid case implemented for p >= 6. Use exact strategy")
+  if (p == 2L) {
+    stop("Hybrid case implemented not implemented for p = 2. Use exact strategy")
   }
+  # Exact cases
+  if (p %in% 3:5) {
+    return(1L + (p >= 4L))
+  }
+  # Cases involving sampling
   kw <- kernel_weights(p)
   if (m >= p * (p + 1) / (2 * sum(kw[1:2]))) {
     return(2L)
@@ -187,19 +192,17 @@ hybrid_degree <- function(p, m) {
 }
 
 # Describe type of strategy
-
 summarize_strategy <- function(sampling_strategy, p, m) {
   if (sampling_strategy == "exact") {
-    txt <- paste0("Exact Kernel SHAP values", " (m = ", m, ")")
+    txt <- sprintf("Exact Kernel SHAP values (m = %s)", m)
   } else {
     if (sampling_strategy %in% c("simple", "paired")) {
-      txt <- paste("Kernel SHAP values by iterative", sampling_strategy, "sampling")
+      txt <- sprintf("Kernel SHAP values by iterative %s sampling", sampling_strategy)
     } else if (sampling_strategy == "hybrid") {
-      deg <- hybrid_degree(p = p, m = m)
       txt <- sprintf(
         "Kernel SHAP values by iterative %s sampling of degree %s", 
         sampling_strategy, 
-        deg
+        hybrid_degree(p = p, m = m)
       )
     }
     txt <- paste0(txt, " (m = ", m, "/iter)")
@@ -209,12 +212,6 @@ summarize_strategy <- function(sampling_strategy, p, m) {
 
 # Kernel weights normalized to a non-empty subset S of {1, ..., p-1}
 kernel_weights <- function(p, S = seq_len(p - 1L)) {
-  if (length(S) == 0L) {
-    stop("S must be non-empty")
-  }
-  if (!all(S %in% 1:(p - 1L))) {
-    stop("S must be subset of 1:(p-1)")
-  }
   probs <- (p - 1L) / (choose(p, S) * S * (p - S))
   probs / sum(probs)
 }

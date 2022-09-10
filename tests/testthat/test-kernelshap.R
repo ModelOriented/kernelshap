@@ -124,88 +124,61 @@ test_that("kernelshap works for large p", {
   expect_equal(rowSums(s$S) + s$baseline, unname(stats::predict(fit, X[1L, ])))
 })
 
-test_that("hybrid sampling works for p = 6", {
+test_that("hybrid sampling gives reasonable output for p = 6", {
   p <- 6
   m <- 100
-  h <- input_hybrid(m, p)
+  h <- input_hybrid(p, m)
   expect_equal(sum(h$w), 1)
   expect_equal(dim(h$A), c(p, p))
   expect_equal(dim(h$Z), c(m, p))
 })
 
-test_that("hybrid sampling works for p = 7", {
+test_that("hybrid sampling gives reasonable output for p = 7", {
   p <- 7
   m <- 100
-  h <- input_hybrid(m, p)
+  h <- input_hybrid(p, m)
   expect_equal(sum(h$w), 1)
   expect_equal(dim(h$A), c(p, p))
   expect_equal(dim(h$Z), c(m, p))
 })
 
-test_that("hybrid sampling works for p = 20", {
-  p <- 20
-  m <- 1000
-  h <- input_hybrid(m, p)
-  expect_equal(sum(h$w), 1)
-  expect_equal(dim(h$A), c(p, p))
-  expect_equal(dim(h$Z), c(m, p))
-})
-
-test_that("paired sampling works for p = 6", {
+test_that("paired sampling gives reasonable output for p = 6", {
   p <- 6
   m <- 100
-  h <- input_simple_paired(m, p, TRUE)
+  h <- input_simple_paired(p, m, TRUE)
   expect_equal(sum(h$w), 1)
   expect_equal(dim(h$A), c(p, p))
   expect_equal(dim(h$Z), c(m, p))
 })
 
-test_that("paired sampling works for p = 7", {
+test_that("paired sampling gives reasonable output for p = 7", {
   p <- 7
   m <- 100
-  h <- input_simple_paired(m, p, TRUE)
+  h <- input_simple_paired(p, m, TRUE)
   expect_equal(sum(h$w), 1)
   expect_equal(dim(h$A), c(p, p))
   expect_equal(dim(h$Z), c(m, p))
 })
 
-test_that("paired sampling works for p = 20", {
-  p <- 20
-  m <- 1000
-  h <- input_simple_paired(m, p, TRUE)
-  expect_equal(sum(h$w), 1)
-  expect_equal(dim(h$A), c(p, p))
-  expect_equal(dim(h$Z), c(m, p))
-})
-
-test_that("simple sampling works for p = 6", {
+test_that("simple sampling gives reasonable output for p = 6", {
   p <- 6
   m <- 100
-  h <- input_simple_paired(m, p, FALSE)
+  h <- input_simple_paired(p, m, FALSE)
   expect_equal(sum(h$w), 1)
   expect_equal(dim(h$A), c(p, p))
   expect_equal(dim(h$Z), c(m, p))
 })
 
-test_that("simple sampling works for p = 7", {
+test_that("simple sampling gives reasonable output for p = 7", {
   p <- 7
   m <- 100
-  h <- input_simple_paired(m, p, FALSE)
+  h <- input_simple_paired(p, m, FALSE)
   expect_equal(sum(h$w), 1)
   expect_equal(dim(h$A), c(p, p))
   expect_equal(dim(h$Z), c(m, p))
 })
 
-test_that("simple sampling works for p = 20", {
-  p <- 20
-  m <- 1000
-  h <- input_simple_paired(m, p, FALSE)
-  expect_equal(sum(h$w), 1)
-  expect_equal(dim(h$A), c(p, p))
-  expect_equal(dim(h$Z), c(m, p))
-})
-
-test_that("exact sampling works for p = 6", {
+test_that("exact sampling gives reasonable output for p = 6", {
   p <- 6
   h <- input_exact(p)
   expect_equal(sum(h$w), 1)
@@ -213,7 +186,7 @@ test_that("exact sampling works for p = 6", {
   expect_equal(dim(h$Z), c(2^p-2, p))
 })
 
-test_that("exact sampling works for p = 7", {
+test_that("exact sampling gives reasonable output for p = 7", {
   p <- 7
   h <- input_exact(p)
   expect_equal(sum(h$w), 1)
@@ -221,11 +194,26 @@ test_that("exact sampling works for p = 7", {
   expect_equal(dim(h$Z), c(2^p-2, p))
 })
 
-test_that("exact sampling works for p = 20", {
-  p <- 20
-  h <- input_exact(p)
-  expect_equal(sum(h$w), 1)
-  expect_equal(dim(h$A), c(p, p))
-  expect_equal(dim(h$Z), c(2^p-2, p))
+test_that("Test that exact and hybrid strategy agree for p = 3", {
+  fit <- stats::lm(Sepal.Length ~ Petal.Width + Petal.Length + Species, data = iris)
+  x <- c("Petal.Width", "Petal.Length", "Species")
+  s_e <- kernelshap(fit, iris[1, x], bg_X = iris, sampling_strategy = "exact")
+  s_h <- kernelshap(fit, iris[1, x], bg_X = iris, sampling_strategy = "hybrid")
+  expect_equal(s_e$S, s_h$S)
 })
 
+test_that("Test that exact and hybrid strategy agree for p = 4", {
+  fit <- stats::lm(Sepal.Length ~ ., data = iris)
+  s_e <- kernelshap(fit, iris[1, -1], bg_X = iris, sampling_strategy = "exact")
+  s_h <- kernelshap(fit, iris[1, -1], bg_X = iris, sampling_strategy = "hybrid")
+  expect_equal(s_e$S, s_h$S)
+})
+
+test_that("Test that exact and hybrid strategy agree for p = 5", {
+  ir <- iris
+  ir$sw_high <- ir$Sepal.Width > median(ir$Sepal.Width)
+  fit <- stats::lm(Sepal.Length ~ . + , data = ir)
+  s_e <- kernelshap(fit, iris[1, -1], bg_X = iris, sampling_strategy = "exact")
+  s_h <- kernelshap(fit, iris[1, -1], bg_X = iris, sampling_strategy = "hybrid")
+  expect_equal(s_e$S, s_h$S)
+})

@@ -36,7 +36,7 @@ conv_crit <- function(sig, bet) {
 }
 
 # Create Z, w, A for strategy "simple" and "paired"
-input_simple_paired <- function(m, p, paired) {
+input_simple_paired <- function(p, m, paired) {
   Z <- sample_Z(m = if (paired) m / 2 else m, p = p)
   if (paired) {
     Z <- rbind(Z, 1 - Z)
@@ -46,7 +46,7 @@ input_simple_paired <- function(m, p, paired) {
 }
 
 # Create Z, w, A for strategy "hybrid"
-input_hybrid <- function(m, p, pairs = NULL) {
+input_hybrid <- function(p, m, pairs = NULL) {
   deg <- hybrid_degree(p = p, m = m)
   kw <- kernel_weights(p)
   need_sampling <- FALSE
@@ -76,7 +76,7 @@ input_hybrid <- function(m, p, pairs = NULL) {
       K <- 3L
     }
   } else {
-    need_sampling <- TRUE
+    need_sampling <- m_rest > 0L
     K <- 2L
   }
   if (need_sampling) {
@@ -87,9 +87,13 @@ input_hybrid <- function(m, p, pairs = NULL) {
     w <- c(w, w_rest)
   }
   
-  # Mirror everything
-  Z <- rbind(Z, 1 - Z)
-  w <- c(w, w)
-  
+  # Mirror everything, except when p = 4 where the pairs are already mirrored
+  if (p == 4L) {
+    Z <- rbind(Z, 1 - diag(p))
+    w <- c(w, rep(kw[1L] / p, p))
+  } else {
+    Z <- rbind(Z, 1 - Z)
+    w <- c(w, w)
+  }
   list(Z = Z, w = w, A = crossprod(Z, w * Z))
 }
