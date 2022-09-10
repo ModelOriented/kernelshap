@@ -46,14 +46,13 @@ input_simple_paired <- function(p, m, paired) {
 }
 
 # Create Z, w, A for strategy "hybrid"
-input_hybrid <- function(p, m, pairs = NULL) {
+input_hybrid <- function(p, m, prs = NULL) {
   deg <- hybrid_degree(p = p, m = m)
-  kw <- kernel_weights(p)
-  need_sampling <- FALSE
-
   if (deg == 0L) {
     stop("m is too small for the hybrid strategy, please make it larger")
   }
+  kw <- kernel_weights(p)
+  need_sampling <- FALSE
 
   # Enumerate all z with sum(z) = 1 and store their effective weights
   Z <- diag(p)
@@ -62,12 +61,12 @@ input_hybrid <- function(p, m, pairs = NULL) {
   
   # Can we also enumerate all z with sum(z) = 2 while keeping a rest proportional to
   # Kernel SHAP weights?
-  n_pairs <- p * (p - 1L) / 2
   if (deg == 2L) {
-    if (is.null(pairs)) {
-      pairs <- all_pairs(p)
+    if (is.null(prs)) {
+      prs <- all_pairs(p)
     }
-    Z <- rbind(Z, pairs)
+    n_pairs <- p * (p - 1L) / 2
+    Z <- rbind(Z, prs)
     w_pairs <- rep(kw[2L], n_pairs) / n_pairs
     w <- c(w, w_pairs)
     m_rest <- m_rest - n_pairs
@@ -80,7 +79,6 @@ input_hybrid <- function(p, m, pairs = NULL) {
     K <- 2L
   }
   if (need_sampling) {
-    # Paired sampling for the rest
     Z_rest <- sample_Z(m = m_rest, p = p, S = K:(p - K))
     w_rest <- rep(0.5 - sum(kw[seq_len(K - 1L)]), times = m_rest) / m_rest
     Z <- rbind(Z, Z_rest)

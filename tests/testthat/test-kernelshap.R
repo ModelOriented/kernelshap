@@ -212,8 +212,8 @@ test_that("Test that exact and hybrid strategy agree for p = 4", {
 test_that("Test that exact and hybrid strategy agree for p = 5", {
   ir <- iris
   ir$sw_high <- ir$Sepal.Width > median(ir$Sepal.Width)
-  fit <- stats::lm(Sepal.Length ~ . + , data = ir)
-  s_e <- kernelshap(fit, iris[1, -1], bg_X = iris, sampling_strategy = "exact")
-  s_h <- kernelshap(fit, iris[1, -1], bg_X = iris, sampling_strategy = "hybrid")
+  fit <- stats::lm(Sepal.Length ~ ., data = ir)
+  s_e <- kernelshap(fit, ir[1, -1], bg_X = ir, sampling_strategy = "exact")
+  s_h <- kernelshap(fit, ir[1, -1], bg_X = ir, sampling_strategy = "hybrid")
   expect_equal(s_e$S, s_h$S)
 })

@@ -19,7 +19,7 @@ kernelshap(object, ...)
   paired_sampling = NULL,
   exact = NULL,
   m = NULL,
-  tol = 0.01,
+  tol = 0.005,
   max_iter = 250,
   parallel = FALSE,
   parallel_args = NULL,
@@ -37,7 +37,7 @@ kernelshap(object, ...)
   paired_sampling = NULL,
   exact = NULL,
   m = NULL,
-  tol = 0.01,
+  tol = 0.005,
   max_iter = 250,
   parallel = FALSE,
   parallel_args = NULL,
@@ -55,7 +55,7 @@ kernelshap(object, ...)
   paired_sampling = NULL,
   exact = NULL,
   m = NULL,
-  tol = 0.01,
+  tol = 0.005,
   max_iter = 250,
   parallel = FALSE,
   parallel_args = NULL,
@@ -96,15 +96,14 @@ distribution (normalized to the range from 1 to p-1), see Covert and Lee (2021).
 Then, s random positions of z are set to 1.
 Note that this strategy is strictly worse than paired sampling, so there is
 virtually no reason to use it except for studying properties of Kernel SHAP.
-\item \code{"paired"}: Here, m/2 vectors z are drawn as with the "simple" strategy.
-Then, all m/2 complements 1-z are added to the pool of vectors.
-This paired sampling strategy converges faster than the simple method,
-see Covert and Lee (2021).
+\item \code{"paired"}: Here, m/2 vectors z are drawn with the "simple" strategy.
+Then, all m/2 complements 1-z are added. This paired sampling strategy converges
+faster than the simple method, see Covert and Lee (2021).
 \item \code{"exact"}: All possible binary vectors z are enumerated and weighted
 according to the SHAP kernel weight distribution. This produces exact Kernel SHAP
-values with respect to the given background data. The algorithm works with large
+values with respect to the given background data. The algorithm uses large
 prediction data having (2^p-2) * nrow(bg_X) rows. Thus, we recommend this option
-up to p=10.
+up to p around 10.
 \item \code{"hybrid"}: Sampling is done partly exact and partly via sampling.
 Kernel SHAP weighting puts >=75\% mass to "on-off" vectors z with sum(z) either 1
 or p-1. (Similarly, it puts >=92.7\% mass to vectors with sum(z) <= 2 or >= p-2.)
@@ -173,8 +172,8 @@ row in \code{X}. Its default behaviour depends on the number of features p:
 \item p > 8: Sampling version of Kernel SHAP.
 The algorithm iterates until Kernel SHAP values are sufficiently accurate.
 Approximate standard errors of the SHAP values are returned.
-To improve convergence, a hybrid (partly-exact) sampling scheme to produce "on-off"
-vectors z is used.
+To improve convergence, a hybrid (partly exact) sampling scheme is used
+to produce "on-off" vectors.
 \item p = 1: Exact Shapley values are returned.
 }
 }

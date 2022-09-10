@@ -15,7 +15,7 @@ kernelshap_one <- function(object, X, bg_X, pred_fun, bg_w, v0, v1,
     # Get Z, w, A for any strategy
     input <- switch(
       sampling_strategy,
-      hybrid = input_hybrid(p = p, m = m, pairs = precalc),
+      hybrid = input_hybrid(p = p, m = m, prs = precalc),
       simple = input_simple_paired(p = p, m = m, paired = FALSE),
       paired = input_simple_paired(p = p, m = m, paired = TRUE),
       exact = precalc
