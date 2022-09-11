@@ -1,28 +1,33 @@
 # Functions required only for the sampling version of Kernel SHAP
 
-# m permutations distributed according to Kernel SHAP weights -> (m x p) matrix
-sample_Z <- function(m, p, paired) {
-  if (p < 2L) {
-    stop("Sampling impossible for p < 2")
-  }
-  if (paired) { # Note that m is an even number
-    m <- m / 2
-  }
+# Functions required only for the sampling version of Kernel SHAP
+
+# Draw m binary vectors z of length p with sum(z) distributed according to Kernel SHAP 
+# weights -> (m x p) matrix. The argument S can be used to restrict the range of sum(z)
+sample_Z <- function(p, m, S = 1:(p - 1L)) {
+  # First draw s = sum(z)
+  probs <- kernel_weights(p, S = S)
+  len_S <- S[sample.int(length(S), m, replace = TRUE, prob = probs)]
   
-  # First draw number of elements in S
-  len_S <- sample(1:(p - 1L), m, replace = TRUE, prob = kernel_weights(p))
-  
-  # Then, conditional on that number, set random positions to 1
+  # Then, conditional on that number, set random positions of z to 1
   # Can this be done without loop/vapply?
-  Z <- t(
-    vapply(
-      len_S, 
-      function(z) {out <- numeric(p); out[sample(1:p, z)] <- 1; out}, 
-      FUN.VALUE = numeric(p)
-    )
+  out <- vapply(
+    len_S, 
+    function(z) {out <- numeric(p); out[sample(1:p, z)] <- 1; out}, 
+    FUN.VALUE = numeric(p)
   )
-  if (paired) rbind(Z, 1 - Z) else Z
+  t(out)
 }
+
+# Vectorized version of the vapply part, credits: Mathias Ambuehl
+# f <- function(N, p = 4L) {
+#   l <- length(N)
+#   out <- rep(rep(0:1, l), as.vector(rbind(p-N, N)))
+#   dim(out) <- c(p, l)
+#   ord <- order(col(out), sample.int(l*p))
+#   out[] <- out[ord]
+#   t.default(out)
+# }
 
 # Calculate standard error from list of m estimates
 get_sigma <- function(est, iter) {
@@ -35,4 +40,40 @@ conv_crit <- function(sig, bet) {
     stop("sig must have same dimension as bet")
   }
   apply(sig, 2L, FUN = max) / apply(bet, 2L, FUN = function(z) diff(range(z)))
+}
+
+# Create Z, w, A from sampling
+input_sampling <- function(p, m, deg = 0L, paired = TRUE) {
+  S <- (deg + 1L):(p - deg - 1L)
+  Z <- sample_Z(m = if (paired) m / 2 else m, p = p, S = S)
+  if (paired) {
+    Z <- rbind(Z, 1 - Z)
+  }
+  w_total <- if (deg == 0L) 1 else 1 - 2 * sum(kernel_weights(p)[seq_len(deg)])
+  w <- w_total / m
+  list(Z = Z, w = rep(w, m), A = crossprod(Z) * w)
+}
+
+# Create Z, w, A for base, enumerating all vectors with sum(z) = 1, p-1 etc.
+input_partly_exact <- function(p, deg) {
+  if (!(deg %in% 1:2)) {
+    stop("Base input only if degree 1 or 2")
+  }
+  kw <- kernel_weights(p)
+
+  # z with sum(z) = 1
+  Z <- diag(p)
+  w <- rep(kw[1L] / p, p)
+  
+  # Enumerate all z with sum(z) = 2
+  if (deg >= 2L) {
+    prs <- all_pairs(p)
+    n_pairs <- p * (p - 1) / 2
+    Z <- rbind(Z, prs)
+    w_pairs <- rep(kw[2L] / n_pairs, n_pairs)
+    w <- c(w, w_pairs)
+  }
+  Z <- rbind(Z, 1 - Z)
+  w <- c(w, w)
+  list(Z = Z, w = w, A = crossprod(Z, w * Z))
 }

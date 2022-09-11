@@ -29,6 +29,11 @@ exact_Z <- function(p) {
   Z[2:(nrow(Z) - 1L), , drop = FALSE]
 }
 
+# List all z vectors with sum(z) = 2
+all_pairs <- function(p) {
+  t(utils::combn(seq_len(p), 2L, FUN = function(z) {x <- numeric(p); x[z] <- 1; x}))
+}
+
 # Case p = 1 returns exact Shapley values
 case_p1 <- function(n, nms, v0, v1, X) {
   S <- v1 - v0[rep(1L, n), , drop = FALSE]

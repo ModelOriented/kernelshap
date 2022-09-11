@@ -1,51 +1,70 @@
 # Kernel SHAP algorithm for a single row x with paired sampling
-kernelshap_one <- function(object, X, bg_X, pred_fun, bg_w, v0, v1, 
-                           sampling_strategy, m, ex, tol, max_iter, ...) {
-  p <- ncol(X)
-  v0_ext <- v0[rep(1L, m), , drop = FALSE]                        #  (m x K)
-  
-  if (sampling_strategy == "exact") {
-    Z <- ex[["Z"]]                                                #  (m x p)
+kernelshap_one <- function(x, v1, args = args,  ...) {
+  p <- ncol(x)
+
+  # Calculate A_exact and b_exact
+  if (exact || deg >= 1L) {
+    v0_ext <- v0[rep(1L, m_base), , drop = FALSE]                      #  (m x K)
+    A_exact <- args[[c("ex", "A")]]                               #  (p x p)
+    Z <- precalc[["Z"]]                                           #  (m x p)
+    
+    # Most expensive part
     vz <- get_vz(                                                 #  (m x K)
-      X = X, bg = bg_X, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
+      X = x[rep(1L, times = nrow(bg_X_exact)), , drop = FALSE], 
+      bg = bg_X_exact, 
+      Z = Z, 
+      object = object, 
+      pred_fun = pred_fun, 
+      w = bg_w, 
+      ...
     )
     # Note: w is correctly replicated along columns of (vz - v0_ext)
-    b <- crossprod(Z, ex[["w"]] * (vz - v0_ext))                  #  (p x K)
-    beta <- solver(ex[["A"]], b, constraint = v1 - v0)            #  (p x K)
+    b_exact <- crossprod(Z, precalc[["w"]] * (vz - v0_ext))        #  (p x K)
     
-    return(list(beta = beta, sigma = 0 * beta, n_iter = 1L, converged = TRUE))
-  }
+    if (exact) {
+      beta <- solver(A_exact, b_exact, constraint = v1 - v0)          #  (p x K)
+      return(list(beta = beta, sigma = 0 * beta, n_iter = 1L, converged = TRUE))  
+    }
+  } 
   
-  # Now the sampling case
+  # Iterative sampling part, always recycling A_exact and b_exact to fill up the weights
+  X <- X[rep(1L, times = nrow(bg_X_m)), , drop = FALSE]
+  v0_ext <- v0[rep(1L, m), , drop = FALSE]                        #  (m x K)
+  
   est_m = list()
   converged <- FALSE
   n_iter <- 0L
-  Asum <- matrix(0, nrow = p, ncol = p)                                  #  (p x p)
-  bsum <- matrix(0, nrow = p, ncol = ncol(v0))                           #  (p x K)
+  A_sum <- matrix(0, nrow = p, ncol = p)                                     #  (p x p)
+  b_sum <- matrix(0, nrow = p, ncol = ncol(v0))                              #  (p x K)
+  if (deg == 0L) {
+    A_exact <- A_sum
+    b_exact <- b_sum
+  }
   
   while(!isTRUE(converged) && n_iter < max_iter) {
     n_iter <- n_iter + 1L
-    Z <- sample_Z(m = m, p = p, paired = sampling_strategy == "paired")  #  (m x p)
-
-    # Expensive                                                          #  (m x K)
+    input <- input_sampling(p = p, m = m, deg = deg, paired = paired)
+    Z <- input[["Z"]]
+      
+    # Expensive                                                              #  (m x K)
     vz <- get_vz(
-      X = X, bg = bg_X, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
+      X = X, bg = bg_X_m, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
     )
     
-    # Least-squares with constraint that beta_1 + ... + beta_p = v_1 - v_0. 
-    # The additional constraint beta_0 = v_0 is dealt via offset
-    Atemp <- crossprod(Z) / m                                     #  (p x p)
-    btemp <- crossprod(Z, (vz - v0_ext)) / m                      #  (p x K)
-    Asum <- Asum + Atemp                                          #  (p x p)
-    bsum <- bsum + btemp                                          #  (p x K)
+    # The sum of weights of A_exact and input[["A"]] is 1, same for b
+    A_temp <- A_exact + input[["A"]]                                          #  (p x p)
+    b_temp <- b_exact + crossprod(Z, input[["w"]](vz - v0_ext))               #  (p x K)
+    A_sum <- A_sum + A_temp                                                  #  (p x p)
+    b_sum <- b_sum + b_temp                                                  #  (p x K)
     
-    # Constrained regression -> parameter matrix                  #  (p x K)
-    est_m[[n_iter]] <- solver(Atemp, btemp, constraint = v1 - v0)
+    # Least-squares with constraint that beta_1 + ... + beta_p = v_1 - v_0. 
+    # The additional constraint beta_0 = v_0 is dealt via offset   
+    est_m[[n_iter]] <- solver(A_temp, b_temp, constraint = v1 - v0)          #  (p x K)
 
     # Covariance calculation would fail in the first iteration
     if (n_iter >= 2L) {
-      beta_n <- solver(Asum / n_iter, bsum / n_iter, constraint = v1 - v0)  # (p x K)
-      sigma_n <- get_sigma(est_m, iter = n_iter)                            # (p x K)
+      beta_n <- solver(A_sum / n_iter, b_sum / n_iter, constraint = v1 - v0) #  (p x K)
+      sigma_n <- get_sigma(est_m, iter = n_iter)                             #  (p x K)
       converged <- all(conv_crit(sigma_n, beta_n) < tol)
     }
   }
@@ -57,8 +76,8 @@ kernelshap_one <- function(object, X, bg_X, pred_fun, bg_w, v0, v1,
 solver <- function(A, b, constraint) {
   p <- ncol(A)
   Ainv <- MASS::ginv(A)
-  s <- (matrix(colSums(Ainv %*% b), nrow = 1L) - constraint) / sum(Ainv)  # (1 x K)
-  Ainv %*% (b - s[rep(1L, p), , drop = FALSE])                            # (p x K)
+  s <- (matrix(colSums(Ainv %*% b), nrow = 1L) - constraint) / sum(Ainv)     #  (1 x K)
+  Ainv %*% (b - s[rep(1L, p), , drop = FALSE])                               #  (p x K)
 }
 
 # Calculates all vz of an iteration and thus takes time
@@ -159,13 +178,8 @@ check_bg_size <- function(n) {
   }
 }
 
-# Kernel weights (renormalized without infinite weights for 0 and p)
-kernel_weights <- function(p) {
-  if (p < 2L) {
-    stop("p must be at least two")
-  }
-  S <- 1:(p - 1L)
+# Kernel weights normalized to a non-empty subset S of {1, ..., p-1}
+kernel_weights <- function(p, S = seq_len(p - 1L)) {
   probs <- (p - 1L) / (choose(p, S) * S * (p - S))
   probs / sum(probs)
 }
-
