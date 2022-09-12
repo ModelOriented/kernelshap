@@ -5,7 +5,7 @@
 # - w: Vector with row weights of Z ensuring that the distribution of sum(z) matches
 #      the SHAP kernel distribution
 # - A: Exact matrix A = Z'wZ
-exact_input <- function(p) {
+input_exact <- function(p) {
   Z <- exact_Z(p)
   w <- kernel_weights(p) / choose(p, 1:(p - 1L))
   list(Z = Z, w = w[rowSums(Z)], A = exact_A(p))
@@ -32,6 +32,35 @@ exact_Z <- function(p) {
 # List all z vectors with sum(z) = 2
 all_pairs <- function(p) {
   t(utils::combn(seq_len(p), 2L, FUN = function(z) {x <- numeric(p); x[z] <- 1; x}))
+}
+
+# Create Z, w, A for base, enumerating all vectors with sum(z) = 1, p-1, 2, p-2
+# Works for degree in 1:2 and sufficiently large p to avoid problems with k = p-k
+input_partly_exact <- function(p, deg) {
+  if (!(deg %in% 1:2)) {
+    stop("deg must be 1 or 2")
+  }
+  if (p < 4L + 2L * (deg == 2L)) {
+    stop("p must be at least 4 (deg 1) or 6 (deg 2)")
+  }
+  kw <- kernel_weights(p)
+  
+  # All z with sum(z) = 1
+  Z <- diag(p)
+  w <- rep(kw[1L] / p, p)
+  
+  # Add all z with sum(z) = 2
+  if (deg == 2L) {
+    n_pairs <- p * (p - 1) / 2
+    Z <- rbind(Z, all_pairs(p))
+    w_pairs <- rep(kw[2L] / n_pairs, n_pairs)
+    w <- c(w, w_pairs)
+  }
+  
+  # Add all flipped z
+  Z <- rbind(Z, 1 - Z)
+  w <- c(w, w)
+  list(Z = Z, w = w, A = crossprod(Z, w * Z))
 }
 
 # Case p = 1 returns exact Shapley values

@@ -189,41 +189,42 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
   }
   
   # Precalculations
-  m_base <- ex <- bg_X_m <- bg_X_exact <- NULL
+  m_base <- precalc <- bg_X_m <- bg_X_exact <- NULL
   if (exact) {
     m_base <- 2^p - 2
-    ex <- input_exact(p = p)
+    precalc <- input_exact(p)
   } else if (partly_exact_degree >= 1L) {
     m_base <- 2 * p + (partly_exact_degree == 2L) * p * (p - 1)
-    ex <- input_partly_exact(p = p, partly_exact_degree = partly_exact_degree)
-  } else {
-    m_base <- NULL
-    ex <- NULL
+    precalc <- input_partly_exact(p, partly_exact_degree)
   }
-  
-  # Constant per row to explain
-  args <- list(
-    object = object,
-    pred_fun = pred_fun,
-    bg_w = bg_w, 
-    exact = exact,
-    deg = partly_exact_degree,
-    paired = paired_sampling,
-    m = m,
-    tol = tol,
-    max_iter = max_iter,
-    v0 = v0,
-    m_base = m_base,
-    ex = ex,
-    bg_X_m = bg_X[rep(seq_len(bg_n), times = m), , drop = FALSE],
-    bg_X_exact = bg_X[rep(seq_len(bg_n), times = m_base), , drop = FALSE]
-  )
-  
+  if (!exact) {
+    bg_X_m = bg_X[rep(seq_len(bg_n), times = m), , drop = FALSE]  
+  }
+  if (!partly_exact_degree == 0L) {
+    bg_X_exact = bg_X[rep(seq_len(bg_n), times = m_base), , drop = FALSE]  
+  }
+
   # Real work: apply Kernel SHAP to each row of X
   if (isTRUE(parallel)) {
     parallel_args <- c(list(i = seq_len(n)), parallel_args)
     res <- do.call(foreach::foreach, parallel_args) %dorng% kernelshap_one(
-      x = X[i, , drop = FALSE], v1 = v1[i, , drop = FALSE], args = args,  ...
+      x = X[i, , drop = FALSE], 
+      v1 = v1[i, , drop = FALSE], 
+      object = object,
+      pred_fun = pred_fun,
+      bg_w = bg_w, 
+      exact = exact,
+      deg = partly_exact_degree,
+      paired = paired_sampling,
+      m = m,
+      tol = tol,
+      max_iter = max_iter,
+      v0 = v0,
+      m_base = m_base,
+      precalc = precalc,
+      bg_X_m = bg_X_m,
+      bg_X_exact = bg_X_exact,
+      ...
     )
   } else {
     if (verbose && n >= 2L) {
@@ -232,7 +233,23 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
     res <- vector("list", n)
     for (i in seq_len(n)) {
       res[[i]] <- kernelshap_one(
-        x = X[i, , drop = FALSE], v1 = v1[i, , drop = FALSE], args = args, ...
+        x = X[i, , drop = FALSE], 
+        v1 = v1[i, , drop = FALSE], 
+        object = object,
+        pred_fun = pred_fun,
+        bg_w = bg_w, 
+        exact = exact,
+        deg = partly_exact_degree,
+        paired = paired_sampling,
+        m = m,
+        tol = tol,
+        max_iter = max_iter,
+        v0 = v0,
+        m_base = m_base,
+        precalc = precalc,
+        bg_X_m = bg_X_m,
+        bg_X_exact = bg_X_exact,
+        ...
       )
       if (verbose && n >= 2L) {
         utils::setTxtProgressBar(pb, i)

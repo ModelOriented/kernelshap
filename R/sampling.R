@@ -43,7 +43,7 @@ conv_crit <- function(sig, bet) {
 }
 
 # Create Z, w, A from sampling
-input_sampling <- function(p, m, deg = 0L, paired = TRUE) {
+input_sampling <- function(p, m, deg, paired) {
   S <- (deg + 1L):(p - deg - 1L)
   Z <- sample_Z(m = if (paired) m / 2 else m, p = p, S = S)
   if (paired) {
@@ -54,26 +54,3 @@ input_sampling <- function(p, m, deg = 0L, paired = TRUE) {
   list(Z = Z, w = rep(w, m), A = crossprod(Z) * w)
 }
 
-# Create Z, w, A for base, enumerating all vectors with sum(z) = 1, p-1 etc.
-input_partly_exact <- function(p, deg) {
-  if (!(deg %in% 1:2)) {
-    stop("Base input only if degree 1 or 2")
-  }
-  kw <- kernel_weights(p)
-
-  # z with sum(z) = 1
-  Z <- diag(p)
-  w <- rep(kw[1L] / p, p)
-  
-  # Enumerate all z with sum(z) = 2
-  if (deg >= 2L) {
-    prs <- all_pairs(p)
-    n_pairs <- p * (p - 1) / 2
-    Z <- rbind(Z, prs)
-    w_pairs <- rep(kw[2L] / n_pairs, n_pairs)
-    w <- c(w, w_pairs)
-  }
-  Z <- rbind(Z, 1 - Z)
-  w <- c(w, w)
-  list(Z = Z, w = w, A = crossprod(Z, w * Z))
-}

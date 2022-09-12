@@ -1,15 +1,16 @@
 # Kernel SHAP algorithm for a single row x with paired sampling
-kernelshap_one <- function(x, v1, args = args,  ...) {
+kernelshap_one <- function(x, object, pred_fun, bg_w, exact, deg, paired, m, tol,
+                           max_iter, v0, m_base, precalc, bg_X_m, bg_X_exact,  ...) {
   p <- ncol(x)
 
   # Calculate A_exact and b_exact
   if (exact || deg >= 1L) {
-    v0_ext <- v0[rep(1L, m_base), , drop = FALSE]                      #  (m x K)
-    A_exact <- args[[c("ex", "A")]]                               #  (p x p)
-    Z <- precalc[["Z"]]                                           #  (m x p)
+    v0_ext <- v0[rep(1L, m_base), , drop = FALSE]                 #  (m_b x K)
+    A_exact <- precalc[["A"]]                                     #  (p x p)
+    Z <- precalc[["Z"]]                                           #  (m_b x p)
     
     # Most expensive part
-    vz <- get_vz(                                                 #  (m x K)
+    vz <- get_vz(                                                 #  (m_b x K)
       X = x[rep(1L, times = nrow(bg_X_exact)), , drop = FALSE], 
       bg = bg_X_exact, 
       Z = Z, 
@@ -19,23 +20,23 @@ kernelshap_one <- function(x, v1, args = args,  ...) {
       ...
     )
     # Note: w is correctly replicated along columns of (vz - v0_ext)
-    b_exact <- crossprod(Z, precalc[["w"]] * (vz - v0_ext))        #  (p x K)
+    b_exact <- crossprod(Z, precalc[["w"]] * (vz - v0_ext))       #  (p x K)
     
     if (exact) {
-      beta <- solver(A_exact, b_exact, constraint = v1 - v0)          #  (p x K)
+      beta <- solver(A_exact, b_exact, constraint = v1 - v0)      #  (p x K)
       return(list(beta = beta, sigma = 0 * beta, n_iter = 1L, converged = TRUE))  
     }
   } 
   
-  # Iterative sampling part, always recycling A_exact and b_exact to fill up the weights
+  # Iterative sampling part, always using A_exact and b_exact to fill up the weights
   X <- X[rep(1L, times = nrow(bg_X_m)), , drop = FALSE]
   v0_ext <- v0[rep(1L, m), , drop = FALSE]                        #  (m x K)
   
   est_m = list()
   converged <- FALSE
   n_iter <- 0L
-  A_sum <- matrix(0, nrow = p, ncol = p)                                     #  (p x p)
-  b_sum <- matrix(0, nrow = p, ncol = ncol(v0))                              #  (p x K)
+  A_sum <- matrix(0, nrow = p, ncol = p)                          #  (p x p)
+  b_sum <- matrix(0, nrow = p, ncol = ncol(v0))                   #  (p x K)
   if (deg == 0L) {
     A_exact <- A_sum
     b_exact <- b_sum
@@ -52,8 +53,8 @@ kernelshap_one <- function(x, v1, args = args,  ...) {
     )
     
     # The sum of weights of A_exact and input[["A"]] is 1, same for b
-    A_temp <- A_exact + input[["A"]]                                          #  (p x p)
-    b_temp <- b_exact + crossprod(Z, input[["w"]](vz - v0_ext))               #  (p x K)
+    A_temp <- A_exact + input[["A"]]                                         #  (p x p)
+    b_temp <- b_exact + crossprod(Z, input[["w"]](vz - v0_ext))              #  (p x K)
     A_sum <- A_sum + A_temp                                                  #  (p x p)
     b_sum <- b_sum + b_temp                                                  #  (p x K)
     
