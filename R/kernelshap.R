@@ -126,8 +126,9 @@ kernelshap <- function(object, ...){
 #' @describeIn kernelshap Default Kernel SHAP method.
 #' @export
 kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w = NULL, 
-                               exact = NULL, partly_exact_degree = NULL,
-                               paired_sampling = TRUE, m = NULL, tol = 0.01, 
+                               exact = ncol(X) <= 8L, 
+                               partly_exact_degree = 1L + (ncol(X) <= 20L),
+                               paired_sampling = TRUE, m = 4L * ncol(X), tol = 0.01, 
                                max_iter = 250, parallel = FALSE, 
                                parallel_args = NULL, verbose = TRUE, ...) {
   stopifnot(
@@ -142,9 +143,9 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
     !is.null(colnames(bg_X)),
     all(nms %in% colnames(bg_X)),
     is.function(pred_fun),
-    is.null(exact) || is.logical(exact),
-    is.null(partly_exact_degree) || partly_exact_degree %in% 0:2,
-    is.logical(paired_sampling),
+    exact %in% c(TRUE, FALSE),
+    partly_exact_degree %in% 0:2,
+    paired_sampling %in% c(TRUE, FALSE),
     "m must be even" = trunc(m / 2) == m / 2
   )
   if (!is.null(bg_w)) {
@@ -166,14 +167,6 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
       message("Calculating exact Shapley values")
     }
     return(case_p1(n = n, nms = nms, v0 = v0, v1 = v1, X = X))
-  }
-  
-  # Set sampling strategy
-  if (is.null(exact) && is.null(degree)) {
-    exact <- p <= 8L
-  }
-  if (!exact && is.null(degree)) {
-    degree <- 1L + (p <= 16L)
   }
 
   if (exact) {
@@ -279,8 +272,9 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
 #' @export
 kernelshap.ranger <- function(object, X, bg_X,
                               pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions, 
-                              bg_w = NULL, exact = NULL, partly_exact_degree = NULL,
-                              paired_sampling = TRUE, m = NULL, tol = 0.01, 
+                              bg_w = NULL, exact = ncol(X) <= 8L, 
+                              partly_exact_degree = 1L + (ncol(X) <= 20L),
+                              paired_sampling = TRUE, m = 4L * ncol(X), tol = 0.01, 
                               max_iter = 250, parallel = FALSE, 
                               parallel_args = NULL, verbose = TRUE, ...) {
   kernelshap.default(
@@ -306,8 +300,9 @@ kernelshap.ranger <- function(object, X, bg_X,
 #' @export
 kernelshap.Learner <- function(object, X, bg_X,
                                pred_fun = function(m, X) m$predict_newdata(X)$response, 
-                               bg_w = NULL, exact = NULL, partly_exact_degree = NULL,
-                               paired_sampling = TRUE, m = NULL, tol = 0.01, 
+                               bg_w = NULL, exact = ncol(X) <= 8L, 
+                               partly_exact_degree = 1L + (ncol(X) <= 20L),
+                               paired_sampling = TRUE, m = 4L * ncol(X), tol = 0.01, 
                                max_iter = 250, parallel = FALSE, 
                                parallel_args = NULL, verbose = TRUE, ...) {
   kernelshap.default(

@@ -29,37 +29,48 @@ exact_Z <- function(p) {
   Z[2:(nrow(Z) - 1L), , drop = FALSE]
 }
 
-# List all z vectors with sum(z) = 2
-all_pairs <- function(p) {
-  t(utils::combn(seq_len(p), 2L, FUN = function(z) {x <- numeric(p); x[z] <- 1; x}))
+# List all length p vectors z with sum(z) in {k, p - k}
+exact_Z_k <- function(p, k) {
+  if (k < 1L) {
+    stop("k must be at least 1")
+  }
+  if (p < 2L * k) {
+    stop("p must be >=2*k")
+  }
+  if (k == 1L) {
+    Z <- diag(p)
+  } else {
+    Z <- t(
+      utils::combn(seq_len(p), k, FUN = function(z) {x <- numeric(p); x[z] <- 1; x})
+    )
+  }
+  if (p - k == k) {
+    return(Z)
+  }
+  return(rbind(Z, 1 - Z))
 }
 
-# Create Z, w, A for base, enumerating all vectors with sum(z) = 1, p-1, 2, p-2
-# Works for degree in 1:2 and sufficiently large p to avoid problems with k = p-k
+# Create Z, w, A for vectors with sum(z) in {k, p-k} for k in deg
 input_partly_exact <- function(p, deg) {
-  if (!(deg %in% 1:2)) {
-    stop("deg must be 1 or 2")
+  if (deg < 1L) {
+    stop("deg must be at least 1")
   }
-  if (p < 4L + 2L * (deg == 2L)) {
-    stop("p must be at least 4 (deg 1) or 6 (deg 2)")
+  if (p < 2L * deg) {
+    stop("p must be >=2*deg")
   }
+  
   kw <- kernel_weights(p)
+  Z <- w <- vector("list", deg)
   
-  # All z with sum(z) = 1
-  Z <- diag(p)
-  w <- rep(kw[1L] / p, p)
-  
-  # Add all z with sum(z) = 2
-  if (deg == 2L) {
-    n_pairs <- p * (p - 1) / 2
-    Z <- rbind(Z, all_pairs(p))
-    w_pairs <- rep(kw[2L] / n_pairs, n_pairs)
-    w <- c(w, w_pairs)
+  for (k in seq_len(deg)) {
+    Z[[k]] <- exact_Z_k(p, k = k)
+    n <- nrow(Z[[k]])
+    w_tot <- kw[k] * (2 - (p - k == k))
+    w[[k]] <- rep(w_tot / n, n)
   }
+  w <- unlist(w, recursive = FALSE, use.names = FALSE)
+  Z <- do.call(rbind, Z)
   
-  # Add all flipped z
-  Z <- rbind(Z, 1 - Z)
-  w <- c(w, w)
   list(Z = Z, w = w, A = crossprod(Z, w * Z))
 }
 
