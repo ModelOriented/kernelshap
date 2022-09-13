@@ -14,10 +14,9 @@ test_that("SHAP + baseline = prediction", {
 
 test_that("Non-exact calculation is similar to exact", {
   s1 <- kernelshap(
-    fit, iris[c(1, 51, 101), x], bg_X = iris[, x], sampling_strategy = "paired"
+    fit, iris[c(1, 51, 101), x], bg_X = iris[, x], exact = FALSE, partly_exact_degree = 1
   )
-  expect_equal(s$S, s1$S)
-  expect_true(all(s$n_iter != s1$n_iter))
+  expect_equal(s, s1)
 })
 
 test_that("Decomposing a single row works", {

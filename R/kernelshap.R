@@ -38,13 +38,12 @@
 #' are handled separately. In other cases, the function must be specified manually.
 #' @param bg_w Optional vector of case weights for each row of \code{bg_X}.
 #' @param exact If \code{TRUE}, the algorithm will produce exact Kernel SHAP values
-#' with respect to the background data. In this case, the arguments \code{partly_exact_degree}, 
+#' with respect to the background data. In this case, the arguments \code{hybrid_degree}, 
 #' \code{m}, \code{paired_sampling}, \code{tol}, and \code{max_iter} are ignored.
-#' @param partly_exact_degree Write something
-#' @param paired_sampling Logical flag indicating whether to use paired sampling or not.
-#' If \code{TRUE} (default), with each on-off vector z, also 1-z is sampled. 
-#' This leads to faster convergence, see Covert and Lee (2021). In practice, there is
-#' never a reason to set this argument to \code{FALSE}, except for research purposes. 
+#' @param hybrid_degree Write something
+#' @param paired_sampling Logical flag indicating whether to use paired sampling.
+#' Covert and Lee (2021) show its superior properties compared to standard sampling,
+#' so there is hardly any reason to change the default of \code{TRUE}. 
 #' Ignored if exact calculations are done.
 #' @param m Number of on-off vectors sampled during one iteration. The default, 
 #' \code{NULL}, equals \code{4*p}, where p is the number of features. 
@@ -126,10 +125,9 @@ kernelshap <- function(object, ...){
 #' @describeIn kernelshap Default Kernel SHAP method.
 #' @export
 kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w = NULL, 
-                               exact = ncol(X) <= 8L, 
-                               partly_exact_degree = 1L + (ncol(X) <= 20L),
-                               paired_sampling = TRUE, m = 4L * ncol(X), tol = 0.01, 
-                               max_iter = 250, parallel = FALSE, 
+                               exact = ncol(X) <= 8L, hybrid_degree = NULL,
+                               paired_sampling = TRUE, m = min(256L, 8L * ncol(X)), 
+                               tol = 0.005, max_iter = 250, parallel = FALSE, 
                                parallel_args = NULL, verbose = TRUE, ...) {
   stopifnot(
     is.matrix(X) || is.data.frame(X),
@@ -144,7 +142,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
     all(nms %in% colnames(bg_X)),
     is.function(pred_fun),
     exact %in% c(TRUE, FALSE),
-    partly_exact_degree %in% 0:2,
+    is.null(hybrid_degree) || hybrid_degree %in% 0:(p / 2),
     paired_sampling %in% c(TRUE, FALSE),
     "m must be even" = trunc(m / 2) == m / 2
   )
@@ -169,32 +167,34 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
     return(case_p1(n = n, nms = nms, v0 = v0, v1 = v1, X = X))
   }
 
-  if (exact) {
-    if (verbose) {
-      message("Calculating exact Kernel SHAP values")
-    }
-    if (p > 10L) {
-      warning("Exact calculations with more than ten features might take long because 
-    prediction data sets have about 2^p * nrow(bg_X) rows. Consider setting exact = FALSE")  
-    }
-  } else if (verbose) {
-    message("Calculating Kernel SHAP values by iterative sampling")
+  # Now, the real Kernel SHAP
+  if (!exact && is.null(hybrid_degree)) {
+    hybrid_degree <- 1L + (p %in% 6:16)
+  }
+  if (verbose) {
+    message(summarize_strategy(p, exact = exact, deg = hybrid_degree))
   }
   
   # Precalculations
-  m_base <- precalc <- bg_X_m <- bg_X_exact <- NULL
   if (exact) {
-    m_base <- 2^p - 2
     precalc <- input_exact(p)
-  } else if (partly_exact_degree >= 1L) {
-    m_base <- 2 * p + (partly_exact_degree == 2L) * p * (p - 1)
-    precalc <- input_partly_exact(p, partly_exact_degree)
+  } else if (hybrid_degree >= 1L) {
+    precalc <- input_partly_exact(p, hybrid_degree)
+  } else {
+    # Pure sampling approach
+    precalc <- list()
   }
   if (!exact) {
-    bg_X_m = bg_X[rep(seq_len(bg_n), times = m), , drop = FALSE]  
+    precalc[["bg_X_m"]] <- bg_X[rep(seq_len(bg_n), times = m), , drop = FALSE]  
   }
-  if (!partly_exact_degree == 0L) {
-    bg_X_exact = bg_X[rep(seq_len(bg_n), times = m_base), , drop = FALSE]  
+  if (exact || hybrid_degree >= 1L) {
+    m_exact <- nrow(precalc[["Z"]])
+    precalc[["bg_X_exact"]] <- bg_X[rep(seq_len(bg_n), times = m_exact), , drop = FALSE] 
+    if (m_exact >= 1200) {
+      warning("Predictions on large data sets with ", m_exact, " times ", bg_n,
+              " observations are being done, which might be slow. Consider setting
+              exact = FALSE or lower the hybrid_degree")
+    }
   }
 
   # Real work: apply Kernel SHAP to each row of X
@@ -207,16 +207,13 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
       pred_fun = pred_fun,
       bg_w = bg_w, 
       exact = exact,
-      deg = partly_exact_degree,
+      deg = hybrid_degree,
       paired = paired_sampling,
       m = m,
       tol = tol,
       max_iter = max_iter,
       v0 = v0,
-      m_base = m_base,
       precalc = precalc,
-      bg_X_m = bg_X_m,
-      bg_X_exact = bg_X_exact,
       ...
     )
   } else {
@@ -232,16 +229,13 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
         pred_fun = pred_fun,
         bg_w = bg_w, 
         exact = exact,
-        deg = partly_exact_degree,
+        deg = hybrid_degree,
         paired = paired_sampling,
         m = m,
         tol = tol,
         max_iter = max_iter,
         v0 = v0,
-        m_base = m_base,
         precalc = precalc,
-        bg_X_m = bg_X_m,
-        bg_X_exact = bg_X_exact,
         ...
       )
       if (verbose && n >= 2L) {
@@ -272,10 +266,9 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
 #' @export
 kernelshap.ranger <- function(object, X, bg_X,
                               pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions, 
-                              bg_w = NULL, exact = ncol(X) <= 8L, 
-                              partly_exact_degree = 1L + (ncol(X) <= 20L),
-                              paired_sampling = TRUE, m = 4L * ncol(X), tol = 0.01, 
-                              max_iter = 250, parallel = FALSE, 
+                              bg_w = NULL, exact = ncol(X) <= 8L, hybrid_degree = NULL,
+                              paired_sampling = TRUE, m = min(256L, 8L * ncol(X)), 
+                              tol = 0.005, max_iter = 250, parallel = FALSE, 
                               parallel_args = NULL, verbose = TRUE, ...) {
   kernelshap.default(
     object = object, 
@@ -284,7 +277,7 @@ kernelshap.ranger <- function(object, X, bg_X,
     pred_fun = pred_fun, 
     bg_w = bg_w, 
     exact = exact,
-    partly_exact_degree = partly_exact_degree,
+    hybrid_degree = hybrid_degree,
     paired_sampling = paired_sampling,
     m = m, 
     tol = tol, 
@@ -300,10 +293,9 @@ kernelshap.ranger <- function(object, X, bg_X,
 #' @export
 kernelshap.Learner <- function(object, X, bg_X,
                                pred_fun = function(m, X) m$predict_newdata(X)$response, 
-                               bg_w = NULL, exact = ncol(X) <= 8L, 
-                               partly_exact_degree = 1L + (ncol(X) <= 20L),
-                               paired_sampling = TRUE, m = 4L * ncol(X), tol = 0.01, 
-                               max_iter = 250, parallel = FALSE, 
+                               bg_w = NULL, exact = ncol(X) <= 8L, hybrid_degree = NULL,
+                               paired_sampling = TRUE, m = min(256L, 8L * ncol(X)), 
+                               tol = 0.005, max_iter = 250, parallel = FALSE, 
                                parallel_args = NULL, verbose = TRUE, ...) {
   kernelshap.default(
     object = object, 
@@ -312,7 +304,7 @@ kernelshap.Learner <- function(object, X, bg_X,
     pred_fun = pred_fun, 
     bg_w = bg_w,
     exact = exact,
-    partly_exact_degree = partly_exact_degree,
+    hybrid_degree = hybrid_degree,
     paired_sampling = paired_sampling,
     m = m, 
     tol = tol, 

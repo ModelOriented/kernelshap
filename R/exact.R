@@ -30,7 +30,7 @@ exact_Z <- function(p) {
 }
 
 # List all length p vectors z with sum(z) in {k, p - k}
-exact_Z_k <- function(p, k) {
+partly_exact_Z <- function(p, k) {
   if (k < 1L) {
     stop("k must be at least 1")
   }
@@ -44,7 +44,7 @@ exact_Z_k <- function(p, k) {
       utils::combn(seq_len(p), k, FUN = function(z) {x <- numeric(p); x[z] <- 1; x})
     )
   }
-  if (p - k == k) {
+  if (p == 2L * k) {
     return(Z)
   }
   return(rbind(Z, 1 - Z))
@@ -63,9 +63,9 @@ input_partly_exact <- function(p, deg) {
   Z <- w <- vector("list", deg)
   
   for (k in seq_len(deg)) {
-    Z[[k]] <- exact_Z_k(p, k = k)
+    Z[[k]] <- partly_exact_Z(p, k = k)
     n <- nrow(Z[[k]])
-    w_tot <- kw[k] * (2 - (p - k == k))
+    w_tot <- kw[k] * (2 - (p == 2L * k))
     w[[k]] <- rep(w_tot / n, n)
   }
   w <- unlist(w, recursive = FALSE, use.names = FALSE)

@@ -6,13 +6,15 @@
 
 ## User visible changes
 
-- The default for `m` is now \code{NULL} instead of "auto".
-- Instead of doubling `m` with paired sampling, we now double the default value of `m` if `m = "auto"`. As a consequence, paired and unpaired sampling will use the same number of on-off vectors per iteration, which improves comparability of the two approaches. The change is backward compatible for the paired sampling case with `m = "auto"`. Note that `paired_sampling` should be `TRUE` except for studying properties of the algorithm.
+- The default value of `tol` was reduced from 0.01 to 0.005.
+- The default value of `m` is now `min(256L, 8L * ncol(X))`.
+- Paired sampling no longer duplicates `m`.
+- Thanks to Mathias Ambuehl, the sampling algorithm is now fully vectorized. Thus, results will be different to those from the last version.
 
 ## Bug fixes
 
 - Predictions of `mgcv::gam()` would cause an error in `check_pred()` (they are 1D-arrays).
-- Fixed small mistakes in Readme (mlr3 and mgcv).
+- Fixed small mistakes in the examples of the README (mlr3 and mgcv).
 
 # kernelshap 0.2.0
 

@@ -15,11 +15,11 @@ kernelshap(object, ...)
   bg_X,
   pred_fun = stats::predict,
   bg_w = NULL,
-  sampling_strategy = c("auto", "paired", "exact", "simple"),
-  paired_sampling = NULL,
-  exact = NULL,
-  m = NULL,
-  tol = 0.01,
+  exact = ncol(X) <= 8L,
+  partly_exact_degree = 1L + (ncol(X) <= 16L),
+  paired_sampling = TRUE,
+  m = min(256L, 8L * ncol(X)),
+  tol = 0.005,
   max_iter = 250,
   parallel = FALSE,
   parallel_args = NULL,
@@ -33,11 +33,11 @@ kernelshap(object, ...)
   bg_X,
   pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
   bg_w = NULL,
-  sampling_strategy = c("auto", "paired", "exact", "simple"),
-  paired_sampling = NULL,
-  exact = NULL,
-  m = NULL,
-  tol = 0.01,
+  exact = ncol(X) <= 8L,
+  partly_exact_degree = 1L + (ncol(X) <= 16L),
+  paired_sampling = TRUE,
+  m = min(256L, 8L * ncol(X)),
+  tol = 0.005,
   max_iter = 250,
   parallel = FALSE,
   parallel_args = NULL,
@@ -51,11 +51,11 @@ kernelshap(object, ...)
   bg_X,
   pred_fun = function(m, X) m$predict_newdata(X)$response,
   bg_w = NULL,
-  sampling_strategy = c("auto", "paired", "exact", "simple"),
-  paired_sampling = NULL,
-  exact = NULL,
-  m = NULL,
-  tol = 0.01,
+  exact = ncol(X) <= 8L,
+  partly_exact_degree = 1L + (ncol(X) <= 16L),
+  paired_sampling = TRUE,
+  m = min(256L, 8L * ncol(X)),
+  tol = 0.005,
   max_iter = 250,
   parallel = FALSE,
   parallel_args = NULL,
@@ -86,34 +86,21 @@ are handled separately. In other cases, the function must be specified manually.
 
 \item{bg_w}{Optional vector of case weights for each row of \code{bg_X}.}
 
-\item{sampling_strategy}{Sampling strategy to draw m binary "on-off" vectors z of
-length p used to calculate Kernel SHAP. Currently, one of:
-\itemize{
-\item \code{"auto"} (default): "exact" for up to 8 features, and "paired" otherwise.
-\item \code{"simple"}: Each z is drawn randomly according to Kernel SHAP weights.
-This is done in two steps: First, the number s of "1" is drawn from the Kernel weight
-distribution (normalized to the range from 1 to p-1), see Covert and Lee (2021).
-Then, the s random positions of a length p 0-vector are set to 1.
-Note that this strategy is strictly worse than paired sampling, so there is
-virtually no reason to use it except for studying properties of Kernel SHAP.
-\item \code{"paired"}: Here, m/2 vectors z are drawn as with the "simple" strategy.
-Then, all m/2 complements 1-z are added to the pool of vectors.
-This paired sampling strategy converges faster than the simple method,
-see Covert and Lee (2021).
-\item \code{"exact"}: All possible binary vectors z are enumerated and weighted
-according to the SHAP kernel weight distribution. This produces exact Kernel SHAP
-values with respect to the given background data. The algorithm works with large
-prediction data having (2^p-2) * nrow(bg_X) rows. Thus, we recommend this option
-up to p=8.
-}}
+\item{exact}{If \code{TRUE}, the algorithm will produce exact Kernel SHAP values
+with respect to the background data. In this case, the arguments \code{partly_exact_degree},
+\code{m}, \code{paired_sampling}, \code{tol}, and \code{max_iter} are ignored.}
 
-\item{paired_sampling}{Deprecated, set \code{sampling_strategy = "paired"}.}
+\item{partly_exact_degree}{Write something}
 
-\item{exact}{Deprecated, set \code{sampling_strategy = "exact"}.}
+\item{paired_sampling}{Logical flag indicating whether to use paired sampling or not.
+If \code{TRUE} (default), with each on-off vector z, also 1-z is sampled.
+This leads to faster convergence, see Covert and Lee (2021). In practice, there is
+never a reason to set this argument to \code{FALSE}, except for research purposes.
+Ignored if exact calculations are done.}
 
-\item{m}{Number of on-off vectors to be evaluated during one iteration.
-The default, \code{NULL}, equals \code{2*max(trunc(20*sqrt(p)), 5*p)}, where p is the
-number of features. Ignored if exact calculations are done.}
+\item{m}{Number of on-off vectors sampled during one iteration. The default,
+\code{NULL}, equals \code{4*p}, where p is the number of features.
+Ignored if exact calculations are done.}
 
 \item{tol}{Tolerance determining when to stop. The algorithm keeps iterating until
 max(sigma_n) / diff(range(beta_n)) < tol, where the beta_n are the SHAP values

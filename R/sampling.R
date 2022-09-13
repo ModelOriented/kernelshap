@@ -7,27 +7,24 @@
 sample_Z <- function(p, m, S = 1:(p - 1L)) {
   # First draw s = sum(z)
   probs <- kernel_weights(p, S = S)
-  len_S <- S[sample.int(length(S), m, replace = TRUE, prob = probs)]
+  N <- S[sample.int(length(S), m, replace = TRUE, prob = probs)]
   
   # Then, conditional on that number, set random positions of z to 1
-  # Can this be done without loop/vapply?
-  out <- vapply(
-    len_S, 
-    function(z) {out <- numeric(p); out[sample(1:p, z)] <- 1; out}, 
-    FUN.VALUE = numeric(p)
-  )
+  # Original, unvectorized code
+  # out <- vapply(
+  #   N, 
+  #   function(z) {out <- numeric(p); out[sample(1:p, z)] <- 1; out}, 
+  #   FUN.VALUE = numeric(p)
+  # )
+  # t(out)
+  
+  # Vectorized by Mathias Ambuehl
+  out <- rep(rep(0:1, m), as.vector(rbind(p - N, N)))
+  dim(out) <- c(p, m)
+  ord <- order(col(out), sample.int(m * p))
+  out[] <- out[ord]
   t(out)
 }
-
-# Vectorized version of the vapply part, credits: Mathias Ambuehl
-# f <- function(N, p = 4L) {
-#   l <- length(N)
-#   out <- rep(rep(0:1, l), as.vector(rbind(p-N, N)))
-#   dim(out) <- c(p, l)
-#   ord <- order(col(out), sample.int(l*p))
-#   out[] <- out[ord]
-#   t.default(out)
-# }
 
 # Calculate standard error from list of m estimates
 get_sigma <- function(est, iter) {

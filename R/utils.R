@@ -1,37 +1,41 @@
 # Kernel SHAP algorithm for a single row x with paired sampling
-kernelshap_one <- function(x, object, pred_fun, bg_w, exact, deg, paired, m, tol,
-                           max_iter, v0, m_base, precalc, bg_X_m, bg_X_exact,  ...) {
+kernelshap_one <- function(x, v1, object, pred_fun, bg_w, exact, deg, 
+                           paired, m, tol, max_iter, v0, precalc, ...) {
   p <- ncol(x)
 
   # Calculate A_exact and b_exact
   if (exact || deg >= 1L) {
-    v0_ext <- v0[rep(1L, m_base), , drop = FALSE]                 #  (m_b x K)
     A_exact <- precalc[["A"]]                                     #  (p x p)
-    Z <- precalc[["Z"]]                                           #  (m_b x p)
+    bg_X_exact <- precalc[["bg_X_exact"]]                         #  (m_ex*n_bg x p)
+    Z <- precalc[["Z"]]                                           #  (m_ex x p)
+    m_exact <- nrow(Z)
+    v0_m_exact <- v0[rep(1L, m_exact), , drop = FALSE]            #  (m_ex x K)
     
     # Most expensive part
-    vz <- get_vz(                                                 #  (m_b x K)
-      X = x[rep(1L, times = nrow(bg_X_exact)), , drop = FALSE], 
-      bg = bg_X_exact, 
-      Z = Z, 
+    vz <- get_vz(                                                 #  (m_ex x K)
+      X = x[rep(1L, times = nrow(bg_X_exact)), , drop = FALSE],   #  (m_ex*n_bg x p)
+      bg = bg_X_exact,                                            #  (m_ex*n_bg x p)
+      Z = Z,                                                      #  (m_ex x p)
       object = object, 
       pred_fun = pred_fun, 
       w = bg_w, 
       ...
     )
-    # Note: w is correctly replicated along columns of (vz - v0_ext)
-    b_exact <- crossprod(Z, precalc[["w"]] * (vz - v0_ext))       #  (p x K)
+    # Note: w is correctly replicated along columns of (vz - v0_m_exact)
+    b_exact <- crossprod(Z, precalc[["w"]] * (vz - v0_m_exact))   #  (p x K)
     
-    if (exact) {
+    # Some of the hybrid cases are exact as well
+    if (exact || p %in% (0:1 + (2L * deg))) {
       beta <- solver(A_exact, b_exact, constraint = v1 - v0)      #  (p x K)
       return(list(beta = beta, sigma = 0 * beta, n_iter = 1L, converged = TRUE))  
     }
   } 
   
   # Iterative sampling part, always using A_exact and b_exact to fill up the weights
-  X <- X[rep(1L, times = nrow(bg_X_m)), , drop = FALSE]
-  v0_ext <- v0[rep(1L, m), , drop = FALSE]                        #  (m x K)
-  
+  bg_X_m <- precalc[["bg_X_m"]]                                   #  (m*n_bg x p)
+  X <- x[rep(1L, times = nrow(bg_X_m)), , drop = FALSE]           #  (m*n_bg x p)
+  v0_m <- v0[rep(1L, m), , drop = FALSE]                          #  (m x K)
+
   est_m = list()
   converged <- FALSE
   n_iter <- 0L
@@ -54,7 +58,7 @@ kernelshap_one <- function(x, object, pred_fun, bg_w, exact, deg, paired, m, tol
     
     # The sum of weights of A_exact and input[["A"]] is 1, same for b
     A_temp <- A_exact + input[["A"]]                                         #  (p x p)
-    b_temp <- b_exact + crossprod(Z, input[["w"]](vz - v0_ext))              #  (p x K)
+    b_temp <- b_exact + crossprod(Z, input[["w"]] * (vz - v0_m))             #  (p x K)
     A_sum <- A_sum + A_temp                                                  #  (p x p)
     b_sum <- b_sum + b_temp                                                  #  (p x K)
     
@@ -177,6 +181,20 @@ check_bg_size <- function(n) {
   if (n < 20L) {
     warning("Your background data 'bg_X' is small, which might lead to imprecise SHAP values. Consider using 100-200 rows.")
   }
+}
+
+# Describe what is happening (should be extended)
+summarize_strategy <- function(p, exact, deg) {
+  if (exact) {
+    return("Exact Kernel SHAP values")
+  }
+  if (p %in% (0:1 + (2L * deg))) {
+    return("Exact Kernel SHAP values by the hybrid approach")
+  }
+  if (deg == 0L) {
+    return("Approximate Kernel SHAP values by iterative sampling")
+  }
+  paste("Approximate Kernel SHAP values by the hybrid strategy of degree", deg)
 }
 
 # Kernel weights normalized to a non-empty subset S of {1, ..., p-1}
