@@ -183,18 +183,42 @@ check_bg_size <- function(n) {
   }
 }
 
-# Describe what is happening (should be extended)
-summarize_strategy <- function(p, exact, deg) {
-  if (exact) {
-    return("Exact Kernel SHAP values")
+# Given p and maximum m, determine hybrid degree (currently not used)
+find_degree <- function(p, m_max) {
+  if (p < 2L) {
+    "p must be at least 2"
   }
-  if (p %in% (0:1 + (2L * deg))) {
-    return("Exact Kernel SHAP values by the hybrid approach")
+  if (m_max < 2L * p) {
+    return(list(degree = 0L, m_exact = 0L))
+  }
+  # Non-integers are rounded down
+  S <- seq_len(p / 2)
+  const <- (2L - (p == 2L * S))
+  m_kum <- cumsum(const * choose(p, S))
+  degree <- max(S[m_kum <= m_max])
+  list(degree = degree, m_exact = m_kum[degree])
+}
+
+# Describe what is happening
+summarize_strategy <- function(p, exact, deg, m_exact, m) {
+  if (exact || p %in% (0:1 + (2L * deg))) {
+    return(
+      sprintf(
+        "Exact Kernel SHAP values %s(m_exact = %s)", 
+        if (exact) "" else "by the hybrid approach ",
+        m_exact
+      )
+    )
   }
   if (deg == 0L) {
-    return("Approximate Kernel SHAP values by iterative sampling")
-  }
-  paste("Approximate Kernel SHAP values by the hybrid strategy of degree", deg)
+    return(sprintf("Kernel SHAP values by iterative sampling (m/iter = %s)", m))
+  } 
+  sprintf(
+    "Kernel SHAP values by the iterative hybrid strategy of degree %s (m_exact = %s, m/iter = %s)", 
+    deg, 
+    m_exact, 
+    m
+  )
 }
 
 # Kernel weights normalized to a non-empty subset S of {1, ..., p-1}

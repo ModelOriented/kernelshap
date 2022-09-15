@@ -1,7 +1,7 @@
 #' Kernel SHAP
 #'
-#' Implements a multidimensional version of the Kernel SHAP algorithm explained in 
-#' detail in Covert and Lee (2021). It is an iterative refinement of the original 
+#' Implements a multidimensional refinement of the Kernel SHAP algorithm explained in 
+#' detail in Covert and Lee (2021). It is an iterative version of the original 
 #' Kernel SHAP algorithm of Lundberg and Lee (2017). The algorithm is applied to each 
 #' row in \code{X}. Its behaviour depends on the number of features p:
 #' \itemize{
@@ -75,7 +75,9 @@
 #'   \item \code{SE}: Standard errors corresponding to \code{S} (and organized like \code{S}).
 #'   \item \code{n_iter}: Integer vector of length n providing the number of iterations per row of \code{X}.
 #'   \item \code{converged}: Logical vector of length n indicating convergence per row of \code{X}.
-#'   \item \code{m}: Integer providing the effective number of on-off vectors used per iteration.
+#'   \item \code{m}: Integer providing the effective number of sampled on-off vectors used per iteration.
+#'   \item \code{m_exact}: Integer providing the effective number of exact on-off vectors used per iteration.
+#'   \item \code{txt}: Summary text.
 #' }
 #' @references
 #' \enumerate{
@@ -125,9 +127,10 @@ kernelshap <- function(object, ...){
 #' @describeIn kernelshap Default Kernel SHAP method.
 #' @export
 kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w = NULL, 
-                               exact = ncol(X) <= 8L, hybrid_degree = NULL,
+                               exact = (ncol(X) <= 8L) && is.null(hybrid_degree), 
+                               hybrid_degree = NULL,
                                paired_sampling = TRUE, m = min(256L, 8L * ncol(X)), 
-                               tol = 0.005, max_iter = 250, parallel = FALSE, 
+                               tol = 0.005, max_iter = 25L, parallel = FALSE, 
                                parallel_args = NULL, verbose = TRUE, ...) {
   stopifnot(
     is.matrix(X) || is.data.frame(X),
@@ -161,43 +164,41 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
   
   # For p = 1, exact Shapley values are returned
   if (p == 1L) {
-    if (verbose) {
-      message("Calculating exact Shapley values")
-    }
-    return(case_p1(n = n, nms = nms, v0 = v0, v1 = v1, X = X))
+    return(case_p1(n = n, nms = nms, v0 = v0, v1 = v1, X = X, verbose = verbose))
   }
 
-  # Now, the real Kernel SHAP
+  # Now the real Kernel SHAP
   if (!exact && is.null(hybrid_degree)) {
     hybrid_degree <- 1L + (p %in% 6:16)
   }
-  if (verbose) {
-    message(summarize_strategy(p, exact = exact, deg = hybrid_degree))
-  }
   
   # Precalculations
-  if (exact) {
-    precalc <- input_exact(p)
-  } else if (hybrid_degree >= 1L) {
-    precalc <- input_partly_exact(p, hybrid_degree)
+  if (exact || hybrid_degree >= 1L) {
+    precalc <- if (exact) input_exact(p) else input_partly_exact(p, hybrid_degree)
+    m_exact <- nrow(precalc[["Z"]])
+    precalc[["bg_X_exact"]] <- bg_X[rep(seq_len(bg_n), times = m_exact), , drop = FALSE] 
   } else {
-    # Pure sampling approach
     precalc <- list()
+    m_exact <- 0L
   }
   if (!exact) {
     precalc[["bg_X_m"]] <- bg_X[rep(seq_len(bg_n), times = m), , drop = FALSE]  
   }
-  if (exact || hybrid_degree >= 1L) {
-    m_exact <- nrow(precalc[["Z"]])
-    precalc[["bg_X_exact"]] <- bg_X[rep(seq_len(bg_n), times = m_exact), , drop = FALSE] 
-    if (m_exact >= 1200) {
-      warning("Predictions on large data sets with ", m_exact, " times ", bg_n,
-              " observations are being done, which might be slow. Consider setting
-              exact = FALSE or lower the hybrid_degree")
-    }
+  
+  # Some infos
+  txt <- summarize_strategy(
+    p, exact = exact, deg = hybrid_degree, m_exact = m_exact, m = m
+  )
+  if (verbose) {
+    message(txt)
   }
-
-  # Real work: apply Kernel SHAP to each row of X
+  if (verbose && (mm <- max(m, m_exact) * bg_n) > 2e5) {
+    warning("Predictions on large data sets with ", mm,
+            " observations are being done. Consider reducing the computational burden
+            (e.g. exact = FALSE, low hybrid_degree, smaller background data, smaller m)")
+  }
+  
+  # Apply Kernel SHAP to each row of X
   if (isTRUE(parallel)) {
     parallel_args <- c(list(i = seq_len(n)), parallel_args)
     res <- do.call(foreach::foreach, parallel_args) %dorng% kernelshap_one(
@@ -256,7 +257,9 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
     SE = reorganize_list(lapply(res, `[[`, "sigma"), nms = nms), 
     n_iter = vapply(res, `[[`, "n_iter", FUN.VALUE = integer(1L)),
     converged = converged,
-    m = m
+    m = m,
+    m_exact = m_exact,
+    txt = txt
   )
   class(out) <- "kernelshap"
   out
@@ -266,9 +269,11 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
 #' @export
 kernelshap.ranger <- function(object, X, bg_X,
                               pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions, 
-                              bg_w = NULL, exact = ncol(X) <= 8L, hybrid_degree = NULL,
+                              bg_w = NULL, 
+                              exact = (ncol(X) <= 8L) && is.null(hybrid_degree), 
+                              hybrid_degree = NULL,
                               paired_sampling = TRUE, m = min(256L, 8L * ncol(X)), 
-                              tol = 0.005, max_iter = 250, parallel = FALSE, 
+                              tol = 0.005, max_iter = 25L, parallel = FALSE, 
                               parallel_args = NULL, verbose = TRUE, ...) {
   kernelshap.default(
     object = object, 
@@ -293,9 +298,11 @@ kernelshap.ranger <- function(object, X, bg_X,
 #' @export
 kernelshap.Learner <- function(object, X, bg_X,
                                pred_fun = function(m, X) m$predict_newdata(X)$response, 
-                               bg_w = NULL, exact = ncol(X) <= 8L, hybrid_degree = NULL,
+                               bg_w = NULL, 
+                               exact = (ncol(X) <= 8L) && is.null(hybrid_degree), 
+                               hybrid_degree = NULL,
                                paired_sampling = TRUE, m = min(256L, 8L * ncol(X)), 
-                               tol = 0.005, max_iter = 250, parallel = FALSE, 
+                               tol = 0.005, max_iter = 25L, parallel = FALSE, 
                                parallel_args = NULL, verbose = TRUE, ...) {
   kernelshap.default(
     object = object, 

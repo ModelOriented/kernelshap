@@ -75,7 +75,11 @@ input_partly_exact <- function(p, deg) {
 }
 
 # Case p = 1 returns exact Shapley values
-case_p1 <- function(n, nms, v0, v1, X) {
+case_p1 <- function(n, nms, v0, v1, X, verbose) {
+  txt <- "Exact Shapley values (p = 1)"
+  if (verbose) {
+    message(txt)
+  }
   S <- v1 - v0[rep(1L, n), , drop = FALSE]
   SE <- matrix(numeric(n), dimnames = list(NULL, nms))
   if (ncol(v1) > 1L) {
@@ -93,7 +97,9 @@ case_p1 <- function(n, nms, v0, v1, X) {
     SE = SE, 
     n_iter = integer(n), 
     converged = rep(TRUE, n),
-    m = 0L
+    m = 0L,
+    m_exact = 0L,
+    txt = txt
   )
   class(out) <- "kernelshap"
   out

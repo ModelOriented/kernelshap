@@ -2,53 +2,49 @@
 
 ## Major improvements
 
-- Thanks to David Watson, exact calculations are now possible for $p>5$ features, although we do not recommend it for $p>8$. In the exact case with $p > 1$, `kernelshap()` does predicions on data sets with $(2^p-2)N$ rows, where $N$ is the number of rows of the background data. This explodes with large $p$.
+### Exact calculations
+
+Thanks to David Watson, exact calculations are now possible for $p>5$ features. By default, the algorithm now uses exact calculations for $p \le 8$ and a hybrid strategy otherwise, see next section. Note that the exact case will create $2^p-2$ on-off vectors $z$. Consequently, predictions will be done on $(2^p-2)N$ rows, where $N$ is the number of rows of the background data. As this explodes with large $p$, we do not recommend it for $p > 10$.
+
+### Hybrid strategy
+
+The iterative Kernel SHAP sampling algorithm of Covert and Lee (2021) [1] works by randomly sample $m$ on-off vectors $z$ so that their sum follows the SHAP Kernel weight distribution (renormalized to the range from $1$ to $p-1$). Based on these vectors, many predictions are formed and Kernel SHAP values are derived, see [1] for details. This is done multiple times until convergence.
+
+A drawback of this strategy is that many (at least 75%) of the $z$ vectors will have $\sum z \in \{1, p-1\}$, producing many duplicates. Similarly, at least 92% of the mass will be used for the $p(p+1)$ possible vectors with $\sum z \in \{1, 2, p-1, p-2\}$ etc. This inefficiency can be removed by a hybrid strategy, combining exact calculations with sampling. 
+
+The hybrid algorithm works in two steps:
+
+1. Step 1 (exact part): All z vectors with $\sum z \in \{1, p-1\}$ are created (degree 1 hybrid). Then, if `m_exact_max` is sufficiently large, also all vectors with $\sum z \in \{2, p-2\}$ are added (degree 2) etc. until at most `m_exact_max` on-off vectors are generated with total Kernel SHAP weight $w_{exact}$. The necessary predictions are obtained along with other calculations similar to those in [1].
+2. Step 2 (sampling part): The remaining weight $1 - w_{exact}$ is filled by sampling vectors $z$ according to Kernel SHAP weights renormalized to the values not yet covered by Step 1. Together with the results from Step 1, correctly weighted, this now forms a complete iteration like in Covert and Lee (2021) with the difference that most mass is covered by exact calculations. Then, the algorithm iterates until convergence. The output of Step 1 is reused in every iteration, leading to an extremely efficient strategy that usually converges in the minimal number of iterations (2).
+
+The default behaviour of `kernelshap()` is as follows:
+
+- $p \le 8$: Exact Kernel SHAP (with respect to the background data)
+- $9 \le p \le 16$: Degree 2 hybrid
+- $p > 16$: Degree 1 hybrid
+- $p = 1$: Exact Shapley values
+
+It is also possible to use a pure sampling strategy, see Section "User visible changes" below.
+
+Kernel SHAP in the Python implementation "shap" uses a quite similar hybrid strategy, but without iterating. The new logic in the R package thus combines the efficiency of the Python implementation with the convergence monitoring of [1].
+
+[1] Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value Estimation Using Linear Regression. Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.
 
 ## User visible changes
 
+- The default value of `m` is now $\min(256, 8p)$`.
+- The default value of `exact` is now `TRUE` if $p <= 8$ and no `hybrid_degree` is set.
+- A new argument `hybrid_degree` is introduced to control the exact part of the hybrid algorithm. The default, `NULL`, ensures hybrid degree 2 up to $p\le 16$ and degree 1 for $p > 16$. Set to 0 to force a pure sampling strategy.
 - The default value of `tol` was reduced from 0.01 to 0.005.
-- The default value of `m` is now `min(256L, 8L * ncol(X))`.
+- The default of `max_iter` was reduced from 250 to 25.
+- The order of some of the arguments behind the first four has been changed.
 - Paired sampling no longer duplicates `m`.
-- Thanks to Mathias Ambuehl, the sampling algorithm is now fully vectorized. Thus, results will be different to those from the last version.
+- Thanks to Mathias Ambuehl, the random sampling of z vectors is now fully vectorized.
 
 ## Bug fixes
 
 - Predictions of `mgcv::gam()` would cause an error in `check_pred()` (they are 1D-arrays).
 - Fixed small mistakes in the examples of the README (mlr3 and mgcv).
-
-# kernelshap 0.2.0
-
-## Breaking change
-
-The interface of `kernelshap()` has been revised. Instead of specifying a prediction function, it suffices now to pass the fitted model object. The default `pred_fun` is now `stats::predict`, which works in most cases. Some other cases are catched via model class ("ranger" and mlr3 "Learner"). The `pred_fun` can be overwritten by a function of the form `function(object, X, ...)`. Additional arguments to the prediction function are passed via `...` of `kernelshap()`.
-
-Some examples:
-
-- Logistic regression (logit scale): `kernelshap(fit, X, bg_X)`
-- Logistic regression (probabilities): `kernelshap(fit, X, bg_X, type = "response")`
-- Linear regression with logarithmic response, but evaluated on original scale: Here, the default predict function needs to be overwritten: `kernelshap(fit, X, bg_X, pred_fun = function(m, X) exp(predict(m, X)))`
-
-## Major improvements
-
-- `kernelshap()` has received a more intuitive interface, see breaking change above.
-- The package now supports multidimensional predictions. Hurray!
-- Thanks to David Watson, parallel computing is now supported. The user needs to set up the parallel backend before calling `kernelshap()`, e.g., using the "doFuture" package, and then set `parallel = TRUE`. Especially on Windows, sometimes not all global variables or packages are loaded in the parallel instances. These can be specified by `parallel_args`, a list of arguments passed to `foreach()`.
-- Even without parallel computing, `kernelshap()` has become much faster.
-- For $2 \le p \le 5$ features, the algorithm now returns exact Kernel SHAP values with respect to the given background data. (For $p = 1$, exact *Shapley values* are returned.)
-- Direct handling of "tidymodels" models.
-
-## User visible changes
-
-- Besides `matrix`, `data.frame`s, and `tibble`s, the package now also accepts `data.table`s (if the prediction function can deal with them).
-- `kernelshap()` is less picky regarding the output structure of `pred_fun()`.
-- `kernelshap()` is less picky about the column structure of the background data `bg_X`. It should simply contain the columns of `X` (but can have more or in different order). The old behaviour was to launch an error if `colnames(X) != colnames(bg_X)`.
-- The default `m = "auto"` has been changed from `trunc(20 * sqrt(p))` to `max(trunc(20 * sqrt(p)), 5 * p`. This will have an effect for cases where the number of features $p > 16$. The change will imply more robust results for large p.
-- There were too many "ks_*()" functions to extract elements of a "kernelshap" object. They are now all deprecated and replaced by `ks_extract(, what = "S")`.
-- Added "MASS", "doRNG", and "foreach" to dependencies.
-
-## Bug fixes
-
-- Depending on $m$ and $p$, the matrix inversion required in the constrained least-squares solution could fail. It is now replaced by `MASS::ginv()`, the Moore-Penrose pseudoinverse using `svd()`.
 
 ## New contributor
 
