@@ -270,7 +270,7 @@ system.time(
 )
 ```
 
-### GAM on Windows
+### Parallel GAM on Windows
 
 On Windows, sometimes not all packages or global objects are passed to the parallel sessions. In this case, the necessary instructions to `foreach` can be specified through a named list via `parallel_args`, see the following example:
 
@@ -285,12 +285,14 @@ plan(multisession, workers = 2)
 
 fit <- gam(Sepal.Length ~ s(Sepal.Width) + Species, data = iris)
 
-s <- kernelshap(
-  fit, 
-  iris[c(2, 5)], 
-  bg_X = iris, 
-  parallel = TRUE, 
-  parallel_args = list(.packages = "mgcv")
+system.time(
+  s <- kernelshap(
+    fit, 
+    iris[c(2, 5)], 
+    bg_X = iris, 
+    parallel = TRUE, 
+    parallel_args = list(.packages = "mgcv")
+  )
 )
 s
 

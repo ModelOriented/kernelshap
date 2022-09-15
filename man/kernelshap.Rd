@@ -15,12 +15,12 @@ kernelshap(object, ...)
   bg_X,
   pred_fun = stats::predict,
   bg_w = NULL,
-  exact = ncol(X) <= 8L,
-  partly_exact_degree = 1L + (ncol(X) <= 16L),
+  exact = (ncol(X) <= 8L) && is.null(hybrid_degree),
+  hybrid_degree = NULL,
   paired_sampling = TRUE,
   m = min(256L, 8L * ncol(X)),
   tol = 0.005,
-  max_iter = 250,
+  max_iter = 25L,
   parallel = FALSE,
   parallel_args = NULL,
   verbose = TRUE,
@@ -33,12 +33,12 @@ kernelshap(object, ...)
   bg_X,
   pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
   bg_w = NULL,
-  exact = ncol(X) <= 8L,
-  partly_exact_degree = 1L + (ncol(X) <= 16L),
+  exact = (ncol(X) <= 8L) && is.null(hybrid_degree),
+  hybrid_degree = NULL,
   paired_sampling = TRUE,
   m = min(256L, 8L * ncol(X)),
   tol = 0.005,
-  max_iter = 250,
+  max_iter = 25L,
   parallel = FALSE,
   parallel_args = NULL,
   verbose = TRUE,
@@ -51,12 +51,12 @@ kernelshap(object, ...)
   bg_X,
   pred_fun = function(m, X) m$predict_newdata(X)$response,
   bg_w = NULL,
-  exact = ncol(X) <= 8L,
-  partly_exact_degree = 1L + (ncol(X) <= 16L),
+  exact = (ncol(X) <= 8L) && is.null(hybrid_degree),
+  hybrid_degree = NULL,
   paired_sampling = TRUE,
   m = min(256L, 8L * ncol(X)),
   tol = 0.005,
-  max_iter = 250,
+  max_iter = 25L,
   parallel = FALSE,
   parallel_args = NULL,
   verbose = TRUE,
@@ -87,15 +87,14 @@ are handled separately. In other cases, the function must be specified manually.
 \item{bg_w}{Optional vector of case weights for each row of \code{bg_X}.}
 
 \item{exact}{If \code{TRUE}, the algorithm will produce exact Kernel SHAP values
-with respect to the background data. In this case, the arguments \code{partly_exact_degree},
+with respect to the background data. In this case, the arguments \code{hybrid_degree},
 \code{m}, \code{paired_sampling}, \code{tol}, and \code{max_iter} are ignored.}
 
-\item{partly_exact_degree}{Write something}
+\item{hybrid_degree}{Write something}
 
-\item{paired_sampling}{Logical flag indicating whether to use paired sampling or not.
-If \code{TRUE} (default), with each on-off vector z, also 1-z is sampled.
-This leads to faster convergence, see Covert and Lee (2021). In practice, there is
-never a reason to set this argument to \code{FALSE}, except for research purposes.
+\item{paired_sampling}{Logical flag indicating whether to use paired sampling.
+Covert and Lee (2021) show its superior properties compared to standard sampling,
+so there is hardly any reason to change the default of \code{TRUE}.
 Ignored if exact calculations are done.}
 
 \item{m}{Number of on-off vectors sampled during one iteration. The default,
@@ -134,12 +133,14 @@ a list of K such matrices.
 \item \code{SE}: Standard errors corresponding to \code{S} (and organized like \code{S}).
 \item \code{n_iter}: Integer vector of length n providing the number of iterations per row of \code{X}.
 \item \code{converged}: Logical vector of length n indicating convergence per row of \code{X}.
-\item \code{m}: Integer providing the effective number of on-off vectors used per iteration.
+\item \code{m}: Integer providing the effective number of sampled on-off vectors used per iteration.
+\item \code{m_exact}: Integer providing the effective number of exact on-off vectors used per iteration.
+\item \code{txt}: Summary text.
 }
 }
 \description{
-Implements a multidimensional version of the Kernel SHAP algorithm explained in
-detail in Covert and Lee (2021). It is an iterative refinement of the original
+Implements a multidimensional refinement of the Kernel SHAP algorithm explained in
+detail in Covert and Lee (2021). It is an iterative version of the original
 Kernel SHAP algorithm of Lundberg and Lee (2017). The algorithm is applied to each
 row in \code{X}. Its behaviour depends on the number of features p:
 \itemize{
