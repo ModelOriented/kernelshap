@@ -39,7 +39,8 @@ conv_crit <- function(sig, bet) {
   apply(sig, 2L, FUN = max) / apply(bet, 2L, FUN = function(z) diff(range(z)))
 }
 
-# Create Z, w, A from sampling
+# Create Z, w, A from sampling. deg > 0 means that we need to compensate the remaining
+# mass after creating exact z up to degree deg.
 input_sampling <- function(p, m, deg, paired) {
   S <- (deg + 1L):(p - deg - 1L)
   Z <- sample_Z(m = if (paired) m / 2 else m, p = p, S = S)

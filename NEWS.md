@@ -43,6 +43,10 @@ Kernel SHAP in the Python implementation "shap" uses a quite similar hybrid stra
 - Paired sampling no longer duplicates `m`.
 - Thanks to Mathias Ambuehl, the random sampling of z vectors is now fully vectorized.
 
+## Other changes
+
+- The resulting object now contains `m_exact` (the number of on-off vectors used for the exact part) and `txt` (the info message when starting the algorithm).
+
 ## Bug fixes
 
 - Predictions of `mgcv::gam()` would cause an error in `check_pred()` (they are 1D-arrays).

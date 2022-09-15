@@ -173,13 +173,13 @@ check_pred <- function(x, n) {
   stop("Predictions must be a length n vector or a matrix/data.frame/array with n rows.")
 }
 
-# Informative warning if background data is small or large
+# Is background data too small or large?
 check_bg_size <- function(n) {
   if (n > 1000L) {
-    warning("Your background data 'bg_X' is large, which will slow down the process. Consider using 100-200 rows.")
+    message("Your background data 'bg_X' is large, which will slow down the process. Consider using 100-200 rows.")
   }
   if (n < 20L) {
-    warning("Your background data 'bg_X' is small, which might lead to imprecise SHAP values. Consider using 100-200 rows.")
+    message("Your background data 'bg_X' is small, which might lead to imprecise SHAP values. Consider using 100-200 rows.")
   }
 }
 

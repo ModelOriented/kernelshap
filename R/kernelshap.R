@@ -228,10 +228,10 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
   if (verbose) {
     message(txt)
   }
-  if (verbose && (mm <- max(m, m_exact) * bg_n) > 2e5) {
-    warning("Predictions on large data sets with ", mm,
-            " observations are being done. Consider reducing the computational burden
-            (e.g. exact = FALSE, low hybrid_degree, smaller background data, smaller m)")
+  if (verbose && max(m, m_exact) * bg_n > 2e5) {
+    warning("Predictions on large data sets with ", max(m, m_exact), "x", bg_n,
+            " observations are being done. Consider reducing the computational burden ",
+            "(e.g. exact = FALSE, low hybrid_degree, smaller background data, smaller m)")
   }
   
   # Apply Kernel SHAP to each row of X

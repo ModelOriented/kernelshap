@@ -1,6 +1,8 @@
 # Model with non-linearities and interactions
-fit <- stats::lm(Sepal.Length ~ poly(Petal.Width, 2) * Species, data = iris)
-x <- c("Petal.Width", "Species")
+fit <- stats::lm(
+  Sepal.Length ~ poly(Petal.Width, 2) * Species + Petal.Length, data = iris
+)
+x <- c("Petal.Width", "Species", "Petal.Length")
 preds <- unname(predict(fit, iris))
 s <- kernelshap(fit, iris[c(1, 51, 101), x], bg_X = iris)
 
@@ -12,8 +14,13 @@ test_that("SHAP + baseline = prediction", {
   expect_equal(rowSums(s$S) + s$baseline, preds[c(1, 51, 101)])
 })
 
-test_that("Non-exact calculation is similar to exact", {
+test_that("Exact hybrid calculation is similar to exact (non-hybrid)", {
   s1 <- kernelshap(fit, iris[c(1, 51, 101), x], bg_X = iris, hybrid_degree = 1)
+  expect_equal(s$S, s1$S)
+})
+
+test_that("Pure sampling is similar to exact", {
+  s1 <- kernelshap(fit, iris[c(1, 51, 101), x], bg_X = iris, hybrid_degree = 0)
   expect_equal(s$S, s1$S)
 })
 
@@ -108,14 +115,23 @@ test_that("Matrix input is fine with case weights", {
   expect_equal(rowSums(s$S) + s$baseline, preds[1:3])
 })
 
-test_that("kernelshap works for large p", {
-  set.seed(9L)
-  X <- data.frame(matrix(rnorm(20000L), ncol = 100L))
-  y <- rnorm(200L)
-  fit <- lm(y ~ ., data = cbind(y = y, X))
-  s <- kernelshap(fit, X[1L, ], bg_X = X)
+set.seed(9L)
+X <- data.frame(matrix(rnorm(20000L), ncol = 100L))
+y <- rnorm(200L)
+fit <- lm(y ~ ., data = cbind(y = y, X))
+s <- kernelshap(fit, X[1L, ], bg_X = X, hybrid_degree = 1L)
 
+test_that("kernelshap works for large p (hybrid case)", {
   expect_equal(s$baseline, mean(y))
   expect_equal(rowSums(s$S) + s$baseline, unname(stats::predict(fit, X[1L, ])))
 })
+
+# Pure sampling case does not converge in 25 iterations, but result matches 
+# test_that("Hybrid large p case matches approximately the pure sampler", {
+#   s1 <- kernelshap(fit, X[1L, ], bg_X = X, hybrid_degree = 0)
+#   
+#   expect_equal(s$S[1, 1], s1$S[1, 1])
+#   expect_equal(rowSums(s$S) + s$baseline, unname(stats::predict(fit, X[1L, ])))
+# })
+
 
