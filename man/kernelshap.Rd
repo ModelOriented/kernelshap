@@ -15,12 +15,12 @@ kernelshap(object, ...)
   bg_X,
   pred_fun = stats::predict,
   bg_w = NULL,
-  sampling_strategy = c("auto", "paired", "exact", "simple"),
-  paired_sampling = NULL,
-  exact = NULL,
-  m = NULL,
-  tol = 0.01,
-  max_iter = 250,
+  exact = (ncol(X) <= 8L) && is.null(hybrid_degree),
+  hybrid_degree = NULL,
+  paired_sampling = TRUE,
+  m = min(256L, 8L * ncol(X)),
+  tol = 0.005,
+  max_iter = 25L,
   parallel = FALSE,
   parallel_args = NULL,
   verbose = TRUE,
@@ -33,12 +33,12 @@ kernelshap(object, ...)
   bg_X,
   pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
   bg_w = NULL,
-  sampling_strategy = c("auto", "paired", "exact", "simple"),
-  paired_sampling = NULL,
-  exact = NULL,
-  m = NULL,
-  tol = 0.01,
-  max_iter = 250,
+  exact = (ncol(X) <= 8L) && is.null(hybrid_degree),
+  hybrid_degree = NULL,
+  paired_sampling = TRUE,
+  m = min(256L, 8L * ncol(X)),
+  tol = 0.005,
+  max_iter = 25L,
   parallel = FALSE,
   parallel_args = NULL,
   verbose = TRUE,
@@ -51,12 +51,12 @@ kernelshap(object, ...)
   bg_X,
   pred_fun = function(m, X) m$predict_newdata(X)$response,
   bg_w = NULL,
-  sampling_strategy = c("auto", "paired", "exact", "simple"),
-  paired_sampling = NULL,
-  exact = NULL,
-  m = NULL,
-  tol = 0.01,
-  max_iter = 250,
+  exact = (ncol(X) <= 8L) && is.null(hybrid_degree),
+  hybrid_degree = NULL,
+  paired_sampling = TRUE,
+  m = min(256L, 8L * ncol(X)),
+  tol = 0.005,
+  max_iter = 25L,
   parallel = FALSE,
   parallel_args = NULL,
   verbose = TRUE,
@@ -86,44 +86,41 @@ are handled separately. In other cases, the function must be specified manually.
 
 \item{bg_w}{Optional vector of case weights for each row of \code{bg_X}.}
 
-\item{sampling_strategy}{Sampling strategy to draw m binary "on-off" vectors z of
-length p used to calculate Kernel SHAP. Currently, one of:
+\item{exact}{If \code{TRUE}, the algorithm will produce exact Kernel SHAP values
+with respect to the background data. In this case, the arguments \code{hybrid_degree},
+\code{m}, \code{paired_sampling}, \code{tol}, and \code{max_iter} are ignored.}
+
+\item{hybrid_degree}{Integer controlling the exactness of the hybrid strategy:
 \itemize{
-\item \code{"auto"} (default): "exact" for up to 8 features, and "paired" otherwise.
-\item \code{"simple"}: Each z is drawn randomly according to Kernel SHAP weights.
-This is done in two steps: First, the number s of "1" is drawn from the Kernel weight
-distribution (normalized to the range from 1 to p-1), see Covert and Lee (2021).
-Then, the s random positions of a length p 0-vector are set to 1.
-Note that this strategy is strictly worse than paired sampling, so there is
-virtually no reason to use it except for studying properties of Kernel SHAP.
-\item \code{"paired"}: Here, m/2 vectors z are drawn as with the "simple" strategy.
-Then, all m/2 complements 1-z are added to the pool of vectors.
-This paired sampling strategy converges faster than the simple method,
-see Covert and Lee (2021).
-\item \code{"exact"}: All possible binary vectors z are enumerated and weighted
-according to the SHAP kernel weight distribution. This produces exact Kernel SHAP
-values with respect to the given background data. The algorithm works with large
-prediction data having (2^p-2) * nrow(bg_X) rows. Thus, we recommend this option
-up to p=8.
+\item \code{0}: Pure sampling strategy, not involving any exact part. This is not
+recommended except when studying properties of Kernel SHAP.
+\item \code{1}: Uses all 2p on-off vectors z having sum(z) in 1, p-1 for the exact
+part. This covers at least 75\% of the mass of the Kernel weight distribution.
+The remaining mass is covered by sampling. This is the default for p>16.
+\item \code{2}: Uses all p(p+1) on-off vectors z having sum(z) in 1, p-1, 2, p-2.
+This covers at least 92\% of the mass of the Kernel weight distribution.
+The remaining mass is covered by sampling. This is the default for 8 < p < 16.
+\item \code{k>2}: Uses all on-off vectors with sum(z) in 1,...,k and p-1,...,p-k.
 }}
 
-\item{paired_sampling}{Deprecated, set \code{sampling_strategy = "paired"}.}
+\item{paired_sampling}{Logical flag indicating whether to do the sampling in a paired
+manner. This means that with every on-off vector z, also 1-z is considered.
+Covert and Lee (2021) shows its superiority compared to standard sampling, so the
+default (\code{TRUE}) should probably not be changed except for research purposes.
+Ignored if \code{exact = TRUE}.}
 
-\item{exact}{Deprecated, set \code{sampling_strategy = "exact"}.}
-
-\item{m}{Number of on-off vectors to be evaluated during one iteration.
-The default, \code{NULL}, equals \code{2*max(trunc(20*sqrt(p)), 5*p)}, where p is the
-number of features. Ignored if exact calculations are done.}
+\item{m}{Number of on-off vectors sampled during one iteration. The default equals
+\code{min(256, 8*p)}, where p is the number of features. Ignored if \code{exact = TRUE}.}
 
 \item{tol}{Tolerance determining when to stop. The algorithm keeps iterating until
-max(sigma_n) / diff(range(beta_n)) < tol, where the beta_n are the SHAP values
+max(sigma_n)/diff(range(beta_n)) < tol, where the beta_n are the SHAP values
 of a given observation and sigma_n their standard errors. For multidimensional
 predictions, the criterion must be satisfied for each dimension separately.
 The stopping criterion uses the fact that standard errors and SHAP values are all
-on the same scale. Ignored if exact calculations are done.}
+on the same scale. Ignored if \code{exact = TRUE}.}
 
 \item{max_iter}{If the stopping criterion (see \code{tol}) is not reached after
-\code{max_iter} iterations, the algorithm stops. Ignored if exact calculations are done.}
+\code{max_iter} iterations, the algorithm stops. Ignored if \code{exact = TRUE}.}
 
 \item{parallel}{If \code{TRUE}, use parallel \code{foreach::foreach()} to loop over rows
 to be explained. Must register backend beforehand, e.g. via "doFuture" package,
@@ -147,30 +144,58 @@ a list of K such matrices.
 \item \code{SE}: Standard errors corresponding to \code{S} (and organized like \code{S}).
 \item \code{n_iter}: Integer vector of length n providing the number of iterations per row of \code{X}.
 \item \code{converged}: Logical vector of length n indicating convergence per row of \code{X}.
-\item \code{m}: Integer providing the effective number of on-off vectors used per iteration.
+\item \code{m}: Integer providing the effective number of sampled on-off vectors used per iteration.
+\item \code{m_exact}: Integer providing the effective number of exact on-off vectors used per iteration.
+\item \code{txt}: Summary text.
 }
 }
 \description{
-Implements a multidimensional version of the Kernel SHAP algorithm explained in
-detail in Covert and Lee (2021). It is an iterative refinement of the original
-Kernel SHAP algorithm of Lundberg and Lee (2017). The algorithm is applied to each
-row in \code{X}. Its behaviour depends on the number of features p:
+Implements a multidimensional refinement of the Kernel SHAP Algorithm described in
+Covert and Lee (2021). Kernel SHAP values can be calculated exactly, by sampling,
+or by a combination of the two. As soon as sampling is involved, the algorithm
+iterates until convergence, and standard errors are provided.
+The default behaviour depends on the number of features p (see details below):
 \itemize{
-\item 2 <= p <= 8: Exact Kernel SHAP values are returned.
-(Exact regarding the given background data.)
-\item p > 8: Sampling version of Kernel SHAP.
-The algorithm iterates until Kernel SHAP values are sufficiently accurate.
-Approximate standard errors of the SHAP values are returned.
-\item p = 1: Exact Shapley values are returned.
+\item 2 <= p <= 8: Exact Kernel SHAP values are returned (for the given background data).
+\item p > 8: Hybrid (partly exact) iterative version of Kernel SHAP.
+\item p = 1: Exact Shapley values are returned (independent of the background data).
 }
 }
 \details{
-During each iteration, \code{m} on-off vectors (feature subsets) are evaluated until
-the worst standard error of the SHAP values is small enough relative to the range of
-the SHAP values. This stopping criterion was suggested in Covert and Lee (2021) and
-uses the fact that SHAP values and their standard errors are all on the scale of the
-predictions. In the multi-output case, the criterion must be fulfilled for each
-dimension separately until iteration stops.
+The iterative Kernel SHAP sampling algorithm (1) works by randomly sample
+m on-off vectors z so that their sum follows the SHAP Kernel weight distribution
+(renormalized to the range from 1 to p-1). Based on these vectors, many predictions
+are formed and Kernel SHAP values are derived, see (1) for details. This is done
+multiple times until convergence.
+
+A drawback of this strategy is that many (at least 75\%) of the z vectors will have
+sum(z) equal to 1 or p-1, producing many duplicates. Similarly, at least 92\% of
+the mass will be used for the p(p+1) possible vectors with sum(z) in 1, 2, p-1, p-2.
+This inefficiency can be fixed by a hybrid strategy, combining exact calculations with sampling.
+
+The hybrid algorithm has two steps:
+\enumerate{
+\item Step 1 (exact part): There are 2p different on-off vectors z with sum(z) equals to
+1 or p-1, covering a large proportion of the Kernel SHAP distribution.
+The degree 1 hybrid will list those vectors and use them according to their weights
+in the upcoming calculations. Depending on p, we can also go a step further to
+a degree 2 hybrid by adding all p(p-1) vectors with sum(z) equals to 2 or p-2
+to the process etc. The necessary predictions are obtained along with other
+calculations similar to those described in the publication (1).
+\item Step 2 (sampling part): The remaining weight is filled by sampling vectors z
+according to Kernel SHAP weights renormalized to the values not yet covered by Step 1.
+Together with the results from Step 1 - correctly weighted - this now forms a
+complete iteration as in (1). The difference is that most mass is covered by exact calculations.
+Afterwards, the algorithm iterates until convergence. The output of Step 1 is reused
+in every iteration, leading to an extremely efficient strategy.
+}
+
+If p is sufficiently small, then all possible 2^p-2 on-off vectors z can be evaluated.
+In this case, no sampling is required and the algorithm returns exact Kernel SHAP values
+regarding the given background data. Since \code{kernelshap()} calculates predictions
+on data with M\emph{N rows (N is the background data size and M the number of z vectors),
+p should probably not be much higher than 10. The same problem occurs with hybrid of
+degree 2 and p larger than 30-40. There, M = p}(p + 1).
 }
 \section{Methods (by class)}{
 \itemize{
@@ -220,6 +245,5 @@ s
 \references{
 \enumerate{
 \item Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value Estimation Using Linear Regression. Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.
-\item Scott M. Lundberg and Su-In Lee. A Unified Approach to Interpreting Model Predictions. Advances in Neural Information Processing Systems 30, 2017.
 }
 }

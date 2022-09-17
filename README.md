@@ -4,10 +4,13 @@
 
 SHAP values (Lundberg and Lee, 2017) decompose model predictions into additive contributions of the features in a fair way. A model agnostic approach is called Kernel SHAP, introduced in Lundberg and Lee (2017), and investigated in detail in Covert and Lee (2021). 
 
-The "kernelshap" package implements a multidimensional version of the Kernel SHAP Algorithm 1 described in the supplement of Covert and Lee (2021). The default behaviour depends on the number of features $p$:
+The "kernelshap" package implements a multidimensional refinement of the Kernel SHAP Algorithm described in Covert and Lee (2021). Depending on the number of features, Kernel SHAP values can be calculated exactly,
+by sampling, or by a combination of the two. As soon as sampling is involved, the algorithm iterates until convergence, and standard errors are provided.
+
+The default behaviour depends on the number of features $p$:
 
 - $2 \le p \le 8$: Exact Kernel SHAP values are returned. (Exact regarding the given background data.)
-- $p > 8$: Sampling version of Kernel SHAP. The algorithm iterates until Kernel SHAP values are sufficiently accurate. Approximate standard errors of the SHAP values are returned.
+- $p > 8$: Hybrid (partly exact) iterative version of Kernel SHAP. The algorithm iterates until Kernel SHAP values are sufficiently accurate. Standard errors of the SHAP values are returned.
 - $p = 1$: Exact Shapley values are returned.
 
 The main function `kernelshap()` has four key arguments:
@@ -270,7 +273,7 @@ system.time(
 )
 ```
 
-### GAM on Windows
+### Parallel GAM on Windows
 
 On Windows, sometimes not all packages or global objects are passed to the parallel sessions. In this case, the necessary instructions to `foreach` can be specified through a named list via `parallel_args`, see the following example:
 
@@ -285,12 +288,14 @@ plan(multisession, workers = 2)
 
 fit <- gam(Sepal.Length ~ s(Sepal.Width) + Species, data = iris)
 
-s <- kernelshap(
-  fit, 
-  iris[c(2, 5)], 
-  bg_X = iris, 
-  parallel = TRUE, 
-  parallel_args = list(.packages = "mgcv")
+system.time(
+  s <- kernelshap(
+    fit, 
+    iris[c(2, 5)], 
+    bg_X = iris, 
+    parallel = TRUE, 
+    parallel_args = list(.packages = "mgcv")
+  )
 )
 s
 
@@ -299,6 +304,51 @@ SHAP values of first 2 observations:
 [1,]  0.35570963 -1.135187
 [2,] -0.04607082 -1.135187
 ```
+
+## Exact/sampling/hybrid
+
+Depending on the number of features $p$, `kernelshap()` is exact regarding the background data or uses a hybrid between exact and sampling. Since $p$ was small in above examples, we will now show an example with $p=10$ features. In this case, `kernelshap()` will use a hybrid strategy of degree 2: 
+
+```r
+library(kernelshap)
+
+set.seed(1)
+X <- data.frame(matrix(rnorm(1000), ncol = 10))
+y <- rnorm(10000L)
+fit <- lm(y ~ ., data = cbind(y = y, X))
+
+s <- kernelshap(fit, X[1L, ], bg_X = X)
+s$S[1:5]
+# Kernel SHAP values by the iterative hybrid strategy of degree 2 
+# (m_exact = 110, m/iter = 80)
+# 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
+```
+
+The hybrid algorithm converged in the minimal number of two iterations and used $110 + 2\cdot 80 = 270$ on-off vectors $z$. For each $z$, predictions on a data set with the same size as the background data are done. Three calls to `predict()` were necessary (one for the exact part and one per sampling iteration).
+
+Since $p$ is not very large in this case, we can also force the algorithm to use exact calculations:
+
+```r
+s <- kernelshap(fit, X[1L, ], bg_X = X, exact = TRUE)
+s$S[1:5]
+# Exact Kernel SHAP values (m_exact = 1022)
+# 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
+```
+
+The results are identical here. Much more on-off vectors $z$ were required (1022), but only a single call to `predict()`.
+
+Pure sampling can be enforced by setting the hybrid degree to 0:
+
+```r
+s <- kernelshap(fit, X[1L, ], bg_X = X, hybrid_degree = 0)
+s$S[1:5]
+# Kernel SHAP values by iterative sampling (m/iter = 80)
+# 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
+```
+
+The results are again identical here and the algorithm converged in two steps. In this case, two calls to `predict()` were necessary and a total of 160 $z$ vectors were required.
+
+For more complex models with interactions, using exact or hybrid is recommended over the pure sampling strategy.
 
 ## References
 

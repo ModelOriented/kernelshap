@@ -16,9 +16,11 @@ use_description(
   fields = list(
     Title = "Kernel SHAP",
     Version = "0.2.0.900",
-    Description = "Multidimensional version of the iterative Kernel SHAP algorithm described in
-    Ian Covert and Su-In Lee (2021) <http://proceedings.mlr.press/v130/covert21a>. 
-    SHAP values are calculated iteratively until convergence, along with approximate standard errors. 
+    Description = "Multidimensional refinement of the Kernel SHAP algorithm described in
+    Ian Covert and Su-In Lee (2021) <http://proceedings.mlr.press/v130/covert21a>.
+    Depending on the number of features, Kernel SHAP values can be calculated exactly,
+    by sampling, or by a combination of the two. As soon as sampling is involved, 
+    the algorithm iterates until convergence, and standard errors are provided.
     The package allows to work with any model that provides numeric predictions of dimension one or higher.
     Examples include linear regression, logistic regression (logit or probability scale),
     other generalized linear models, generalized additive models, and neural networks. 
