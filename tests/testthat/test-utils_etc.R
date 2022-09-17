@@ -1,6 +1,7 @@
 test_that("Sum of kernel weights is 1", {
-  expect_equal(sum(kernel_weights(5)), 1)
-  expect_equal(sum(kernel_weights(10)), 1)
+  for (p in 2:10) {
+    expect_equal(sum(kernel_weights(p)), 1)
+  }
 })
 
 test_that("Sum of kernel weights is 1, even for subset of domain", {
@@ -25,7 +26,7 @@ test_that("Random z have right output dim and the sums are in subset S", {
   expect_true(all(rowSums(Z) %in% S))
 })
 
-test_that("Sampling input looks ok (deg = 0)", {
+test_that("Sampling input structure is ok (deg = 0)", {
   input <- input_sampling(p, m = m, deg = 0, paired = TRUE)
 
   expect_equal(dim(input$Z), c(m, p))
@@ -34,7 +35,7 @@ test_that("Sampling input looks ok (deg = 0)", {
   expect_equal(diag(input$A), rep(0.5, p))
 })
 
-test_that("Sampling input looks ok (deg = 0, unpaired)", {
+test_that("Sampling input structure is ok (deg = 0, unpaired)", {
   input <- input_sampling(p, m = m, deg = 0, paired = FALSE)
   
   expect_equal(dim(input$Z), c(m, p))
@@ -43,7 +44,7 @@ test_that("Sampling input looks ok (deg = 0, unpaired)", {
  # expect_equal(diag(input$A), rep(0.5, p)) # This is not TRUE
 })
 
-test_that("Sampling input looks ok (deg = 1)", {
+test_that("Sampling input structure is ok (deg = 1)", {
   input <- input_sampling(p, m = m, deg = 1, paired = TRUE)
   
   expect_equal(dim(input$Z), c(m, p))
@@ -52,7 +53,7 @@ test_that("Sampling input looks ok (deg = 1)", {
   expect_true(all(diag(input$A) < 0.5))
 })
 
-test_that("Sampling input looks ok (deg = 2)", {
+test_that("Sampling input input structure ok (deg = 2)", {
   input <- input_sampling(p, m = m, deg = 2, paired = TRUE)
   
   expect_equal(dim(input$Z), c(m, p))
@@ -61,3 +62,15 @@ test_that("Sampling input looks ok (deg = 2)", {
   expect_true(all(diag(input$A) < 0.5))
 })
 
+test_that("Partly exact A, w, Z equal exact for sufficiently large deg", {
+  for (p in 2:10) {
+    pa <- input_partly_exact(p, deg = trunc(p / 2))
+    ex <- input_exact(p)
+    pa_rs <- rowSums(pa$Z)
+    ex_rs <- rowSums(ex$Z)
+    
+    expect_equal(pa$A, ex$A)
+    expect_equal(pa$w[order(pa_rs)], ex$w[order(ex_rs)])
+    expect_equal(tabulate(pa_rs), tabulate(ex_rs))
+  }
+})

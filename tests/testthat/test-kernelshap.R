@@ -19,7 +19,7 @@ test_that("Exact hybrid calculation is similar to exact (non-hybrid)", {
   expect_equal(s$S, s1$S)
 })
 
-test_that("Pure sampling is similar to exact", {
+test_that("Pure sampling is very similar to exact", {
   s1 <- kernelshap(fit, iris[c(1, 51, 101), x], bg_X = iris, hybrid_degree = 0)
   expect_equal(s$S, s1$S)
 })
