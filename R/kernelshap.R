@@ -1,21 +1,22 @@
 #' Kernel SHAP
 #'
-#' Implements a multidimensional refinement of the Kernel SHAP Algorithm described in 
+#' Multidimensional refinement of the Kernel SHAP Algorithm described in 
 #' Covert and Lee (2021). Kernel SHAP values can be calculated exactly, by sampling, 
 #' or by a combination of the two. As soon as sampling is involved, the algorithm 
 #' iterates until convergence, and standard errors are provided. 
 #' The default behaviour depends on the number of features p (see details below):
 #' \itemize{
 #'   \item 2 <= p <= 8: Exact Kernel SHAP values are returned (for the given background data). 
-#'   \item p > 8: Hybrid (partly exact) iterative version of Kernel SHAP.
+#'   \item p > 8: Hybrid (partly exact) iterative version of Kernel SHAP
+#'   (degree 2 up to p = 16, degree 1 for p > 16, see Details).
 #'   \item p = 1: Exact Shapley values are returned (independent of the background data).
 #' }
 #' 
 #' The iterative Kernel SHAP sampling algorithm (1) works by randomly sample 
 #' m on-off vectors z so that their sum follows the SHAP Kernel weight distribution 
 #' (renormalized to the range from 1 to p-1). Based on these vectors, many predictions 
-#' are formed and Kernel SHAP values are derived, see (1) for details. This is done 
-#' multiple times until convergence.
+#' are formed. Then, Kernel SHAP values are derived as the solution of a constrained 
+#' linear regression, see (1) for details. This is done multiple times until convergence.
 #' 
 #' A drawback of this strategy is that many (at least 75%) of the z vectors will have 
 #' sum(z) equal to 1 or p-1, producing many duplicates. Similarly, at least 92% of 
@@ -42,9 +43,9 @@
 #' If p is sufficiently small, then all possible 2^p-2 on-off vectors z can be evaluated.
 #' In this case, no sampling is required and the algorithm returns exact Kernel SHAP values 
 #' regarding the given background data. Since \code{kernelshap()} calculates predictions 
-#' on data with M*N rows (N is the background data size and M the number of z vectors),
+#' on data with MN rows (N is the background data size and M the number of z vectors),
 #' p should probably not be much higher than 10. The same problem occurs with hybrid of
-#' degree 2 and p larger than 30-40. There, M = p*(p + 1).
+#' degree 2 and p larger than 30-40. There, M = p(p + 1).
 #' 
 #' @importFrom doRNG %dorng%
 #' 
@@ -66,14 +67,15 @@
 #' @param exact If \code{TRUE}, the algorithm will produce exact Kernel SHAP values
 #' with respect to the background data. In this case, the arguments \code{hybrid_degree}, 
 #' \code{m}, \code{paired_sampling}, \code{tol}, and \code{max_iter} are ignored.
+#' The default is \code{TRUE} up to eight features, and \code{FALSE} otherwise. 
 #' @param hybrid_degree Integer controlling the exactness of the hybrid strategy:
 #' \itemize{
 #'   \item \code{0}: Pure sampling strategy, not involving any exact part. This is not
 #'   recommended except when studying properties of Kernel SHAP.
-#'   \item \code{1}: Uses all 2p on-off vectors z having sum(z) in 1, p-1 for the exact 
-#'   part. This covers at least 75% of the mass of the Kernel weight distribution. 
+#'   \item \code{1}: Uses all 2p on-off vectors z with sum(z) equal to 1 or p-1 for the exact 
+#'   part, which covers at least 75% of the mass of the Kernel weight distribution. 
 #'   The remaining mass is covered by sampling. This is the default for p>16.
-#'   \item \code{2}: Uses all p(p+1) on-off vectors z having sum(z) in 1, p-1, 2, p-2. 
+#'   \item \code{2}: Uses all p(p+1) on-off vectors z with sum(z) equal to 1, p-1, 2, or p-2. 
 #'   This covers at least 92% of the mass of the Kernel weight distribution. 
 #'   The remaining mass is covered by sampling. This is the default for 8 < p < 16.
 #'   \item \code{k>2}: Uses all on-off vectors with sum(z) in 1,...,k and p-1,...,p-k.

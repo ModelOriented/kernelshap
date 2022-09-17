@@ -6,11 +6,11 @@
 
 Thanks to David Watson, exact calculations are now also possible for $p>5$ features. By default, the algorithm uses exact calculations for $p \le 8$ and a hybrid strategy otherwise, see the next section. At the same time, the exact algorithm became much more efficient.
 
-A word of caution: Exact calculations mean to create $2^p-2$ on-off vectors $z$ (cheap step) and evaluating the model on a whopping $(2^p-2)N$ rows, where $N$ is the number of rows of the background data (expensive step). As this explodes with large $p$, we do not recommend it for $p > 10$.
+A word of caution: Exact calculations mean to create $2^p-2$ on-off vectors $z$ (cheap step) and evaluating the model on a whopping $(2^p-2)N$ rows, where $N$ is the number of rows of the background data (expensive step). As this explodes with large $p$, we do not recommend the exact strategy for $p > 10$.
 
 ### Hybrid strategy
 
-The iterative Kernel SHAP sampling algorithm of Covert and Lee (2021) [1] works by randomly sample $m$ on-off vectors $z$ so that their sum follows the SHAP Kernel weight distribution (renormalized to the range from $1$ to $p-1$). Based on these vectors, many predictions are formed and Kernel SHAP values are derived, see [1] for details. This is done multiple times until convergence.
+The iterative Kernel SHAP sampling algorithm of Covert and Lee (2021) [1] works by randomly sample $m$ on-off vectors $z$ so that their sum follows the SHAP Kernel weight distribution (renormalized to the range from $1$ to $p-1$). Based on these vectors, many predictions are formed. Then, Kernel SHAP values are derived as the solution of a constrained linear regression, see [1] for details. This is done multiple times until convergence.
 
 A drawback of this strategy is that many (at least 75%) of the $z$ vectors will have $\sum z \in \{1, p-1\}$, producing many duplicates. Similarly, at least 92% of the mass will be used for the $p(p+1)$ possible vectors with $\sum z \in \{1, 2, p-1, p-2\}$ etc. This inefficiency can be fixed by a hybrid strategy, combining exact calculations with sampling. 
 

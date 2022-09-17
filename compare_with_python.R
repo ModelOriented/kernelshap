@@ -25,9 +25,9 @@ ks
 # [1,] -2.050074 -0.28048747 0.1281222 0.01587382
 # [2,] -2.085838  0.04050415 0.1283010 0.03731644
 
-# Pure sampling version takes a bit longer (12 seconds)
+# Pure sampling version takes a bit longer (13 seconds)
 system.time(
-  ks2 <- kernelshap(fit, X_small, bg_X = bg_X, exact = FALSE, partly_exact_degree = 0)  
+  ks2 <- kernelshap(fit, X_small, bg_X = bg_X, hybrid_degree = 0)  
 )
 ks2
 
@@ -36,14 +36,14 @@ ks2
 # [1,] -2.050074 -0.28048747 0.1281222 0.01587382
 # [2,] -2.085838  0.04050415 0.1283010 0.03731644
 
-# Using parallel backend (1 second from the second call on)
+# Using parallel backend
 library("doFuture")
 
 registerDoFuture()
 plan(multisession, workers = 2)  # Windows
 # plan(multicore, workers = 2)   # Linux, macOS, Solaris
 
-# 3 seconds
+# 3 seconds in the second call
 system.time(
   ks3 <- kernelshap(fit, X_small, bg_X = bg_X, parallel = TRUE)  
 )
@@ -65,8 +65,8 @@ fit <- lm(
 X_small <- diamonds[seq(1, nrow(diamonds), 53), setdiff(names(diamonds), "price")]
 
 # Exact KernelSHAP on X_small, using X_small as background data 
-# (78 seconds for exact, 45 for hybrid deg 2, 29 for hybrid deg 1, 
-# 26s for pure sampling)
+# (71/27 seconds for exact, 40/26 for hybrid deg 2, 31/18 for hybrid deg 1, 
+# 26/16 for pure sampling; second number with 2 parallel sessions on Windows)
 system.time(
   ks <- kernelshap(fit, X_small, bg_X = bg_X)  
 )

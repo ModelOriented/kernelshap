@@ -305,6 +305,51 @@ SHAP values of first 2 observations:
 [2,] -0.04607082 -1.135187
 ```
 
+## Exact/sampling/hybrid
+
+Depending on the number of features $p$, `kernelshap()` is exact regarding the background data or uses a hybrid between exact and sampling. Since $p$ was small in above examples, we will now show an example with $p=10$ features. In this case, `kernelshap()` will use a hybrid strategy of degree 2: 
+
+```r
+library(kernelshap)
+
+set.seed(1)
+X <- data.frame(matrix(rnorm(1000), ncol = 10))
+y <- rnorm(10000L)
+fit <- lm(y ~ ., data = cbind(y = y, X))
+
+s <- kernelshap(fit, X[1L, ], bg_X = X)
+s$S[1:5]
+# Kernel SHAP values by the iterative hybrid strategy of degree 2 
+# (m_exact = 110, m/iter = 80)
+# 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
+```
+
+The hybrid algorithm converged in the minimal number of two iterations and used $110 + 2\cdot 80 = 270$ on-off vectors $z$. For each $z$, predictions on a data set with the same size as the background data are done. Three calls to `predict()` were necessary (one for the exact part and one per sampling iteration).
+
+Since $p$ is not very large in this case, we can also force the algorithm to use exact calculations:
+
+```r
+s <- kernelshap(fit, X[1L, ], bg_X = X, exact = TRUE)
+s$S[1:5]
+# Exact Kernel SHAP values (m_exact = 1022)
+# 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
+```
+
+The results are identical here. Much more on-off vectors $z$ were required (1022), but only a single call to `predict()`.
+
+Pure sampling can be enforced by setting the hybrid degree to 0:
+
+```r
+s <- kernelshap(fit, X[1L, ], bg_X = X, hybrid_degree = 0)
+s$S[1:5]
+# Kernel SHAP values by iterative sampling (m/iter = 80)
+# 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
+```
+
+The results are again identical here and the algorithm converged in two steps. In this case, two calls to `predict()` were necessary and a total of 160 $z$ vectors were required.
+
+For more complex models with interactions, using exact or hybrid is recommended over the pure sampling strategy.
+
 ## References
 
 [1] Scott M. Lundberg and Su-In Lee. A Unified Approach to Interpreting Model Predictions. Advances in Neural Information Processing Systems 30, 2017.
