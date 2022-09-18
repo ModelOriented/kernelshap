@@ -173,31 +173,31 @@ check_pred <- function(x, n) {
   stop("Predictions must be a length n vector or a matrix/data.frame/array with n rows.")
 }
 
-# Is background data too small or large?
-check_bg_size <- function(n) {
-  if (n > 1000L) {
-    message("Your background data 'bg_X' is large, which will slow down the process. Consider using 100-200 rows.")
-  }
-  if (n < 20L) {
-    message("Your background data 'bg_X' is small, which might lead to imprecise SHAP values. Consider using 100-200 rows.")
-  }
-}
+# # Is background data too small or large?
+# check_bg_size <- function(n) {
+#   if (n > 1000L) {
+#     message("Your background data 'bg_X' is large, which will slow down the process. Consider using 100-200 rows.")
+#   }
+#   if (n < 20L) {
+#     message("Your background data 'bg_X' is small, which might lead to imprecise SHAP values. Consider using 100-200 rows.")
+#   }
+# }
 
-# Given p and maximum m, determine hybrid degree (currently not used)
-find_degree <- function(p, m_max) {
-  if (p < 2L) {
-    "p must be at least 2"
-  }
-  if (m_max < 2L * p) {
-    return(list(degree = 0L, m_exact = 0L))
-  }
-  # Non-integers are rounded down
-  S <- seq_len(p / 2)
-  const <- (2L - (p == 2L * S))
-  m_kum <- cumsum(const * choose(p, S))
-  degree <- max(S[m_kum <= m_max])
-  list(degree = degree, m_exact = m_kum[degree])
-}
+# # Given p and maximum m, determine hybrid degree (currently not used)
+# find_degree <- function(p, m_max) {
+#   if (p < 2L) {
+#     "p must be at least 2"
+#   }
+#   if (m_max < 2L * p) {
+#     return(list(degree = 0L, m_exact = 0L))
+#   }
+#   # Non-integers are rounded down
+#   S <- seq_len(p / 2)
+#   const <- (2L - (p == 2L * S))
+#   m_kum <- cumsum(const * choose(p, S))
+#   degree <- max(S[m_kum <= m_max])
+#   list(degree = degree, m_exact = m_kum[degree])
+# }
 
 # Describe what is happening
 summarize_strategy <- function(p, exact, deg, m_exact, m) {

@@ -1,10 +1,11 @@
 #' Kernel SHAP
 #'
-#' Multidimensional refinement of the Kernel SHAP Algorithm described in 
-#' Covert and Lee (2021). Kernel SHAP values can be calculated exactly, by sampling, 
-#' or by a combination of the two. As soon as sampling is involved, the algorithm 
-#' iterates until convergence, and standard errors are provided. 
-#' The default behaviour depends on the number of features p (see details below):
+#' Multidimensional refinement of the Kernel SHAP Algorithm described in Covert and Lee (2021), 
+#' in the following abbreviated by "CL21". 
+#' The function allows to calculate Kernel SHAP values in an exact way, by iterative sampling 
+#' as in CL21, or by a hybrid of the two. As soon as sampling is involved, 
+#' the algorithm iterates until convergence, and standard errors are provided.
+#' The default behaviour depends on the number of features p:
 #' \itemize{
 #'   \item 2 <= p <= 8: Exact Kernel SHAP values are returned (for the given background data). 
 #'   \item p > 8: Hybrid (partly exact) iterative version of Kernel SHAP
@@ -12,11 +13,11 @@
 #'   \item p = 1: Exact Shapley values are returned (independent of the background data).
 #' }
 #' 
-#' The iterative Kernel SHAP sampling algorithm (1) works by randomly sample 
+#' The iterative Kernel SHAP sampling algorithm (CL21) works by randomly sample 
 #' m on-off vectors z so that their sum follows the SHAP Kernel weight distribution 
 #' (renormalized to the range from 1 to p-1). Based on these vectors, many predictions 
 #' are formed. Then, Kernel SHAP values are derived as the solution of a constrained 
-#' linear regression, see (1) for details. This is done multiple times until convergence.
+#' linear regression, see CL21 for details. This is done multiple times until convergence.
 #' 
 #' A drawback of this strategy is that many (at least 75%) of the z vectors will have 
 #' sum(z) equal to 1 or p-1, producing many duplicates. Similarly, at least 92% of 
@@ -31,11 +32,11 @@
 #'   in the upcoming calculations. Depending on p, we can also go a step further to 
 #'   a degree 2 hybrid by adding all p(p-1) vectors with sum(z) equals to 2 or p-2
 #'   to the process etc. The necessary predictions are obtained along with other 
-#'   calculations similar to those described in the publication (1).
+#'   calculations similar to those described in CL21.
 #'   \item Step 2 (sampling part): The remaining weight is filled by sampling vectors z
 #'   according to Kernel SHAP weights renormalized to the values not yet covered by Step 1. 
 #'   Together with the results from Step 1 - correctly weighted - this now forms a
-#'   complete iteration as in (1). The difference is that most mass is covered by exact calculations. 
+#'   complete iteration as in CL21. The difference is that most mass is covered by exact calculations. 
 #'   Afterwards, the algorithm iterates until convergence. The output of Step 1 is reused
 #'   in every iteration, leading to an extremely efficient strategy.
 #' }
@@ -53,7 +54,7 @@
 #' @param X A (n x p) matrix, data.frame, tibble or data.table of rows to be explained. 
 #' Important: The columns should only represent model features, not the response.
 #' @param bg_X Background data used to integrate out "switched off" features, 
-#' often a subset of the training data (around 100 to 200 rows)
+#' often a subset of the training data (around 100 to 500 rows)
 #' It should contain the same columns as \code{X}. Columns not in \code{X} are silently 
 #' dropped and the columns are arranged into the order as they appear in \code{X}.
 #' @param pred_fun Prediction function of the form \code{function(object, X, ...)},
@@ -82,14 +83,14 @@
 #' }
 #' @param paired_sampling Logical flag indicating whether to do the sampling in a paired
 #' manner. This means that with every on-off vector z, also 1-z is considered.
-#' Covert and Lee (2021) shows its superiority compared to standard sampling, so the 
-#' default (\code{TRUE}) should probably not be changed except for research purposes. 
+#' CL21 shows its superiority compared to standard sampling, therefore the 
+#' default (\code{TRUE}) should usually not be changed except for research purposes. 
 #' Ignored if \code{exact = TRUE}.
 #' @param m Number of on-off vectors sampled during one iteration. The default equals 
 #' \code{min(256, 8*p)}, where p is the number of features. Ignored if \code{exact = TRUE}.
 #' @param tol Tolerance determining when to stop. The algorithm keeps iterating until
 #' max(sigma_n)/diff(range(beta_n)) < tol, where the beta_n are the SHAP values 
-#' of a given observation and sigma_n their standard errors. For multidimensional
+#' of a given observation and sigma_n their standard errors, see CL21. For multidimensional
 #' predictions, the criterion must be satisfied for each dimension separately.
 #' The stopping criterion uses the fact that standard errors and SHAP values are all
 #' on the same scale. Ignored if \code{exact = TRUE}.
@@ -116,6 +117,7 @@
 #'   \item \code{converged}: Logical vector of length n indicating convergence per row of \code{X}.
 #'   \item \code{m}: Integer providing the effective number of sampled on-off vectors used per iteration.
 #'   \item \code{m_exact}: Integer providing the effective number of exact on-off vectors used per iteration.
+#'   \item \code{prop_exact}: Proportion of the Kernel SHAP weight distribution covered by exact calculations.
 #'   \item \code{txt}: Summary text.
 #' }
 #' @references
@@ -190,9 +192,6 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
   if (!is.null(bg_w)) {
     stopifnot(length(bg_w) == bg_n, all(bg_w >= 0), !all(bg_w == 0))
   }
-  if (verbose) {
-    check_bg_size(bg_n)
-  }
   
   # Calculate v0 and v1
   bg_X <- bg_X[, colnames(X), drop = FALSE]
@@ -214,10 +213,12 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
   if (exact || hybrid_degree >= 1L) {
     precalc <- if (exact) input_exact(p) else input_partly_exact(p, hybrid_degree)
     m_exact <- nrow(precalc[["Z"]])
+    prop_exact <- sum(precalc[["w"]])
     precalc[["bg_X_exact"]] <- bg_X[rep(seq_len(bg_n), times = m_exact), , drop = FALSE] 
   } else {
     precalc <- list()
     m_exact <- 0L
+    prop_exact <- 0
   }
   if (!exact) {
     precalc[["bg_X_m"]] <- bg_X[rep(seq_len(bg_n), times = m), , drop = FALSE]  
@@ -297,6 +298,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
     converged = converged,
     m = m,
     m_exact = m_exact,
+    prop_exact = prop_exact,
     txt = txt
   )
   class(out) <- "kernelshap"

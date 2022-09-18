@@ -67,7 +67,8 @@ is.kernelshap <- function(object){
 #' Function to extract an element of a "kernelshap" object, e.g., the SHAP values "S".
 #'
 #' @param object Object to extract something.
-#' @param what Element to extract. One of "S", "X", "baseline", "SE", "n_iter", or "converged".
+#' @param what Element to extract. One of "S", "X", "baseline", "SE", "n_iter", 
+#' "converged", "m", "m_exact", "prop_exact", or "txt".
 #' @param ... Currently unused.
 #' @return The corresponding object is returned.
 #' @export
@@ -82,7 +83,8 @@ ks_extract <- function(object, ...){
 #' s <- kernelshap(fit, iris[1:2, -1], bg_X = iris[-1])
 #' ks_extract(s, what = "S")
 ks_extract.kernelshap = function(object, 
-                                 what = c("S", "X", "baseline", "SE", "n_iter", "converged"), 
+                                 what = c("S", "X", "baseline", "SE", "n_iter", "converged",
+                                          "m", "m_exact", "prop_exact", "txt"), 
                                  ...) {
   what <- match.arg(what)
   object[[what]]

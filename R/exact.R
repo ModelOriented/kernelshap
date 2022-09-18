@@ -99,6 +99,7 @@ case_p1 <- function(n, nms, v0, v1, X, verbose) {
     converged = rep(TRUE, n),
     m = 0L,
     m_exact = 0L,
+    prop_exact = 1,
     txt = txt
   )
   class(out) <- "kernelshap"
