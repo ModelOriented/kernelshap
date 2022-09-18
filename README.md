@@ -4,13 +4,12 @@
 
 SHAP values (Lundberg and Lee, 2017) decompose model predictions into additive contributions of the features in a fair way. A model agnostic approach is called Kernel SHAP, introduced in Lundberg and Lee (2017), and investigated in detail in Covert and Lee (2021). 
 
-The "kernelshap" package implements a multidimensional refinement of the Kernel SHAP Algorithm described in Covert and Lee (2021). Depending on the number of features, Kernel SHAP values can be calculated exactly,
-by sampling, or by a combination of the two. As soon as sampling is involved, the algorithm iterates until convergence, and standard errors are provided.
+The "kernelshap" package implements a multidimensional refinement of the Kernel SHAP Algorithm described in Covert and Lee (2021). The package allows to calculate Kernel SHAP values in an exact way, by iterative sampling (as in Covert and Lee, 2021), or a hybrid of the two. As soon as sampling is involved, the algorithm iterates until convergence, and standard errors are provided.
 
 The default behaviour depends on the number of features $p$:
 
 - $2 \le p \le 8$: Exact Kernel SHAP values are returned. (Exact regarding the given background data.)
-- $p > 8$: Hybrid (partly exact) iterative version of Kernel SHAP. The algorithm iterates until Kernel SHAP values are sufficiently accurate. Standard errors of the SHAP values are returned.
+- $p > 8$: Hybrid (partly exact) iterative version of Kernel SHAP. The algorithm iterates until Kernel SHAP values are sufficiently accurate.
 - $p = 1$: Exact Shapley values are returned.
 
 The main function `kernelshap()` has four key arguments:
@@ -18,7 +17,7 @@ The main function `kernelshap()` has four key arguments:
 - `object`: Fitted model object.
 - `X`: A (n x p) `matrix`, `data.frame`, `tibble` or `data.table` of rows to be explained. Important: The columns should only represent model features, not the response.
 - `bg_X`: Background data used to integrate out "switched off" features, 
-often a subset of the training data (around 100 to 200 rows).
+often a subset of the training data (around 100 to 500 rows).
 It should contain the same columns as `X`.
 Columns not in `X` are silently dropped and the columns are arranged into
 the order as they appear in `X`.
@@ -307,7 +306,9 @@ SHAP values of first 2 observations:
 
 ## Exact/sampling/hybrid
 
-Depending on the number of features $p$, `kernelshap()` is exact regarding the background data or uses a hybrid between exact and sampling. Since $p$ was small in above examples, we will now show an example with $p=10$ features. In this case, `kernelshap()` will use a hybrid strategy of degree 2: 
+In above examples, since $p$ was small, exact Kernel SHAP values were calculated. Here, we want to show how to use the different strategies (exact, hybrid, and pure sampling) in a situation with ten features. 
+
+With ten features, a degree 2 hybrid is being used by default: 
 
 ```r
 library(kernelshap)
@@ -324,7 +325,7 @@ s$S[1:5]
 # 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
 ```
 
-The hybrid algorithm converged in the minimal number of two iterations and used $110 + 2\cdot 80 = 270$ on-off vectors $z$. For each $z$, predictions on a data set with the same size as the background data are done. Three calls to `predict()` were necessary (one for the exact part and one per sampling iteration).
+The algorithm converged in the minimal possible number of two iterations and used $110 + 2\cdot 80 = 270$ on-off vectors $z$. For each $z$, predictions on a data set with the same size as the background data are done. Three calls to `predict()` were necessary (one for the exact part and one per sampling iteration).
 
 Since $p$ is not very large in this case, we can also force the algorithm to use exact calculations:
 
@@ -335,7 +336,7 @@ s$S[1:5]
 # 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
 ```
 
-The results are identical here. Much more on-off vectors $z$ were required (1022), but only a single call to `predict()`.
+The results are identical. While more on-off vectors $z$ were required (1022), only a single call to `predict()` was necessary.
 
 Pure sampling can be enforced by setting the hybrid degree to 0:
 
@@ -347,8 +348,6 @@ s$S[1:5]
 ```
 
 The results are again identical here and the algorithm converged in two steps. In this case, two calls to `predict()` were necessary and a total of 160 $z$ vectors were required.
-
-For more complex models with interactions, using exact or hybrid is recommended over the pure sampling strategy.
 
 ## References
 
