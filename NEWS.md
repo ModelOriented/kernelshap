@@ -36,7 +36,7 @@ Kernel SHAP in the Python implementation "shap" uses a quite similar hybrid stra
 - The default value of `m` is now $\min(256, 8p)$`.
 - The default value of `exact` is now `TRUE` if $p <= 8$ as long as no `hybrid_degree` is set.
 - A new argument `hybrid_degree` is introduced to control the exact part of the hybrid algorithm. The default, `NULL`, ensures hybrid degree 2 up to $p\le 16$ and degree 1 for $p > 16$. Set to 0 to force a pure sampling strategy. A hybrid of degree 1 requires the generation of $2p$ on-off vectors, while a degree 2 requires $p(p+1)$. Depending on $p$, this can lead to very large prediction data, see exact part above.
-- The default value of `tol` was reduced from 0.01 to 0.001.
+- The default value of `tol` was reduced from 0.01 to 0.005.
 - The default of `max_iter` was reduced from 250 to 25.
 - The order of some of the arguments behind the first four has been changed.
 - Paired sampling no longer duplicates `m`.
