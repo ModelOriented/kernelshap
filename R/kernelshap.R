@@ -170,7 +170,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
                                exact = (ncol(X) <= 8L) && is.null(hybrid_degree), 
                                hybrid_degree = NULL,
                                paired_sampling = TRUE, m = min(256L, 8L * ncol(X)), 
-                               tol = 0.005, max_iter = 25L, parallel = FALSE, 
+                               tol = 0.001, max_iter = 25L, parallel = FALSE, 
                                parallel_args = NULL, verbose = TRUE, ...) {
   stopifnot(
     is.matrix(X) || is.data.frame(X),
@@ -313,7 +313,7 @@ kernelshap.ranger <- function(object, X, bg_X,
                               exact = (ncol(X) <= 8L) && is.null(hybrid_degree), 
                               hybrid_degree = NULL,
                               paired_sampling = TRUE, m = min(256L, 8L * ncol(X)), 
-                              tol = 0.005, max_iter = 25L, parallel = FALSE, 
+                              tol = 0.001, max_iter = 25L, parallel = FALSE, 
                               parallel_args = NULL, verbose = TRUE, ...) {
   kernelshap.default(
     object = object, 
@@ -342,7 +342,7 @@ kernelshap.Learner <- function(object, X, bg_X,
                                exact = (ncol(X) <= 8L) && is.null(hybrid_degree), 
                                hybrid_degree = NULL,
                                paired_sampling = TRUE, m = min(256L, 8L * ncol(X)), 
-                               tol = 0.005, max_iter = 25L, parallel = FALSE, 
+                               tol = 0.001, max_iter = 25L, parallel = FALSE, 
                                parallel_args = NULL, verbose = TRUE, ...) {
   kernelshap.default(
     object = object, 
