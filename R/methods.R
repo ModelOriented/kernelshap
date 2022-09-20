@@ -20,7 +20,7 @@ print.kernelshap <- function(x, n = 2L, ...) {
 
 #' Summary Method
 #'
-#' @param x An object of class "kernelshap".
+#' @param object An object of class "kernelshap".
 #' @param compact Set to \code{TRUE} to hide printing the top n SHAP values, 
 #' standard errors and feature values. 
 #' @param n Maximum number of rows of SHAP values, standard errors and feature values to print.
@@ -32,10 +32,10 @@ print.kernelshap <- function(x, n = 2L, ...) {
 #' s <- kernelshap(fit, iris[1:3, -1], bg_X = iris[-1])
 #' summary(s)
 #' @seealso \code{\link{kernelshap}}.
-summary.kernelshap <- function(x, compact = FALSE, n = 2L, ...) {
-  cat(ks_extract(x, "txt"))
+summary.kernelshap <- function(object, compact = FALSE, n = 2L, ...) {
+  cat(ks_extract(object, "txt"))
 
-  S <- ks_extract(x, "S")
+  S <- ks_extract(object, "S")
   if (!is.list(S)) {
     n <- min(n, nrow(S))
     cat(paste("\n  - SHAP matrix of dim",  nrow(S), "x", ncol(S)))
@@ -45,26 +45,26 @@ summary.kernelshap <- function(x, compact = FALSE, n = 2L, ...) {
       "\n  -", length(S), "SHAP matrices of dim", nrow(S[[1L]]), "x", ncol(S[[1L]])
     )
   }
-  cat("\n  - baseline:", ks_extract(x, "baseline"))
-  ex <- ks_extract(x, "exact")
+  cat("\n  - baseline:", ks_extract(object, "baseline"))
+  ex <- ks_extract(object, "exact")
   if (!ex) {
     cat(
-      "\n  - average number of iterations:", mean(ks_extract(x, "n_iter")),
-      "\n  - rows not converged:", sum(!ks_extract(x, "converged")),
-      "\n  - proportion exact:", ks_extract(x, "prop_exact"),
-      "\n  - m/iter:", ks_extract(x, "m")
+      "\n  - average number of iterations:", mean(ks_extract(object, "n_iter")),
+      "\n  - rows not converged:", sum(!ks_extract(object, "converged")),
+      "\n  - proportion exact:", ks_extract(object, "prop_exact"),
+      "\n  - m/iter:", ks_extract(object, "m")
     )
   }
-  cat("\n  - m_exact:", ks_extract(x, "m_exact"))
+  cat("\n  - m_exact:", ks_extract(object, "m_exact"))
   if (!compact) {
     cat("\n\nSHAP values of first", n, "observations:\n")
     head_list(S, n = n)
     if (!ex) {
       cat("\nCorresponding standard errors:\n")
-      head_list(ks_extract(x, "SE"), n = n) 
+      head_list(ks_extract(object, "SE"), n = n) 
     }
   }
-  invisible(x)
+  invisible(object)
 }
 
 #' Check for kernelshap

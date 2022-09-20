@@ -4,10 +4,10 @@
 \alias{summary.kernelshap}
 \title{Summary Method}
 \usage{
-\method{summary}{kernelshap}(x, compact = FALSE, n = 2L, ...)
+\method{summary}{kernelshap}(object, compact = FALSE, n = 2L, ...)
 }
 \arguments{
-\item{x}{An object of class "kernelshap".}
+\item{object}{An object of class "kernelshap".}
 
 \item{compact}{Set to \code{TRUE} to hide printing the top n SHAP values,
 standard errors and feature values.}
