@@ -118,6 +118,7 @@
 #'   \item \code{m}: Integer providing the effective number of sampled on-off vectors used per iteration.
 #'   \item \code{m_exact}: Integer providing the effective number of exact on-off vectors used per iteration.
 #'   \item \code{prop_exact}: Proportion of the Kernel SHAP weight distribution covered by exact calculations.
+#'   \item \code{exact}: Logical flag indicating whether calculations are exact or not.
 #'   \item \code{txt}: Summary text.
 #' }
 #' @references
@@ -136,7 +137,7 @@
 #'   as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris
 #' )
 #' s <- kernelshap(fit, iris[1:4, 3:5], bg_X = iris)
-#' s
+#' summary(s)
 #'
 #' # Matrix input works as well, and pred_fun can be overwritten
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
@@ -170,7 +171,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
                                exact = (ncol(X) <= 8L) && is.null(hybrid_degree), 
                                hybrid_degree = NULL,
                                paired_sampling = TRUE, m = min(256L, 8L * ncol(X)), 
-                               tol = 0.005, max_iter = 25L, parallel = FALSE, 
+                               tol = 0.001, max_iter = 25L, parallel = FALSE, 
                                parallel_args = NULL, verbose = TRUE, ...) {
   stopifnot(
     is.matrix(X) || is.data.frame(X),
@@ -225,9 +226,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
   }
   
   # Some infos
-  txt <- summarize_strategy(
-    p, exact = exact, deg = hybrid_degree, m_exact = m_exact, m = m
-  )
+  txt <- summarize_strategy(p, exact = exact, deg = hybrid_degree)
   if (verbose) {
     message(txt)
   }
@@ -299,6 +298,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
     m = m,
     m_exact = m_exact,
     prop_exact = prop_exact,
+    exact = exact || p %in% (0:1 + (2L * hybrid_degree)),
     txt = txt
   )
   class(out) <- "kernelshap"
@@ -313,7 +313,7 @@ kernelshap.ranger <- function(object, X, bg_X,
                               exact = (ncol(X) <= 8L) && is.null(hybrid_degree), 
                               hybrid_degree = NULL,
                               paired_sampling = TRUE, m = min(256L, 8L * ncol(X)), 
-                              tol = 0.005, max_iter = 25L, parallel = FALSE, 
+                              tol = 0.001, max_iter = 25L, parallel = FALSE, 
                               parallel_args = NULL, verbose = TRUE, ...) {
   kernelshap.default(
     object = object, 
@@ -342,7 +342,7 @@ kernelshap.Learner <- function(object, X, bg_X,
                                exact = (ncol(X) <= 8L) && is.null(hybrid_degree), 
                                hybrid_degree = NULL,
                                paired_sampling = TRUE, m = min(256L, 8L * ncol(X)), 
-                               tol = 0.005, max_iter = 25L, parallel = FALSE, 
+                               tol = 0.001, max_iter = 25L, parallel = FALSE, 
                                parallel_args = NULL, verbose = TRUE, ...) {
   kernelshap.default(
     object = object, 

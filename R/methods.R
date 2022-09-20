@@ -1,4 +1,24 @@
-#' Prints "kernelshap" Object
+#' Print Method
+#' 
+#' Prints the first two rows of the matrix (or matrices) of SHAP values. 
+#'
+#' @param x An object of class "kernelshap".
+#' @param n Maximum number of rows of SHAP values to print.
+#' @param ... Further arguments passed from other methods.
+#' @return Invisibly, the input is returned.
+#' @export
+#' @examples
+#' fit <- stats::lm(Sepal.Length ~ ., data = iris)
+#' s <- kernelshap(fit, iris[1:3, -1], bg_X = iris[-1])
+#' s
+#' @seealso \code{\link{kernelshap}}.
+print.kernelshap <- function(x, n = 2L, ...) {
+  cat("SHAP values of first", n, "observations:\n")
+  head_list(ks_extract(x, "S"), n = n)
+  invisible(x)
+}
+
+#' Summary Method
 #'
 #' @param x An object of class "kernelshap".
 #' @param compact Set to \code{TRUE} to hide printing the top n SHAP values, 
@@ -10,37 +30,39 @@
 #' @examples
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
 #' s <- kernelshap(fit, iris[1:3, -1], bg_X = iris[-1])
-#' s
+#' summary(s)
 #' @seealso \code{\link{kernelshap}}.
-print.kernelshap <- function(x, compact = FALSE, n = 2L, ...) {
+summary.kernelshap <- function(x, compact = FALSE, n = 2L, ...) {
+  cat(ks_extract(x, "txt"))
+
   S <- ks_extract(x, "S")
-  SE <- ks_extract(x, "SE")
-  X <- ks_extract(x, "X")
   if (!is.list(S)) {
     n <- min(n, nrow(S))
-    s_text <- paste("- SHAP matrix of dimension",  nrow(S), "x", ncol(S))
+    cat(paste("\n  - SHAP matrix of dim",  nrow(S), "x", ncol(S)))
   } else {
     n <- min(n, nrow(S[[1L]]))
-    s_text <- paste(
-      "-", length(S), "SHAP matrices of dimension",  nrow(S[[1L]]), "x", ncol(S[[1L]])
+    cat(
+      "\n  -", length(S), "SHAP matrices of dim", nrow(S[[1L]]), "x", ncol(S[[1L]])
     )
   }
-  cat(
-    "'kernelshap' object representing \n ", s_text,
-    "\n  - feature data.frame/matrix of dimension",  nrow(X), "x", ncol(X),
-    "\n  - baseline:", ks_extract(x, "baseline"),
-    "\n  - average iterations:", mean(ks_extract(x, "n_iter")),
-    "\n  - rows not converged:", sum(!ks_extract(x, "converged"))
-  )
-  cat("\n")
+  cat("\n  - baseline:", ks_extract(x, "baseline"))
+  ex <- ks_extract(x, "exact")
+  if (!ex) {
+    cat(
+      "\n  - average number of iterations:", mean(ks_extract(x, "n_iter")),
+      "\n  - rows not converged:", sum(!ks_extract(x, "converged")),
+      "\n  - proportion exact:", ks_extract(x, "prop_exact"),
+      "\n  - m/iter:", ks_extract(x, "m")
+    )
+  }
+  cat("\n  - m_exact:", ks_extract(x, "m_exact"))
   if (!compact) {
-    cat("\nSHAP values of first", n, "observations:\n")
-    if (!is.list(S)) print(utils::head(S, n)) else print(lapply(S, utils::head, n))
-    cat("\n Corresponding standard errors:\n")
-    if (!is.list(S)) print(utils::head(SE, n)) else print(lapply(SE, utils::head, n))
-    cat("\n And the feature values:\n")
-    print(utils::head(X, n))
-    cat("\n")
+    cat("\n\nSHAP values of first", n, "observations:\n")
+    head_list(S, n = n)
+    if (!ex) {
+      cat("\nCorresponding standard errors:\n")
+      head_list(ks_extract(x, "SE"), n = n) 
+    }
   }
   invisible(x)
 }
@@ -68,7 +90,7 @@ is.kernelshap <- function(object){
 #'
 #' @param object Object to extract something.
 #' @param what Element to extract. One of "S", "X", "baseline", "SE", "n_iter", 
-#' "converged", "m", "m_exact", "prop_exact", or "txt".
+#' "converged", "m", "m_exact", "prop_exact", "exact", or "txt".
 #' @param ... Currently unused.
 #' @return The corresponding object is returned.
 #' @export
@@ -84,7 +106,7 @@ ks_extract <- function(object, ...){
 #' ks_extract(s, what = "S")
 ks_extract.kernelshap = function(object, 
                                  what = c("S", "X", "baseline", "SE", "n_iter", "converged",
-                                          "m", "m_exact", "prop_exact", "txt"), 
+                                          "m", "m_exact", "prop_exact", "exact", "txt"), 
                                  ...) {
   what <- match.arg(what)
   object[[what]]

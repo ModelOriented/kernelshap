@@ -59,16 +59,10 @@ fit <- lm(Sepal.Length ~ ., data = iris)
 s <- kernelshap(fit, iris[-1], bg_X = iris)
 s
 
-# Output (partly)
 # SHAP values of first 2 observations:
 #      Sepal.Width Petal.Length Petal.Width   Species
 # [1,]  0.21951350    -1.955357   0.3149451 0.5823533
 # [2,] -0.02843097    -1.955357   0.3149451 0.5823533
-# 
- Corresponding standard errors:
-     Sepal.Width Petal.Length Petal.Width Species
-[1,]           0            0           0       0
-[2,]           0            0           0       0
 
 # Plot with shapviz
 shp <- shapviz(s)
@@ -115,14 +109,12 @@ set.seed(1)
 fit <- ranger(Species ~ ., data = iris, probability = TRUE)
 
 s <- kernelshap(fit, iris[c(1, 51, 101), -5], bg_X = iris)
-s
+summary(s)
 
-# 'kernelshap' object representing 
-#   - 3 SHAP matrices of dimension 3 x 4 
-#   - feature data.frame/matrix of dimension 3 x 4 
-#   - baseline: 0.3332606 0.3347014 0.332038 
-#   - average iterations: 2 
-#   - rows not converged: 0
+# Exact Kernel SHAP values
+#   - 3 SHAP matrices of dim 3 x 4
+#   - baseline: 0.3332606 0.3347014 0.332038
+#   - m_exact: 14
 # 
 # SHAP values of first 2 observations:
 # [[1]]
@@ -160,7 +152,9 @@ iris_wf <- workflow() %>%
 fit <- iris_wf %>%
   fit(iris)
   
-ks <- kernelshap(fit, iris[, -1], bg_X = iris)
+system.time(
+  ks <- kernelshap(fit, iris[, -1], bg_X = iris)
+)
 ks
 ```
 

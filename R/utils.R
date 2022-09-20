@@ -199,26 +199,24 @@ check_pred <- function(x, n) {
 #   list(degree = degree, m_exact = m_kum[degree])
 # }
 
+# Helper function in print() and summary()
+head_list <- function(x, n) {
+  if (!is.list(x)) print(utils::head(x, n)) else print(lapply(x, utils::head, n))
+}
+
 # Describe what is happening
-summarize_strategy <- function(p, exact, deg, m_exact, m) {
+summarize_strategy <- function(p, exact, deg) {
   if (exact || p %in% (0:1 + (2L * deg))) {
-    return(
-      sprintf(
-        "Exact Kernel SHAP values %s(m_exact = %s)", 
-        if (exact) "" else "by the hybrid approach ",
-        m_exact
-      )
-    )
+    txt <- "Exact Kernel SHAP values"
+    if (!exact) {
+      txt <- paste(txt, "by the hybrid approach")
+    }
+    return(txt)
   }
   if (deg == 0L) {
-    return(sprintf("Kernel SHAP values by iterative sampling (m/iter = %s)", m))
+    return("Kernel SHAP values by iterative sampling")
   } 
-  sprintf(
-    "Kernel SHAP values by the iterative hybrid strategy of degree %s (m_exact = %s, m/iter = %s)", 
-    deg, 
-    m_exact, 
-    m
-  )
+  paste("Kernel SHAP values by the hybrid strategy of degree", deg)
 }
 
 # Kernel weights normalized to a non-empty subset S of {1, ..., p-1}

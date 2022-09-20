@@ -11,7 +11,7 @@ ks_extract(object, ...)
 \method{ks_extract}{kernelshap}(
   object,
   what = c("S", "X", "baseline", "SE", "n_iter", "converged", "m", "m_exact",
-    "prop_exact", "txt"),
+    "prop_exact", "exact", "txt"),
   ...
 )
 
@@ -23,7 +23,7 @@ ks_extract(object, ...)
 \item{...}{Currently unused.}
 
 \item{what}{Element to extract. One of "S", "X", "baseline", "SE", "n_iter",
-"converged", "m", "m_exact", "prop_exact", or "txt".}
+"converged", "m", "m_exact", "prop_exact", "exact", or "txt".}
 }
 \value{
 The corresponding object is returned.
