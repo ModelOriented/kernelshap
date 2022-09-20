@@ -225,9 +225,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
   }
   
   # Some infos
-  txt <- summarize_strategy(
-    p, exact = exact, deg = hybrid_degree, m_exact = m_exact, m = m
-  )
+  txt <- summarize_strategy(p, exact = exact, deg = hybrid_degree)
   if (verbose) {
     message(txt)
   }
