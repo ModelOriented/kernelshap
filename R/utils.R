@@ -25,7 +25,7 @@ kernelshap_one <- function(x, v1, object, pred_fun, bg_w, exact, deg,
     b_exact <- crossprod(Z, precalc[["w"]] * (vz - v0_m_exact))   #  (p x K)
     
     # Some of the hybrid cases are exact as well
-    if (exact || p %in% (0:1 + (2L * deg))) {
+    if (exact || trunc(p / 2) == deg) {
       beta <- solver(A_exact, b_exact, constraint = v1 - v0)      #  (p x K)
       return(list(beta = beta, sigma = 0 * beta, n_iter = 1L, converged = TRUE))  
     }
@@ -206,7 +206,7 @@ head_list <- function(x, n) {
 
 # Describe what is happening
 summarize_strategy <- function(p, exact, deg) {
-  if (exact || p %in% (0:1 + (2L * deg))) {
+  if (exact || trunc(p / 2) == deg) {
     txt <- "Exact Kernel SHAP values"
     if (!exact) {
       txt <- paste(txt, "by the hybrid approach")
