@@ -117,16 +117,16 @@ test_that("Matrix input is fine with case weights", {
 
 set.seed(9L)
 X <- data.frame(matrix(rnorm(20000L), ncol = 100L))
-y <- rnorm(200L)
-fit <- lm(y ~ ., data = cbind(y = y, X))
-s <- kernelshap(fit, X[1L, ], bg_X = X, hybrid_degree = 1L)
+y <- X[, 1L] * X[, 2L] * X[, 3L]
+fit <- lm(y ~ X1:X2:X3 + ., data = cbind(y = y, X))
+s <- kernelshap(fit, X[1L, ], bg_X = X)
 
 test_that("kernelshap works for large p (hybrid case)", {
   expect_equal(s$baseline, mean(y))
   expect_equal(rowSums(s$S) + s$baseline, unname(stats::predict(fit, X[1L, ])))
 })
 
-# Pure sampling case does not converge in 25 iterations, but result matches 
+# Pure sampling case does not converge in 100 iterations, but result matches 
 # test_that("Hybrid large p case matches approximately the pure sampler", {
 #   s1 <- kernelshap(fit, X[1L, ], bg_X = X, hybrid_degree = 0)
 #   

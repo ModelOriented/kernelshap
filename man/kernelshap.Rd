@@ -18,9 +18,9 @@ kernelshap(object, ...)
   exact = (ncol(X) <= 8L) && is.null(hybrid_degree),
   hybrid_degree = NULL,
   paired_sampling = TRUE,
-  m = min(256L, 8L * ncol(X)),
+  m = NULL,
   tol = 0.005,
-  max_iter = 25L,
+  max_iter = 100L,
   parallel = FALSE,
   parallel_args = NULL,
   verbose = TRUE,
@@ -36,9 +36,9 @@ kernelshap(object, ...)
   exact = (ncol(X) <= 8L) && is.null(hybrid_degree),
   hybrid_degree = NULL,
   paired_sampling = TRUE,
-  m = min(256L, 8L * ncol(X)),
+  m = NULL,
   tol = 0.005,
-  max_iter = 25L,
+  max_iter = 100L,
   parallel = FALSE,
   parallel_args = NULL,
   verbose = TRUE,
@@ -54,9 +54,9 @@ kernelshap(object, ...)
   exact = (ncol(X) <= 8L) && is.null(hybrid_degree),
   hybrid_degree = NULL,
   paired_sampling = TRUE,
-  m = min(256L, 8L * ncol(X)),
+  m = NULL,
   tol = 0.005,
-  max_iter = 25L,
+  max_iter = 100L,
   parallel = FALSE,
   parallel_args = NULL,
   verbose = TRUE,
@@ -91,27 +91,31 @@ with respect to the background data. In this case, the arguments \code{hybrid_de
 \code{m}, \code{paired_sampling}, \code{tol}, and \code{max_iter} are ignored.
 The default is \code{TRUE} up to eight features, and \code{FALSE} otherwise.}
 
-\item{hybrid_degree}{Integer controlling the exactness of the hybrid strategy:
+\item{hybrid_degree}{Integer controlling the exactness of the hybrid strategy. The
+default, \code{NULL}, equals 2 for p <= 16 and 1 otherwise. Ignored if \code{exact = TRUE}.
 \itemize{
-\item \code{0}: Pure sampling strategy, not involving any exact part. This is not
-recommended except when studying properties of Kernel SHAP.
+\item \code{0}: Pure sampling strategy not involving any exact part. It is strictly
+worse than the hybrid strategy and should therefore only be used for
+studying properties of Kernel SHAP algorithms.
 \item \code{1}: Uses all 2p on-off vectors z with sum(z) equal to 1 or p-1 for the exact
 part, which covers at least 75\% of the mass of the Kernel weight distribution.
-The remaining mass is covered by sampling. This is the default for p>16.
+The remaining mass is covered by sampling.
 \item \code{2}: Uses all p(p+1) on-off vectors z with sum(z) equal to 1, p-1, 2, or p-2.
 This covers at least 92\% of the mass of the Kernel weight distribution.
-The remaining mass is covered by sampling. This is the default for 8 < p < 16.
+The remaining mass is covered by sampling. Convergence usually happens in the
+minimal possible number of iterations of two.
 \item \code{k>2}: Uses all on-off vectors with sum(z) in 1,...,k and p-1,...,p-k.
 }}
 
 \item{paired_sampling}{Logical flag indicating whether to do the sampling in a paired
 manner. This means that with every on-off vector z, also 1-z is considered.
 CL21 shows its superiority compared to standard sampling, therefore the
-default (\code{TRUE}) should usually not be changed except for research purposes.
-Ignored if \code{exact = TRUE}.}
+default (\code{TRUE}) should usually not be changed except for studying properties
+of Kernel SHAP algorithms. Ignored if \code{exact = TRUE}.}
 
-\item{m}{Number of on-off vectors sampled during one iteration. The default equals
-\code{min(256, 8*p)}, where p is the number of features. Ignored if \code{exact = TRUE}.}
+\item{m}{Even number of on-off vectors sampled during one iteration. The default,
+\code{NULL}, equals 8p for \code{hybrid_degree == 0} and 2p otherwise.
+Ignored if \code{exact = TRUE}.}
 
 \item{tol}{Tolerance determining when to stop. The algorithm keeps iterating until
 max(sigma_n)/diff(range(beta_n)) < tol, where the beta_n are the SHAP values
