@@ -137,7 +137,7 @@
 #'   as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris
 #' )
 #' s <- kernelshap(fit, iris[1:4, 3:5], bg_X = iris)
-#' s
+#' summary(s)
 #'
 #' # Matrix input works as well, and pred_fun can be overwritten
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])

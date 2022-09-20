@@ -19,7 +19,7 @@ kernelshap(object, ...)
   hybrid_degree = NULL,
   paired_sampling = TRUE,
   m = min(256L, 8L * ncol(X)),
-  tol = 0.005,
+  tol = 0.001,
   max_iter = 25L,
   parallel = FALSE,
   parallel_args = NULL,
@@ -37,7 +37,7 @@ kernelshap(object, ...)
   hybrid_degree = NULL,
   paired_sampling = TRUE,
   m = min(256L, 8L * ncol(X)),
-  tol = 0.005,
+  tol = 0.001,
   max_iter = 25L,
   parallel = FALSE,
   parallel_args = NULL,
@@ -55,7 +55,7 @@ kernelshap(object, ...)
   hybrid_degree = NULL,
   paired_sampling = TRUE,
   m = min(256L, 8L * ncol(X)),
-  tol = 0.005,
+  tol = 0.001,
   max_iter = 25L,
   parallel = FALSE,
   parallel_args = NULL,
@@ -148,6 +148,7 @@ a list of K such matrices.
 \item \code{m}: Integer providing the effective number of sampled on-off vectors used per iteration.
 \item \code{m_exact}: Integer providing the effective number of exact on-off vectors used per iteration.
 \item \code{prop_exact}: Proportion of the Kernel SHAP weight distribution covered by exact calculations.
+\item \code{exact}: Logical flag indicating whether calculations are exact or not.
 \item \code{txt}: Summary text.
 }
 }
@@ -221,7 +222,7 @@ fit <- stats::lm(
   as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris
 )
 s <- kernelshap(fit, iris[1:4, 3:5], bg_X = iris)
-s
+summary(s)
 
 # Matrix input works as well, and pred_fun can be overwritten
 fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
