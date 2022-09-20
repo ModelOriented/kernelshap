@@ -74,3 +74,27 @@ test_that("Partly exact A, w, Z equal exact for sufficiently large deg", {
     expect_equal(tabulate(pa_rs), tabulate(ex_rs))
   }
 })
+
+test_that("hybrid weights sum to 1 for different p and degree 1", {
+  deg <- 1
+  expect_error(input_sampling(2, deg = deg))
+  expect_error(input_sampling(3, deg = deg))
+
+  for (p in 4:20) {
+    pa <- input_partly_exact(p, deg = deg)
+    sa <- input_sampling(p, m = 100, deg = deg, paired = TRUE)
+    expect_equal(sum(pa$w) + sum(sa$w), 1)
+  }
+})
+
+test_that("hybrid weights sum to 1 for different p and degree 2", {
+  deg <- 2
+  expect_error(input_sampling(4, deg = deg))
+  expect_error(input_sampling(5, deg = deg))
+  
+  for (p in 6:20) {
+    pa <- input_partly_exact(p, deg = deg)
+    sa <- input_sampling(p, m = 100, deg = deg, paired = FALSE)
+    expect_equal(sum(pa$w) + sum(sa$w), 1)
+  }
+})

@@ -42,8 +42,8 @@ conv_crit <- function(sig, bet) {
 # Create Z, w, A from sampling. deg > 0 means that we need to compensate the remaining
 # mass after creating exact z up to degree deg.
 input_sampling <- function(p, m, deg, paired) {
-  if (p %in% (0:1 + (2L * deg))) {
-    stop("Special case is not yet implemented")
+  if (p < 2L * deg + 2L) {
+    stop("p must be >=2*deg + 2")
   }
   S <- (deg + 1L):(p - deg - 1L)
   Z <- sample_Z(m = if (paired) m / 2 else m, p = p, S = S)
