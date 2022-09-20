@@ -100,6 +100,7 @@ case_p1 <- function(n, nms, v0, v1, X, verbose) {
     m = 0L,
     m_exact = 0L,
     prop_exact = 1,
+    exact = TRUE,
     txt = txt
   )
   class(out) <- "kernelshap"

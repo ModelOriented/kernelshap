@@ -118,6 +118,7 @@
 #'   \item \code{m}: Integer providing the effective number of sampled on-off vectors used per iteration.
 #'   \item \code{m_exact}: Integer providing the effective number of exact on-off vectors used per iteration.
 #'   \item \code{prop_exact}: Proportion of the Kernel SHAP weight distribution covered by exact calculations.
+#'   \item \code{exact}: Logical flag indicating whether calculations are exact or not.
 #'   \item \code{txt}: Summary text.
 #' }
 #' @references
@@ -297,6 +298,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
     m = m,
     m_exact = m_exact,
     prop_exact = prop_exact,
+    exact = exact || p %in% (0:1 + (2L * hybrid_degree)),
     txt = txt
   )
   class(out) <- "kernelshap"

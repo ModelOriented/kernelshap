@@ -41,10 +41,12 @@ Kernel SHAP in the Python implementation "shap" uses a quite similar hybrid stra
 - The order of some of the arguments behind the first four has been changed.
 - Paired sampling no longer duplicates `m`.
 - Thanks to Mathias Ambuehl, the random sampling of z vectors is now fully vectorized.
+- The output of `print()` is now more slim. 
+- A new `summary()` function shows more infos.
 
 ## Other changes
 
-- The resulting object now contains `m_exact` (the number of on-off vectors used for the exact part) and `txt` (the info message when starting the algorithm).
+- The resulting object now contains `m_exact` (the number of on-off vectors used for the exact part), `prop_exact` (proportion of mass treated in exact fashion), `exact` flag, and `txt` (the info message when starting the algorithm).
 
 ## Bug fixes
 

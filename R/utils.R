@@ -216,7 +216,7 @@ summarize_strategy <- function(p, exact, deg) {
   if (deg == 0L) {
     return("Kernel SHAP values by iterative sampling")
   } 
-  print("Kernel SHAP values by the hybrid strategy of degree", deg)
+  paste("Kernel SHAP values by the hybrid strategy of degree", deg)
 }
 
 # Kernel weights normalized to a non-empty subset S of {1, ..., p-1}
