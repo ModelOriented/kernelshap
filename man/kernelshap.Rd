@@ -15,10 +15,10 @@ kernelshap(object, ...)
   bg_X,
   pred_fun = stats::predict,
   bg_w = NULL,
-  exact = (ncol(X) <= 8L) && is.null(hybrid_degree),
-  hybrid_degree = NULL,
+  exact = ncol(X) <= 8L,
+  hybrid_degree = 1L + ncol(X) \%in\% 4:16,
   paired_sampling = TRUE,
-  m = NULL,
+  m = 2L * ncol(X) * (1L + 3L * (hybrid_degree == 0L)),
   tol = 0.005,
   max_iter = 100L,
   parallel = FALSE,
@@ -33,10 +33,10 @@ kernelshap(object, ...)
   bg_X,
   pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
   bg_w = NULL,
-  exact = (ncol(X) <= 8L) && is.null(hybrid_degree),
-  hybrid_degree = NULL,
+  exact = ncol(X) <= 8L,
+  hybrid_degree = 1L + ncol(X) \%in\% 4:16,
   paired_sampling = TRUE,
-  m = NULL,
+  m = 2L * ncol(X) * (1L + 3L * (hybrid_degree == 0L)),
   tol = 0.005,
   max_iter = 100L,
   parallel = FALSE,
@@ -51,10 +51,10 @@ kernelshap(object, ...)
   bg_X,
   pred_fun = function(m, X) m$predict_newdata(X)$response,
   bg_w = NULL,
-  exact = (ncol(X) <= 8L) && is.null(hybrid_degree),
-  hybrid_degree = NULL,
+  exact = ncol(X) <= 8L,
+  hybrid_degree = 1L + ncol(X) \%in\% 4:16,
   paired_sampling = TRUE,
-  m = NULL,
+  m = 2L * ncol(X) * (1L + 3L * (hybrid_degree == 0L)),
   tol = 0.005,
   max_iter = 100L,
   parallel = FALSE,
@@ -91,12 +91,12 @@ with respect to the background data. In this case, the arguments \code{hybrid_de
 \code{m}, \code{paired_sampling}, \code{tol}, and \code{max_iter} are ignored.
 The default is \code{TRUE} up to eight features, and \code{FALSE} otherwise.}
 
-\item{hybrid_degree}{Integer controlling the exactness of the hybrid strategy. The
-default, \code{NULL}, equals 2 for p <= 16 and 1 otherwise. Ignored if \code{exact = TRUE}.
+\item{hybrid_degree}{Integer controlling the exactness of the hybrid strategy. For
+4 <= p <= 16, the default is 2, otherwise it is 1. Ignored if \code{exact = TRUE}.
 \itemize{
 \item \code{0}: Pure sampling strategy not involving any exact part. It is strictly
 worse than the hybrid strategy and should therefore only be used for
-studying properties of Kernel SHAP algorithms.
+studying properties of the Kernel SHAP algorithm.
 \item \code{1}: Uses all 2p on-off vectors z with sum(z) equal to 1 or p-1 for the exact
 part, which covers at least 75\% of the mass of the Kernel weight distribution.
 The remaining mass is covered by sampling.
@@ -113,8 +113,8 @@ CL21 shows its superiority compared to standard sampling, therefore the
 default (\code{TRUE}) should usually not be changed except for studying properties
 of Kernel SHAP algorithms. Ignored if \code{exact = TRUE}.}
 
-\item{m}{Even number of on-off vectors sampled during one iteration. The default,
-\code{NULL}, equals 8p for \code{hybrid_degree == 0} and 2p otherwise.
+\item{m}{Even number of on-off vectors sampled during one iteration.
+The default is 2p, except when \code{hybrid_degree == 0}. Then it is set to 8p.
 Ignored if \code{exact = TRUE}.}
 
 \item{tol}{Tolerance determining when to stop. The algorithm keeps iterating until
@@ -160,7 +160,7 @@ a list of K such matrices.
 Multidimensional refinement of the Kernel SHAP Algorithm described in Covert and Lee (2021),
 in the following abbreviated by "CL21".
 The function allows to calculate Kernel SHAP values in an exact way, by iterative sampling
-as in CL21, or by a hybrid of the two. As soon as sampling is involved,
+as in CL21, or by a hybrid of these two options. As soon as sampling is involved,
 the algorithm iterates until convergence, and standard errors are provided.
 The default behaviour depends on the number of features p:
 \itemize{
@@ -175,7 +175,7 @@ The iterative Kernel SHAP sampling algorithm (CL21) works by randomly sample
 m on-off vectors z so that their sum follows the SHAP Kernel weight distribution
 (renormalized to the range from 1 to p-1). Based on these vectors, many predictions
 are formed. Then, Kernel SHAP values are derived as the solution of a constrained
-linear regression, see CL21 for details. This is done multiple times until convergence.
+linear regression. This is done multiple times until convergence, see CL21 for details.
 
 A drawback of this strategy is that many (at least 75\%) of the z vectors will have
 sum(z) equal to 1 or p-1, producing many duplicates. Similarly, at least 92\% of

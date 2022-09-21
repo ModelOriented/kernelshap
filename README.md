@@ -313,20 +313,31 @@ y <- rnorm(10000L)
 fit <- lm(y ~ ., data = cbind(y = y, X))
 
 s <- kernelshap(fit, X[1L, ], bg_X = X)
+summary(s)
 s$S[1:5]
-# Kernel SHAP values by the iterative hybrid strategy of degree 2 
-# (m_exact = 110, m/iter = 80)
+# Kernel SHAP values by the hybrid strategy of degree 2
+#   - SHAP matrix of dim 1 x 10
+#   - baseline: -0.005390948
+#   - average number of iterations: 2 
+#   - rows not converged: 0 
+#   - proportion exact: 0.9487952 
+#   - m/iter: 20
+#   - m_exact: 110
 # 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
 ```
 
-The algorithm converged in the minimal possible number of two iterations and used $110 + 2\cdot 80 = 270$ on-off vectors $z$. For each $z$, predictions on a data set with the same size as the background data are done. Three calls to `predict()` were necessary (one for the exact part and one per sampling iteration).
+The algorithm converged in the minimal possible number of two iterations and used $110 + 2\cdot 20 = 150$ on-off vectors $z$. For each $z$, predictions on a data set with the same size as the background data are done. Three calls to `predict()` were necessary (one for the exact part and one per sampling iteration).
 
 Since $p$ is not very large in this case, we can also force the algorithm to use exact calculations:
 
 ```r
 s <- kernelshap(fit, X[1L, ], bg_X = X, exact = TRUE)
+summary(s)
 s$S[1:5]
-# Exact Kernel SHAP values (m_exact = 1022)
+# Exact Kernel SHAP values
+#   - SHAP matrix of dim 1 x 10
+#   - baseline: -0.005390948
+#   - m_exact: 1022
 # 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
 ```
 
@@ -336,8 +347,16 @@ Pure sampling can be enforced by setting the hybrid degree to 0:
 
 ```r
 s <- kernelshap(fit, X[1L, ], bg_X = X, hybrid_degree = 0)
+summary(s)
 s$S[1:5]
-# Kernel SHAP values by iterative sampling (m/iter = 80)
+# Kernel SHAP values by iterative sampling
+#   - SHAP matrix of dim 1 x 10
+#   - baseline: -0.005390948
+#   - average number of iterations: 2 
+#   - rows not converged: 0 
+#   - proportion exact: 0 
+#   - m/iter: 80
+#   - m_exact: 0
 # 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
 ```
 
