@@ -15,12 +15,9 @@ test_that("SHAP + baseline = prediction", {
 })
 
 test_that("Exact hybrid calculation is similar to exact (non-hybrid)", {
-  s1 <- kernelshap(fit, iris[c(1, 51, 101), x], bg_X = iris, hybrid_degree = 1)
-  expect_equal(s$S, s1$S)
-})
-
-test_that("Pure sampling is very similar to exact", {
-  s1 <- kernelshap(fit, iris[c(1, 51, 101), x], bg_X = iris, hybrid_degree = 0)
+  s1 <- kernelshap(
+    fit, iris[c(1, 51, 101), x], bg_X = iris, exact = FALSE, hybrid_degree = 1
+  )
   expect_equal(s$S, s1$S)
 })
 
@@ -125,13 +122,5 @@ test_that("kernelshap works for large p (hybrid case)", {
   expect_equal(s$baseline, mean(y))
   expect_equal(rowSums(s$S) + s$baseline, unname(stats::predict(fit, X[1L, ])))
 })
-
-# Pure sampling case does not converge in 100 iterations, but result matches 
-# test_that("Hybrid large p case matches approximately the pure sampler", {
-#   s1 <- kernelshap(fit, X[1L, ], bg_X = X, hybrid_degree = 0)
-#   
-#   expect_equal(s$S[1, 1], s1$S[1, 1])
-#   expect_equal(rowSums(s$S) + s$baseline, unname(stats::predict(fit, X[1L, ])))
-# })
 
 
