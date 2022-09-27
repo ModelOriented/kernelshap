@@ -191,7 +191,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
     all(nms %in% colnames(bg_X)),
     is.function(pred_fun),
     exact %in% c(TRUE, FALSE),
-    p == 1L || hybrid_degree %in% 0:(p / 2),
+    p == 1L || exact || hybrid_degree %in% 0:(p / 2),
     paired_sampling %in% c(TRUE, FALSE),
     "m must be even" = trunc(m / 2) == m / 2
   )
