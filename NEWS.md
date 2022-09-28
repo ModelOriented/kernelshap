@@ -1,4 +1,4 @@
-# kernelshap 0.2.0.900 DEVEL
+# kernelshap 0.3.0
 
 ## Major improvements
 
