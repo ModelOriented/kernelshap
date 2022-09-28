@@ -283,7 +283,7 @@ fit <- gam(Sepal.Length ~ s(Sepal.Width) + Species, data = iris)
 
 system.time(
   s <- kernelshap(
-    fit, 
+    fit,  
     iris[c(2, 5)], 
     bg_X = iris, 
     parallel = TRUE, 
@@ -343,7 +343,7 @@ s$S[1:5]
 
 The results are identical. While more on-off vectors $z$ were required (1022), only a single call to `predict()` was necessary.
 
-Pure sampling can be enforced by setting the hybrid degree to 0:
+Pure sampling (not recommended!) can be enforced by setting the hybrid degree to 0:
 
 ```r
 s <- kernelshap(fit, X[1L, ], bg_X = X, hybrid_degree = 0)
