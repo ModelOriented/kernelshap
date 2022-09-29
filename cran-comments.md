@@ -2,7 +2,7 @@ Hello CRAN
 
 This is an update with
 
-- more efficient exact KernelSHAP values,
+- a much better way to calculate *exact* KernelSHAP values,
 - and a very fast and accurate hybrid between exact and sampling.
 
 Furthermore, some defaults have been improved. As the package is maturing, the next
