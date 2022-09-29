@@ -4,7 +4,7 @@
 
 SHAP values (Lundberg and Lee, 2017) decompose model predictions into additive contributions of the features in a fair way. A model agnostic approach is called Kernel SHAP, introduced in Lundberg and Lee (2017), and investigated in detail in Covert and Lee (2021). 
 
-The "kernelshap" package implements a multidimensional refinement of the Kernel SHAP Algorithm described in Covert and Lee (2021). The package allows to calculate Kernel SHAP values in an exact way, by iterative sampling (as in Covert and Lee, 2021), or a hybrid of the two. As soon as sampling is involved, the algorithm iterates until convergence, and standard errors are provided.
+The "kernelshap" package implements a multidimensional refinement of the Kernel SHAP Algorithm described in Covert and Lee (2021). The package allows to calculate Kernel SHAP values in an exact way, by iterative sampling (as in Covert and Lee, 2021), or by a hybrid of the two. As soon as sampling is involved, the algorithm iterates until convergence, and standard errors are provided.
 
 The default behaviour depends on the number of features $p$:
 
@@ -283,7 +283,7 @@ fit <- gam(Sepal.Length ~ s(Sepal.Width) + Species, data = iris)
 
 system.time(
   s <- kernelshap(
-    fit, 
+    fit,  
     iris[c(2, 5)], 
     bg_X = iris, 
     parallel = TRUE, 
@@ -300,7 +300,7 @@ SHAP values of first 2 observations:
 
 ## Exact/sampling/hybrid
 
-In above examples, since $p$ was small, exact Kernel SHAP values were calculated. Here, we want to show how to use the different strategies (exact, hybrid, and pure sampling) in a situation with ten features. 
+In above examples, since $p$ was small, exact Kernel SHAP values were calculated. Here, we want to show how to use the different strategies (exact, hybrid, and pure sampling) in a situation with ten features, see `?kernelshap` for details about those strategies.
 
 With ten features, a degree 2 hybrid is being used by default: 
 
@@ -343,7 +343,7 @@ s$S[1:5]
 
 The results are identical. While more on-off vectors $z$ were required (1022), only a single call to `predict()` was necessary.
 
-Pure sampling can be enforced by setting the hybrid degree to 0:
+Pure sampling (not recommended!) can be enforced by setting the hybrid degree to 0:
 
 ```r
 s <- kernelshap(fit, X[1L, ], bg_X = X, hybrid_degree = 0)

@@ -65,8 +65,8 @@ fit <- lm(
 X_small <- diamonds[seq(1, nrow(diamonds), 53), setdiff(names(diamonds), "price")]
 
 # Exact KernelSHAP on X_small, using X_small as background data 
-# (71/59 seconds for exact, 27/17 for hybrid deg 2, 17/9 for hybrid deg 1, 
-# 26/15 for pure sampling; second number with 2 parallel sessions on Windows)
+# (58/67(?) seconds for exact, 25/18 for hybrid deg 2, 16/9 for hybrid deg 1, 
+# 26/17 for pure sampling; second number with 2 parallel sessions on Windows)
 system.time(
   ks <- kernelshap(fit, X_small, bg_X = bg_X)  
 )

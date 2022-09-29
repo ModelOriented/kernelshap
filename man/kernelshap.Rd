@@ -162,7 +162,7 @@ in the following abbreviated by "CL21".
 The function allows to calculate Kernel SHAP values in an exact way, by iterative sampling
 as in CL21, or by a hybrid of these two options. As soon as sampling is involved,
 the algorithm iterates until convergence, and standard errors are provided.
-The default behaviour depends on the number of features p:
+The default behaviour depends on the number of features p, see also Details below:
 \itemize{
 \item 2 <= p <= 8: Exact Kernel SHAP values are returned (for the given background data).
 \item p > 8: Hybrid (partly exact) iterative version of Kernel SHAP

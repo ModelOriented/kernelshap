@@ -5,7 +5,7 @@
 #' The function allows to calculate Kernel SHAP values in an exact way, by iterative sampling 
 #' as in CL21, or by a hybrid of these two options. As soon as sampling is involved, 
 #' the algorithm iterates until convergence, and standard errors are provided.
-#' The default behaviour depends on the number of features p:
+#' The default behaviour depends on the number of features p, see also Details below:
 #' \itemize{
 #'   \item 2 <= p <= 8: Exact Kernel SHAP values are returned (for the given background data). 
 #'   \item p > 8: Hybrid (partly exact) iterative version of Kernel SHAP
@@ -191,7 +191,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
     all(nms %in% colnames(bg_X)),
     is.function(pred_fun),
     exact %in% c(TRUE, FALSE),
-    p == 1L || hybrid_degree %in% 0:(p / 2),
+    p == 1L || exact || hybrid_degree %in% 0:(p / 2),
     paired_sampling %in% c(TRUE, FALSE),
     "m must be even" = trunc(m / 2) == m / 2
   )
