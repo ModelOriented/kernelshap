@@ -33,6 +33,11 @@ test_that("Background data can contain additional columns", {
   expect_true(is.kernelshap(ks4))
 })
 
+test_that("Background data can contain only one single row", {
+  expect_true(is.kernelshap(kernelshap(fit, iris[1L, x], bg_X = iris[150L, ])))
+  expect_true(is.kernelshap(kernelshap(fit, iris[1:10, x], bg_X = iris[150L, ])))
+})
+
 fit <- stats::lm(Sepal.Length ~ stats::poly(Petal.Width, 2), data = iris)
 x <- "Petal.Width"
 preds <- unname(stats::predict(fit, iris))

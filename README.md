@@ -12,24 +12,14 @@ The default behaviour depends on the number of features $p$:
 - $p > 8$: Hybrid (partly exact) iterative version of Kernel SHAP. The algorithm iterates until Kernel SHAP values are sufficiently accurate.
 - $p = 1$: Exact Shapley values are returned.
 
-The main function `kernelshap()` has four key arguments:
+The main function `kernelshap()` has three key arguments:
 
 - `object`: Fitted model object.
 - `X`: A (n x p) `matrix`, `data.frame`, `tibble` or `data.table` of rows to be explained. Important: The columns should only represent model features, not the response.
 - `bg_X`: Background data used to integrate out "switched off" features, 
-often a subset of the training data (around 100 to 500 rows).
-It should contain the same columns as `X`.
-Columns not in `X` are silently dropped and the columns are arranged into
-the order as they appear in `X`.
-- `pred_fun`: Prediction function of the form `function(object, X, ...)`,
-providing K >= 1 numeric predictions per row. Its first argument represents the
-model `object`, its second argument a data structure like `X`.
-(The names of the first two arguments do not matter.) Additional (named)
-arguments are passed via `...` of `kernelshap()`. The default, `stats::predict`, will
-work in most cases. Some exceptions (classes "ranger" and mlr3 "Learner")
-are handled separately. In other cases, the function must be specified manually.
+often a subset of the training data (typically 50 to 500 rows). It should contain the same columns as `X`. In cases with a natural "off" value (like MNIST digits), this can also be a single row with all values set to the off value.
 
-Additional arguments of `kernelshap()` can be used to control details of the algorithm and to activate parallel processing.
+Additional arguments of `kernelshap()` can be used to control details of the algorithm, to activate parallel processing, or to manually pass a prediction function.
 
 **Remarks**
 

@@ -54,9 +54,11 @@
 #' @param X A (n x p) matrix, data.frame, tibble or data.table of rows to be explained. 
 #' Important: The columns should only represent model features, not the response.
 #' @param bg_X Background data used to integrate out "switched off" features, 
-#' often a subset of the training data (around 100 to 500 rows)
+#' often a subset of the training data (typically 50 to 500 rows)
 #' It should contain the same columns as \code{X}. Columns not in \code{X} are silently 
 #' dropped and the columns are arranged into the order as they appear in \code{X}.
+#' In cases with a natural "off" value (like MNIST digits), 
+#' this can also be a single row with all values set to the off value.
 #' @param pred_fun Prediction function of the form \code{function(object, X, ...)},
 #' providing K >= 1 numeric predictions per row. Its first argument represents the
 #' model \code{object}, its second argument a data structure like \code{X}. 
@@ -183,7 +185,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
     is.matrix(bg_X) || is.data.frame(bg_X),
     is.matrix(X) == is.matrix(bg_X),
     (n <- nrow(X)) >= 1L,
-    (bg_n <- nrow(bg_X)) >= 2L,
+    (bg_n <- nrow(bg_X)) >= 1L,
     (p <- ncol(X)) >= 1L,
     ncol(bg_X) >= 1L,
     !is.null(nms <- colnames(X)),

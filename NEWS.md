@@ -1,3 +1,10 @@
+# kernelshap 0.3.0.9000 DEVEL
+
+## Changes
+
+- The background dataset is now allowed to have just a single row. This is useful in situations where there is a natural "off" value such as with MNIST data or for models that can naturally deal with missing values.
+
+
 # kernelshap 0.3.0
 
 ## Major improvements

@@ -72,9 +72,11 @@ kernelshap(object, ...)
 Important: The columns should only represent model features, not the response.}
 
 \item{bg_X}{Background data used to integrate out "switched off" features,
-often a subset of the training data (around 100 to 500 rows)
+often a subset of the training data (typically 50 to 500 rows)
 It should contain the same columns as \code{X}. Columns not in \code{X} are silently
-dropped and the columns are arranged into the order as they appear in \code{X}.}
+dropped and the columns are arranged into the order as they appear in \code{X}.
+In cases with a natural "off" value (like MNIST digits),
+this can also be a single row with all values set to the off value.}
 
 \item{pred_fun}{Prediction function of the form \code{function(object, X, ...)},
 providing K >= 1 numeric predictions per row. Its first argument represents the
