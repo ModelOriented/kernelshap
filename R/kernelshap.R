@@ -55,13 +55,12 @@
 #' Important: The columns should only represent model features, not the response.
 #' @param bg_X Background data used to integrate out "switched off" features, 
 #' often a subset of the training data (typically 50 to 500 rows)
-#' It should contain the same columns as \code{X}. Columns not in \code{X} are silently 
-#' dropped and the columns are arranged into the order as they appear in \code{X}.
+#' It should contain the same columns as \code{X}.
 #' In cases with a natural "off" value (like MNIST digits), 
 #' this can also be a single row with all values set to the off value.
 #' @param pred_fun Prediction function of the form \code{function(object, X, ...)},
 #' providing K >= 1 numeric predictions per row. Its first argument represents the
-#' model \code{object}, its second argument a data structure like \code{X}. 
+#' model \code{object}, its second argument a data structure like \code{X} and \code{bg_X}. 
 #' (The names of the first two arguments do not matter.) Additional (named)
 #' arguments are passed via \code{...}. The default, \code{stats::predict}, will
 #' work in most cases. Some exceptions (classes "ranger" and mlr3 "Learner")
@@ -178,10 +177,10 @@ kernelshap <- function(object, ...){
 #' @export
 kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, 
                                feature_names = colnames(X), bg_w = NULL, 
-                               exact = ncol(X) <= 8L, 
-                               hybrid_degree = 1L + ncol(X) %in% 4:16, 
+                               exact = length(feature_names) <= 8L, 
+                               hybrid_degree = 1L + length(feature_names) %in% 4:16, 
                                paired_sampling = TRUE, 
-                               m = 2L * ncol(X) * (1L + 3L * (hybrid_degree == 0L)), 
+                               m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)), 
                                tol = 0.005, max_iter = 100L, parallel = FALSE, 
                                parallel_args = NULL, verbose = TRUE, ...) {
   stopifnot(
@@ -329,10 +328,10 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
 kernelshap.ranger <- function(object, X, bg_X,
                               pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
                               feature_names = colnames(X), 
-                              bg_w = NULL, exact = ncol(X) <= 8L, 
-                              hybrid_degree = 1L + ncol(X) %in% 4:16, 
+                              bg_w = NULL, exact = length(feature_names) <= 8L, 
+                              hybrid_degree = 1L + length(feature_names) %in% 4:16, 
                               paired_sampling = TRUE, 
-                              m = 2L * ncol(X) * (1L + 3L * (hybrid_degree == 0L)), 
+                              m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)), 
                               tol = 0.005, max_iter = 100L, parallel = FALSE, 
                               parallel_args = NULL, verbose = TRUE, ...) {
   kernelshap.default(
@@ -360,10 +359,10 @@ kernelshap.ranger <- function(object, X, bg_X,
 kernelshap.Learner <- function(object, X, bg_X,
                                pred_fun = function(m, X) m$predict_newdata(X)$response,
                                feature_names = colnames(X),
-                               bg_w = NULL, exact = ncol(X) <= 8L,
-                               hybrid_degree = 1L + ncol(X) %in% 4:16,
+                               bg_w = NULL, exact = length(feature_names) <= 8L,
+                               hybrid_degree = 1L + length(feature_names) %in% 4:16,
                                paired_sampling = TRUE,
-                               m = 2L * ncol(X) * (1L + 3L * (hybrid_degree == 0L)),
+                               m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)),
                                tol = 0.005, max_iter = 100L, parallel = FALSE,
                                parallel_args = NULL, verbose = TRUE, ...) {
   kernelshap.default(

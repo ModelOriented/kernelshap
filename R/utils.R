@@ -1,7 +1,7 @@
 # Kernel SHAP algorithm for a single row x with paired sampling
 kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, deg, 
                            paired, m, tol, max_iter, v0, precalc, ...) {
-  p <- ncol(x)
+  p <- length(feature_names)
 
   # Calculate A_exact and b_exact
   if (exact || deg >= 1L) {
