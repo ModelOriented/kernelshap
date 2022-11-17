@@ -14,6 +14,7 @@ kernelshap(object, ...)
   X,
   bg_X,
   pred_fun = stats::predict,
+  feature_names = colnames(X),
   bg_w = NULL,
   exact = ncol(X) <= 8L,
   hybrid_degree = 1L + ncol(X) \%in\% 4:16,
@@ -32,6 +33,7 @@ kernelshap(object, ...)
   X,
   bg_X,
   pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
+  feature_names = colnames(X),
   bg_w = NULL,
   exact = ncol(X) <= 8L,
   hybrid_degree = 1L + ncol(X) \%in\% 4:16,
@@ -50,6 +52,7 @@ kernelshap(object, ...)
   X,
   bg_X,
   pred_fun = function(m, X) m$predict_newdata(X)$response,
+  feature_names = colnames(X),
   bg_w = NULL,
   exact = ncol(X) <= 8L,
   hybrid_degree = 1L + ncol(X) \%in\% 4:16,
@@ -85,6 +88,10 @@ model \code{object}, its second argument a data structure like \code{X}.
 arguments are passed via \code{...}. The default, \code{stats::predict}, will
 work in most cases. Some exceptions (classes "ranger" and mlr3 "Learner")
 are handled separately. In other cases, the function must be specified manually.}
+
+\item{feature_names}{Optional vector of column names in \code{X} used to calculate
+SHAP values. By default, this equals \code{colnames(X)}. Not supported for matrix
+\code{X}.}
 
 \item{bg_w}{Optional vector of case weights for each row of \code{bg_X}.}
 

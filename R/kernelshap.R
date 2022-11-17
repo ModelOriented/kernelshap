@@ -207,7 +207,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
     stopifnot(length(bg_w) == bg_n, all(bg_w >= 0), !all(bg_w == 0))
   }
   if (is.matrix(X) && !identical(colnames(X), feature_names)) {
-    stop("If X is a matrix, feature_names must equal colnames(X).")  
+    stop("If X is a matrix, feature_names must equal colnames(X)")  
   }
   
   # Calculate v0 and v1
@@ -222,23 +222,24 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
     )
   }
   
+  # Drop unnecessary columns in bg_X. If X is matrix, also column order is relevant
+  if (!identical(colnames(bg_X), feature_names)) {
+    bg_X <- bg_X[, feature_names, drop = FALSE]
+  }
+  
   # Precalculations for the real Kernel SHAP
   if (exact || hybrid_degree >= 1L) {
     precalc <- if (exact) input_exact(p) else input_partly_exact(p, hybrid_degree)
     m_exact <- nrow(precalc[["Z"]])
     prop_exact <- sum(precalc[["w"]])
-    precalc[["bg_X_exact"]] <- bg_X[
-      rep(seq_len(bg_n), times = m_exact), feature_names, drop = FALSE
-    ]
+    precalc[["bg_X_exact"]] <- bg_X[rep(seq_len(bg_n), times = m_exact), , drop = FALSE]
   } else {
     precalc <- list()
     m_exact <- 0L
     prop_exact <- 0
   }
   if (!exact) {
-    precalc[["bg_X_m"]] <- bg_X[
-      rep(seq_len(bg_n), times = m), feature_names, drop = FALSE
-    ]  
+    precalc[["bg_X_m"]] <- bg_X[rep(seq_len(bg_n), times = m), , drop = FALSE]  
   }
   
   # Some infos
