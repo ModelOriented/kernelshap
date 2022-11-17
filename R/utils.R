@@ -103,9 +103,11 @@ get_vz <- function(X, bg, Z, object, pred_fun, feature_names, w, ...) {
   not_Z <- not_Z[g, , drop = FALSE]
   
   if (is.matrix(X)) {
+    # Remember that columns of X and bg are perfectly aligned in this case
     X[not_Z] <- bg[not_Z]
   } else {
     for (j in seq_along(feature_names)) {
+      # not_Z does not have column names, so we need to access its columns by integers
       nm <- feature_names[j]
       s <- not_Z[, j, drop = TRUE]
       X[[nm]][s] <- bg[[nm]][s]
