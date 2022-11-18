@@ -1,7 +1,7 @@
 # Kernel SHAP algorithm for a single row x with paired sampling
-kernelshap_one <- function(x, v1, object, pred_fun, bg_w, exact, deg, 
+kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, deg, 
                            paired, m, tol, max_iter, v0, precalc, ...) {
-  p <- ncol(x)
+  p <- length(feature_names)
 
   # Calculate A_exact and b_exact
   if (exact || deg >= 1L) {
@@ -17,7 +17,8 @@ kernelshap_one <- function(x, v1, object, pred_fun, bg_w, exact, deg,
       bg = bg_X_exact,                                            #  (m_ex*n_bg x p)
       Z = Z,                                                      #  (m_ex x p)
       object = object, 
-      pred_fun = pred_fun, 
+      pred_fun = pred_fun,
+      feature_names = feature_names,
       w = bg_w, 
       ...
     )
@@ -53,7 +54,14 @@ kernelshap_one <- function(x, v1, object, pred_fun, bg_w, exact, deg,
       
     # Expensive                                                              #  (m x K)
     vz <- get_vz(
-      X = X, bg = bg_X_m, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
+      X = X, 
+      bg = bg_X_m, 
+      Z = Z, 
+      object = object, 
+      pred_fun = pred_fun, 
+      feature_names = feature_names, 
+      w = bg_w, 
+      ...
     )
     
     # The sum of weights of A_exact and input[["A"]] is 1, same for b
@@ -86,7 +94,7 @@ solver <- function(A, b, constraint) {
 }
 
 # Calculates all vz of an iteration and thus takes time
-get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
+get_vz <- function(X, bg, Z, object, pred_fun, feature_names, w, ...) {
   m <- nrow(Z)
   not_Z <- !Z
   n_bg <- nrow(bg) / m   # because bg was replicated m times
@@ -96,11 +104,14 @@ get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
   not_Z <- not_Z[g, , drop = FALSE]
   
   if (is.matrix(X)) {
+    # Remember that columns of X and bg are perfectly aligned in this case
     X[not_Z] <- bg[not_Z]
   } else {
-    for (j in seq_len(ncol(bg))) {
+    for (j in seq_along(feature_names)) {
+      # not_Z does not have column names, so we need to access its columns by integers
+      nm <- feature_names[j]
       s <- not_Z[, j, drop = TRUE]
-      X[[j]][s] <- bg[[j]][s]
+      X[[nm]][s] <- bg[[nm]][s]
     }
   }
   preds <- check_pred(pred_fun(object, X, ...), n = nrow(X))

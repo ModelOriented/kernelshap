@@ -41,12 +41,12 @@
 #'   in every iteration, leading to an extremely efficient strategy.
 #' }
 #' 
-#' If p is sufficiently small, then all possible 2^p-2 on-off vectors z can be evaluated.
+#' If p is sufficiently small, all possible 2^p-2 on-off vectors z can be evaluated.
 #' In this case, no sampling is required and the algorithm returns exact Kernel SHAP values 
-#' regarding the given background data. Since \code{kernelshap()} calculates predictions 
+#' with respect to the given background data. Since \code{kernelshap()} calculates predictions 
 #' on data with MN rows (N is the background data size and M the number of z vectors),
-#' p should probably not be much higher than 10. The same problem occurs with hybrid of
-#' degree 2 and p larger than 30-40. There, M = p(p + 1).
+#' p should not be much higher than 10 for exact calculations. 
+#' For similar reasons, degree 2 hybrids are limited to p up to 30-40.
 #' 
 #' @importFrom doRNG %dorng%
 #' 
@@ -55,17 +55,19 @@
 #' Important: The columns should only represent model features, not the response.
 #' @param bg_X Background data used to integrate out "switched off" features, 
 #' often a subset of the training data (typically 50 to 500 rows)
-#' It should contain the same columns as \code{X}. Columns not in \code{X} are silently 
-#' dropped and the columns are arranged into the order as they appear in \code{X}.
+#' It should contain the same columns as \code{X}.
 #' In cases with a natural "off" value (like MNIST digits), 
 #' this can also be a single row with all values set to the off value.
 #' @param pred_fun Prediction function of the form \code{function(object, X, ...)},
 #' providing K >= 1 numeric predictions per row. Its first argument represents the
-#' model \code{object}, its second argument a data structure like \code{X}. 
+#' model \code{object}, its second argument a data structure like \code{X} and \code{bg_X}. 
 #' (The names of the first two arguments do not matter.) Additional (named)
 #' arguments are passed via \code{...}. The default, \code{stats::predict}, will
 #' work in most cases. Some exceptions (classes "ranger" and mlr3 "Learner")
 #' are handled separately. In other cases, the function must be specified manually.
+#' @param feature_names Optional vector of column names in \code{X} used to calculate 
+#' SHAP values. By default, this equals \code{colnames(X)}. Not supported for matrix
+#' \code{X}.
 #' @param bg_w Optional vector of case weights for each row of \code{bg_X}.
 #' @param exact If \code{TRUE}, the algorithm will produce exact Kernel SHAP values
 #' with respect to the background data. In this case, the arguments \code{hybrid_degree}, 
@@ -167,51 +169,72 @@
 #' s <- kernelshap(fit, iris[1:2], bg_X = iris, type = "response")
 #' s
 #' 
+#' # Non-feature columns can be dropped via 'feature_names'
+#' fit <- stats::lm(Sepal.Length ~ . - Species, data = iris)
+#' s <- kernelshap(
+#'   fit, 
+#'   iris[1:2, ], 
+#'   bg_X = iris, 
+#'   feature_names = c("Sepal.Width", "Petal.Length", "Petal.Width")
+#' )
+#' s
 kernelshap <- function(object, ...){
   UseMethod("kernelshap")
 }
 
 #' @describeIn kernelshap Default Kernel SHAP method.
 #' @export
-kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w = NULL, 
-                               exact = ncol(X) <= 8L, 
-                               hybrid_degree = 1L + ncol(X) %in% 4:16, 
+kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, 
+                               feature_names = colnames(X), bg_w = NULL, 
+                               exact = length(feature_names) <= 8L, 
+                               hybrid_degree = 1L + length(feature_names) %in% 4:16, 
                                paired_sampling = TRUE, 
-                               m = 2L * ncol(X) * (1L + 3L * (hybrid_degree == 0L)), 
+                               m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)), 
                                tol = 0.005, max_iter = 100L, parallel = FALSE, 
                                parallel_args = NULL, verbose = TRUE, ...) {
   stopifnot(
     is.matrix(X) || is.data.frame(X),
     is.matrix(bg_X) || is.data.frame(bg_X),
     is.matrix(X) == is.matrix(bg_X),
-    (n <- nrow(X)) >= 1L,
-    (bg_n <- nrow(bg_X)) >= 1L,
-    (p <- ncol(X)) >= 1L,
-    ncol(bg_X) >= 1L,
-    !is.null(nms <- colnames(X)),
+    dim(X) >= 1L,
+    dim(bg_X) >= 1L,
+    !is.null(colnames(X)),
     !is.null(colnames(bg_X)),
-    all(nms %in% colnames(bg_X)),
+    (p <- length(feature_names)) >= 1L,
+    all(feature_names %in% colnames(X)),
+    all(feature_names %in% colnames(bg_X)),
     is.function(pred_fun),
     exact %in% c(TRUE, FALSE),
     p == 1L || exact || hybrid_degree %in% 0:(p / 2),
     paired_sampling %in% c(TRUE, FALSE),
     "m must be even" = trunc(m / 2) == m / 2
   )
+  n <- nrow(X)
+  bg_n <- nrow(bg_X)
   if (!is.null(bg_w)) {
     stopifnot(length(bg_w) == bg_n, all(bg_w >= 0), !all(bg_w == 0))
   }
+  if (is.matrix(X) && !identical(colnames(X), feature_names)) {
+    stop("If X is a matrix, feature_names must equal colnames(X)")  
+  }
   
   # Calculate v0 and v1
-  bg_X <- bg_X[, colnames(X), drop = FALSE]
   bg_preds <- check_pred(pred_fun(object, bg_X, ...), n = bg_n)
   v0 <- weighted_colMeans(bg_preds, bg_w)            # Average pred of bg data: 1 x K
   v1 <- check_pred(pred_fun(object, X, ...), n = n)  # Predictions on X:        n x K
   
   # For p = 1, exact Shapley values are returned
   if (p == 1L) {
-    return(case_p1(n = n, nms = nms, v0 = v0, v1 = v1, X = X, verbose = verbose))
+    return(
+      case_p1(n = n, nms = feature_names, v0 = v0, v1 = v1, X = X, verbose = verbose)
+    )
   }
-
+  
+  # Drop unnecessary columns in bg_X. If X is matrix, also column order is relevant
+  if (!identical(colnames(bg_X), feature_names)) {
+    bg_X <- bg_X[, feature_names, drop = FALSE]
+  }
+  
   # Precalculations for the real Kernel SHAP
   if (exact || hybrid_degree >= 1L) {
     precalc <- if (exact) input_exact(p) else input_partly_exact(p, hybrid_degree)
@@ -246,6 +269,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
       v1 = v1[i, , drop = FALSE], 
       object = object,
       pred_fun = pred_fun,
+      feature_names = feature_names,
       bg_w = bg_w, 
       exact = exact,
       deg = hybrid_degree,
@@ -268,6 +292,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
         v1 = v1[i, , drop = FALSE], 
         object = object,
         pred_fun = pred_fun,
+        feature_names = feature_names,
         bg_w = bg_w, 
         exact = exact,
         deg = hybrid_degree,
@@ -291,10 +316,10 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
     warning("\nNon-convergence for ", sum(!converged), " rows.")
   }
   out <- list(
-    S = reorganize_list(lapply(res, `[[`, "beta"), nms = nms), 
+    S = reorganize_list(lapply(res, `[[`, "beta"), nms = feature_names), 
     X = X, 
     baseline = as.vector(v0), 
-    SE = reorganize_list(lapply(res, `[[`, "sigma"), nms = nms), 
+    SE = reorganize_list(lapply(res, `[[`, "sigma"), nms = feature_names), 
     n_iter = vapply(res, `[[`, "n_iter", FUN.VALUE = integer(1L)),
     converged = converged,
     m = m,
@@ -310,28 +335,30 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, bg_w 
 #' @describeIn kernelshap Kernel SHAP method for "ranger" models, see Readme for an example.
 #' @export
 kernelshap.ranger <- function(object, X, bg_X,
-                              pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions, 
-                              bg_w = NULL, exact = ncol(X) <= 8L, 
-                              hybrid_degree = 1L + ncol(X) %in% 4:16, 
+                              pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
+                              feature_names = colnames(X), 
+                              bg_w = NULL, exact = length(feature_names) <= 8L, 
+                              hybrid_degree = 1L + length(feature_names) %in% 4:16, 
                               paired_sampling = TRUE, 
-                              m = 2L * ncol(X) * (1L + 3L * (hybrid_degree == 0L)), 
+                              m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)), 
                               tol = 0.005, max_iter = 100L, parallel = FALSE, 
                               parallel_args = NULL, verbose = TRUE, ...) {
   kernelshap.default(
     object = object, 
-    X = X, 
-    bg_X = bg_X, 
-    pred_fun = pred_fun, 
-    bg_w = bg_w, 
+    X = X,
+    bg_X = bg_X,
+    pred_fun = pred_fun,
+    feature_names = feature_names,
+    bg_w = bg_w,
     exact = exact,
     hybrid_degree = hybrid_degree,
     paired_sampling = paired_sampling,
-    m = m, 
-    tol = tol, 
+    m = m,
+    tol = tol,
     max_iter = max_iter,
     parallel = parallel,
-    parallel_args = parallel_args, 
-    verbose = verbose, 
+    parallel_args = parallel_args,
+    verbose = verbose,
     ...
   )
 }
@@ -339,28 +366,30 @@ kernelshap.ranger <- function(object, X, bg_X,
 #' @describeIn kernelshap Kernel SHAP method for "mlr3" models, see Readme for an example.
 #' @export
 kernelshap.Learner <- function(object, X, bg_X,
-                               pred_fun = function(m, X) m$predict_newdata(X)$response, 
-                               bg_w = NULL, exact = ncol(X) <= 8L, 
-                               hybrid_degree = 1L + ncol(X) %in% 4:16, 
-                               paired_sampling = TRUE, 
-                               m = 2L * ncol(X) * (1L + 3L * (hybrid_degree == 0L)),
-                               tol = 0.005, max_iter = 100L, parallel = FALSE, 
+                               pred_fun = function(m, X) m$predict_newdata(X)$response,
+                               feature_names = colnames(X),
+                               bg_w = NULL, exact = length(feature_names) <= 8L,
+                               hybrid_degree = 1L + length(feature_names) %in% 4:16,
+                               paired_sampling = TRUE,
+                               m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)),
+                               tol = 0.005, max_iter = 100L, parallel = FALSE,
                                parallel_args = NULL, verbose = TRUE, ...) {
   kernelshap.default(
-    object = object, 
-    X = X, 
-    bg_X = bg_X, 
-    pred_fun = pred_fun, 
+    object = object,
+    X = X,
+    bg_X = bg_X,
+    pred_fun = pred_fun,
+    feature_names = feature_names,
     bg_w = bg_w,
     exact = exact,
     hybrid_degree = hybrid_degree,
     paired_sampling = paired_sampling,
-    m = m, 
-    tol = tol, 
+    m = m,
+    tol = tol,
     max_iter = max_iter,
     parallel = parallel,
-    parallel_args = parallel_args, 
-    verbose = verbose, 
+    parallel_args = parallel_args,
+    verbose = verbose,
     ...
   )
 }
