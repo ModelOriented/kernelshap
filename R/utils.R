@@ -60,7 +60,8 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
       object = object, 
       pred_fun = pred_fun, 
       feature_names = feature_names, 
-      w = bg_w, ...
+      w = bg_w, 
+      ...
     )
     
     # The sum of weights of A_exact and input[["A"]] is 1, same for b
