@@ -41,12 +41,12 @@
 #'   in every iteration, leading to an extremely efficient strategy.
 #' }
 #' 
-#' If p is sufficiently small, then all possible 2^p-2 on-off vectors z can be evaluated.
+#' If p is sufficiently small, all possible 2^p-2 on-off vectors z can be evaluated.
 #' In this case, no sampling is required and the algorithm returns exact Kernel SHAP values 
-#' regarding the given background data. Since \code{kernelshap()} calculates predictions 
+#' with respect to the given background data. Since \code{kernelshap()} calculates predictions 
 #' on data with MN rows (N is the background data size and M the number of z vectors),
-#' p should probably not be much higher than 10. The same problem occurs with hybrid of
-#' degree 2 and p larger than 30-40. There, M = p(p + 1).
+#' p should not be much higher than 10 for exact calculations. 
+#' For similar reasons, degree 2 hybrids are limited to p up to 30-40.
 #' 
 #' @importFrom doRNG %dorng%
 #' 

@@ -38,6 +38,21 @@ test_that("Background data can contain only one single row", {
   expect_true(is.kernelshap(kernelshap(fit, iris[1:10, x], bg_X = iris[150L, ])))
 })
 
+test_that("feature_names can drop columns from SHAP calculations", {
+  s_f <- kernelshap(fit, iris[c(1, 51, 101), ], bg_X = iris, feature_names = x)
+  expect_equal(within(unclass(s), rm(X)), within(unclass(s_f), rm(X)))
+})
+
+test_that("feature_names can rearrange column names in result", {
+  s_f2 <- kernelshap(fit, iris[c(1, 51, 101), ], bg_X = iris, feature_names = rev(x))
+  expect_equal(s$S, s_f2$S[, x])
+})
+
+test_that("feature_names must be in colnames(X) and colnames(bg_X)", {
+  expect_error(kernelshap(fit, iris, bg_X = cbind(iris, a = 1), feature_names = "a"))
+  expect_error(kernelshap(fit, cbind(iris, a = 1), bg_X = iris, feature_names = "a"))
+})
+
 fit <- stats::lm(Sepal.Length ~ stats::poly(Petal.Width, 2), data = iris)
 x <- "Petal.Width"
 preds <- unname(stats::predict(fit, iris))

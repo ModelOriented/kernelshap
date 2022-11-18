@@ -16,10 +16,10 @@ kernelshap(object, ...)
   pred_fun = stats::predict,
   feature_names = colnames(X),
   bg_w = NULL,
-  exact = ncol(X) <= 8L,
-  hybrid_degree = 1L + ncol(X) \%in\% 4:16,
+  exact = length(feature_names) <= 8L,
+  hybrid_degree = 1L + length(feature_names) \%in\% 4:16,
   paired_sampling = TRUE,
-  m = 2L * ncol(X) * (1L + 3L * (hybrid_degree == 0L)),
+  m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)),
   tol = 0.005,
   max_iter = 100L,
   parallel = FALSE,
@@ -35,10 +35,10 @@ kernelshap(object, ...)
   pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
   feature_names = colnames(X),
   bg_w = NULL,
-  exact = ncol(X) <= 8L,
-  hybrid_degree = 1L + ncol(X) \%in\% 4:16,
+  exact = length(feature_names) <= 8L,
+  hybrid_degree = 1L + length(feature_names) \%in\% 4:16,
   paired_sampling = TRUE,
-  m = 2L * ncol(X) * (1L + 3L * (hybrid_degree == 0L)),
+  m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)),
   tol = 0.005,
   max_iter = 100L,
   parallel = FALSE,
@@ -54,10 +54,10 @@ kernelshap(object, ...)
   pred_fun = function(m, X) m$predict_newdata(X)$response,
   feature_names = colnames(X),
   bg_w = NULL,
-  exact = ncol(X) <= 8L,
-  hybrid_degree = 1L + ncol(X) \%in\% 4:16,
+  exact = length(feature_names) <= 8L,
+  hybrid_degree = 1L + length(feature_names) \%in\% 4:16,
   paired_sampling = TRUE,
-  m = 2L * ncol(X) * (1L + 3L * (hybrid_degree == 0L)),
+  m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)),
   tol = 0.005,
   max_iter = 100L,
   parallel = FALSE,
@@ -76,14 +76,13 @@ Important: The columns should only represent model features, not the response.}
 
 \item{bg_X}{Background data used to integrate out "switched off" features,
 often a subset of the training data (typically 50 to 500 rows)
-It should contain the same columns as \code{X}. Columns not in \code{X} are silently
-dropped and the columns are arranged into the order as they appear in \code{X}.
+It should contain the same columns as \code{X}.
 In cases with a natural "off" value (like MNIST digits),
 this can also be a single row with all values set to the off value.}
 
 \item{pred_fun}{Prediction function of the form \code{function(object, X, ...)},
 providing K >= 1 numeric predictions per row. Its first argument represents the
-model \code{object}, its second argument a data structure like \code{X}.
+model \code{object}, its second argument a data structure like \code{X} and \code{bg_X}.
 (The names of the first two arguments do not matter.) Additional (named)
 arguments are passed via \code{...}. The default, \code{stats::predict}, will
 work in most cases. Some exceptions (classes "ranger" and mlr3 "Learner")
@@ -208,12 +207,12 @@ Afterwards, the algorithm iterates until convergence. The output of Step 1 is re
 in every iteration, leading to an extremely efficient strategy.
 }
 
-If p is sufficiently small, then all possible 2^p-2 on-off vectors z can be evaluated.
+If p is sufficiently small, all possible 2^p-2 on-off vectors z can be evaluated.
 In this case, no sampling is required and the algorithm returns exact Kernel SHAP values
-regarding the given background data. Since \code{kernelshap()} calculates predictions
+with respect to the given background data. Since \code{kernelshap()} calculates predictions
 on data with MN rows (N is the background data size and M the number of z vectors),
-p should probably not be much higher than 10. The same problem occurs with hybrid of
-degree 2 and p larger than 30-40. There, M = p(p + 1).
+p should not be much higher than 10 for exact calculations.
+For similar reasons, degree 2 hybrids are limited to p up to 30-40.
 }
 \section{Methods (by class)}{
 \itemize{
