@@ -258,6 +258,15 @@ s
 s <- kernelshap(fit, iris[1:2], bg_X = iris, type = "response")
 s
 
+# Non-feature columns can be dropped via 'feature_names'
+fit <- stats::lm(Sepal.Length ~ . - Species, data = iris)
+s <- kernelshap(
+  fit, 
+  iris[1:2, ], 
+  bg_X = iris, 
+  feature_names = c("Sepal.Width", "Petal.Length", "Petal.Width")
+)
+s
 }
 \references{
 \enumerate{
