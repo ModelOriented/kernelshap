@@ -1,4 +1,4 @@
-# kernelshap 0.3.0.9000 DEVEL
+# kernelshap 0.3.1
 
 ## Changes
 
