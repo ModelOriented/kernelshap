@@ -183,7 +183,7 @@ fit <- train(
   trControl = trainControl(method = "none")
 )
 
-s <- kernelshap(fit, iris[, -1], predict, bg_X = iris)
+s <- kernelshap(fit, X = iris[, -1], bg_X = iris)
 sv <- shapviz(s)
 sv_waterfall(sv, 1)
 ```

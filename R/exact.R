@@ -12,7 +12,7 @@ input_exact <- function(p) {
 }
 
 # Calculates exact A. Notice the difference in the off-diagnonals to Appendix 1 of 
-# Covert and Lee (2021), which seems slightly off
+# Covert and Lee (2021), which seems slightly off. Credits to David Watson.
 exact_A <- function(p) {
   S <- 1:(p - 1L)
   c_pr <- S * (S - 1) / p / (p - 1)
