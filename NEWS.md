@@ -1,3 +1,13 @@
+# kernelshap 0.3.2
+
+## Improvements
+
+- Rewritten examples in README to better show the role of the background data.
+
+## Bug fixes
+
+- When `bg_X` contained more columns than `X`, some prediction functions could fail when being applied to `bg_X`. 
+
 # kernelshap 0.3.1
 
 ## Changes

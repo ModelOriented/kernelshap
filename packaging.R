@@ -15,7 +15,7 @@ library(usethis)
 use_description(
   fields = list(
     Title = "Kernel SHAP",
-    Version = "0.3.1",
+    Version = "0.3.2",
     Description = "Multidimensional refinement of the Kernel SHAP algorithm described in
     Ian Covert and Su-In Lee (2021) <http://proceedings.mlr.press/v130/covert21a>.
     The package allows to calculate Kernel SHAP values in an exact way, by iterative 

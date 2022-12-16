@@ -26,7 +26,7 @@ Additional arguments of `kernelshap()` can be used to control details of the alg
 - To visualize the result, you can use R package "shapviz".
 - Passing `bg_w` allows to weight background data according to case weights.
 - The algorithm tends to run faster if `X` is a matrix or tibble.
-- In order to use parallel processing, the backend must be set up beforehand.
+- In order to use parallel processing, the backend must be set up beforehand, see the example below.
 
 ## Installation
 
@@ -35,212 +35,164 @@ Additional arguments of `kernelshap()` can be used to control details of the alg
 devtools::install_github("mayer79/kernelshap")
 ```
 
-## Examples
+## Workflow to explain whole model
 
-### Linear regression
+The typical workflow of a SHAP analysis to explain any model:
+
+1. **Model** `object`: Fit a model `object` on some training data, e.g., a linear regression, an additive model, a random forest or a deep neural net. The only requirement is that predictions are numeric.
+2. **Rows to explain** `X`: Sample 500 to 2000 rows to be explained from the training data. `X` should contain only feature columns. If the training dataset is small, simply use the full training data for this purpose. Calculations will be done row by row, so the algorithm scales linearly in the number of rows of `X`.
+3. **Background data** `bg_X`: Kernel SHAP requires a representative background data to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data. `kernelshap()` will need to calculate model predictions on datasets that are typically up to 500 times larger than `bg_X`.
+
+### Example: Linear regression
+
+Let's illustrate this on the famous diamonds data in the "ggplot2" package.
 
 ```r
+library(tidyverse)
 library(kernelshap)
 library(shapviz)
 
-fit <- lm(Sepal.Length ~ ., data = iris)
+# Prepare data
+diamonds <- diamonds %>% 
+  mutate(
+  log_price = log(price), 
+  log_carat = log(carat)
+)
 
-# Crunch SHAP values
-s <- kernelshap(fit, iris[-1], bg_X = iris)
-s
+# Fit model
+fit_lm <- lm(log_price ~ log_carat + clarity + color + cut, data = diamonds)
+
+set.seed(10)
+xvars <- c("log_carat", "clarity", "color", "cut")
+X <- diamonds[sample(nrow(diamonds), 1000), xvars]
+bg_X <- diamonds[sample(nrow(diamonds), 200), ]
+
+# Crunch SHAP values for all rows of X
+system.time(
+  shap_lm <- kernelshap(fit_lm, X, bg_X = bg_X)
+)
+shap_lm
 
 # SHAP values of first 2 observations:
-#      Sepal.Width Petal.Length Petal.Width   Species
-# [1,]  0.21951350    -1.955357   0.3149451 0.5823533
-# [2,] -0.02843097    -1.955357   0.3149451 0.5823533
+#           carat    clarity       color         cut
+# [1,]  1.2692479  0.1081900 -0.07847065 0.004630899
+# [2,] -0.4499226 -0.1111329  0.11832292 0.026503850
 
 # Plot with shapviz
-shp <- shapviz(s)
-sv_waterfall(shp, 1)
-sv_importance(shp)
-sv_dependence(shp, "Petal.Length")
+sv_lm <- shapviz(shap_lm)
+sv_importance(sv_lm)
+sv_dependence(sv_lm, "log_carat")
 ```
-
-![](man/figures/README-lm-waterfall.svg)
 
 ![](man/figures/README-lm-imp.svg)
 
 ![](man/figures/README-lm-dep.svg)
 
-### Logistic regression on probability scale
 
-```r
-library(kernelshap)
-library(shapviz)
+### Example: Random forest
 
-fit <- glm(
-  I(Species == "virginica") ~ Sepal.Length + Sepal.Width, data = iris, family = binomial
-)
-
-# Crunch SHAP values
-s <- kernelshap(fit, iris[1:2], bg_X = iris, type = "response")
-
-# Plot with shapviz
-shp <- shapviz(s)
-sv_waterfall(shp, 51)
-sv_dependence(shp, "Sepal.Length")
-```
-![](man/figures/README-glm-waterfall.svg)
-
-![](man/figures/README-glm-dep.svg)
-
-### Probability random forest (multivariate predictions)
+We can use the same `X` and `bg_X` for other models, e.g., a random forest:
 
 ```r
 library(ranger)
-library(kernelshap)
 
-set.seed(1)
-fit <- ranger(Species ~ ., data = iris, probability = TRUE)
-
-s <- kernelshap(fit, iris[c(1, 51, 101), -5], bg_X = iris)
-summary(s)
-
-# Exact Kernel SHAP values
-#   - 3 SHAP matrices of dim 3 x 4
-#   - baseline: 0.3332606 0.3347014 0.332038
-#   - m_exact: 14
-# 
-# SHAP values of first 2 observations:
-# [[1]]
-#      Sepal.Length  Sepal.Width Petal.Length Petal.Width
-# [1,]   0.02299032  0.008345772    0.3168792   0.3185242
-# [2,]  -0.01479279 -0.002066122   -0.1585125  -0.1578892
-# 
-# [[2]]
-#      Sepal.Length  Sepal.Width Petal.Length Petal.Width
-# [1,]   0.00190803 -0.004574378   -0.1615047  -0.1705303
-# [2,]   0.02443698  0.006684421    0.3157610   0.2942638
-# 
-# [[3]]
-#      Sepal.Length  Sepal.Width Petal.Length Petal.Width
-# [1,] -0.024898347 -0.003771394   -0.1553745  -0.1479938
-# [2,] -0.009644196 -0.004618300   -0.1572485  -0.1363747
-```
-
-### tidymodels
-
-```r
-library(tidymodels)
-library(kernelshap)
-
-iris_recipe <- iris %>%
-  recipe(Sepal.Length ~ .)
-
-reg <- linear_reg() %>%
-  set_engine("lm")
-  
-iris_wf <- workflow() %>%
-  add_recipe(iris_recipe) %>%
-  add_model(reg)
-
-fit <- iris_wf %>%
-  fit(iris)
-  
-system.time(
-  ks <- kernelshap(fit, iris[, -1], bg_X = iris)
-)
-ks
-```
-
-### mlr3
-
-```R
-library(mlr3)
-library(mlr3learners)
-library(kernelshap)
-library(shapviz)
-
-mlr_tasks$get("iris")
-tsk("iris")
-task_iris <- TaskRegr$new(id = "iris", backend = iris, target = "Sepal.Length")
-fit_lm <- lrn("regr.lm")
-fit_lm$train(task_iris)
-s <- kernelshap(fit_lm, iris[-1], bg_X = iris)
-sv <- shapviz(s)
-sv_dependence(sv, "Species")
-```
-
-![](man/figures/README-mlr3-dep.svg)
-
-### caret
-
-```r
-library(caret)
-library(kernelshap)
-library(shapviz)
-
-fit <- train(
-  Sepal.Length ~ ., 
-  data = iris, 
-  method = "lm", 
-  tuneGrid = data.frame(intercept = TRUE),
-  trControl = trainControl(method = "none")
+fit_rf <- ranger(
+  log_price ~ log_carat + clarity + color + cut, 
+  data = diamonds, 
+  num.trees = 20,
+  seed = 20
 )
 
-s <- kernelshap(fit, X = iris[, -1], bg_X = iris)
-sv <- shapviz(s)
-sv_waterfall(sv, 1)
+# An alternative to Kernel SHAP would be TreeSHAP
+shap_rf <- kernelshap(fit_rf, X, bg_X = bg_X)
+
+# Plot
+sv_rf <- shapviz(shap_rf)
+sv_importance(sv_rf, kind = "bee", show_numbers = TRUE)
+sv_dependence(sv_rf, "log_carat", color_var = "auto")
 ```
 
-![](man/figures/README-caret-waterfall.svg)
+![](man/figures/README-rf-imp.jpeg)
 
-### Keras neural net
+![](man/figures/README-rf-dep.svg)
+
+### Example: Deep neural net
+
+Or a deep neural net (results not fully reproducible):
 
 ```r
-library(kernelshap)
 library(keras)
-library(shapviz)
 
-model <- keras_model_sequential()
-model %>% 
-  layer_dense(units = 6, activation = "tanh", input_shape = 3) %>% 
+nn <- keras_model_sequential()
+nn %>% 
+  layer_dense(units = 30, activation = "relu", input_shape = 4) %>% 
+  layer_dense(units = 15, activation = "relu") %>% 
   layer_dense(units = 1)
 
-model %>% 
-  compile(loss = "mse", optimizer = optimizer_nadam(0.005))
+nn %>% 
+  compile(optimizer = optimizer_adam(learning_rate = 0.1), loss = "mse")
 
-model %>% 
-  fit(
-    x = data.matrix(iris[2:4]), 
-    y = iris[, 1],
-    epochs = 50,
-    batch_size = 30
-  )
-
-X <- data.matrix(iris[2:4])
-
-# Crunch SHAP values
-system.time(
-  s <- kernelshap(model, X, bg_X = X, batch_size = 1000)
+# Callbacks
+cb <- list(
+  callback_early_stopping(patience = 20),
+  callback_reduce_lr_on_plateau(patience = 5)
+)
+       
+# Fit model
+nn %>% fit(
+  x = data.matrix(diamonds[xvars]),
+  y = diamonds$log_price,
+  epochs = 100,
+  batch_size = 400, 
+  validation_split = 0.2,
+  callbacks = cb
 )
 
-# Plot with shapviz (results depend on neural net seed)
-shp <- shapviz(s)
-sv_waterfall(shp, 1)
-sv_importance(shp)
-sv_dependence(shp, "Petal.Length")
-```
+shap_nn <- kernelshap(nn, data.matrix(X), bg_X = data.matrix(bg_X), batch_size = 10000)
 
-![](man/figures/README-nn-waterfall.svg)
+# Plot
+sv_nn <- shapviz(shap_nn, X = X)
+sv_importance(sv_nn, show_numbers = TRUE)
+sv_dependence(sv_nn, "clarity", color_var = "auto")
+```
 
 ![](man/figures/README-nn-imp.svg)
 
 ![](man/figures/README-nn-dep.svg)
 
+
+## tidymodels, caret, mlr3
+
+Meta-learner packages like "tidyvmodels", "caret", and "mlr3" are supported as well.
+
+### Example: tidymodels
+```r
+library(tidymodels)
+
+dia_recipe <- diamonds %>%
+  recipe(log_price ~ log_carat + clarity + color + cut)
+
+reg <- linear_reg() %>%
+  set_engine("lm")
+  
+dia_wf <- workflow() %>%
+  add_recipe(dia_recipe) %>%
+  add_model(reg)
+
+fit_tidy <- dia_wf %>%
+  fit(diamonds)
+  
+shap_tidy <- kernelshap(fit_tidy, X, bg_X = bg_X)
+
+```
+
 ## Parallel computing
 
 As long as you have set up a parallel processing backend, parallel computing is supported via `foreach` and `%dorng`. The latter ensures that `set.seed()` will lead to reproducible results.
 
-### Linear regression
+### Linear regression continued
 
 ```r
-library(kernelshap)
 library(doFuture)
 
 # Set up parallel backend
@@ -248,11 +200,9 @@ registerDoFuture()
 plan(multisession, workers = 2)  # Windows
 # plan(multicore, workers = 2)   # Linux, macOS, Solaris
 
-fit <- stats::lm(Sepal.Length ~ ., data = iris)
-
 # With parallel computing (run twice to see the difference)
 system.time(
-  s <- kernelshap(fit, iris[, -1], bg_X = iris, parallel = TRUE)
+  s <- kernelshap(fit_lm, X, bg_X = bg_X, parallel = TRUE)
 )
 ```
 
@@ -262,25 +212,18 @@ On Windows, sometimes not all packages or global objects are passed to the paral
 
 ```r
 library(mgcv)
-library(kernelshap)
-library(doFuture)
 
-# Set up parallel backend
-registerDoFuture()
-plan(multisession, workers = 2)
+fit_gam <- gam(Sepal.Length ~ s(Sepal.Width) + Species, data = iris)
 
-fit <- gam(Sepal.Length ~ s(Sepal.Width) + Species, data = iris)
-
-system.time(
-  s <- kernelshap(
-    fit,  
-    iris[c(2, 5)], 
-    bg_X = iris, 
-    parallel = TRUE, 
-    parallel_args = list(.packages = "mgcv")
+shap_gam <- kernelshap(
+  fit_gam, 
+  X, 
+  bg_X = bg_X 
+  parallel = TRUE, 
+  parallel_args = list(.packages = "mgcv")
   )
 )
-s
+shap_gam
 
 SHAP values of first 2 observations:
      Sepal.Width   Species
