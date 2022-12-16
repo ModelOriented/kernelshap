@@ -51,7 +51,7 @@
 #' @importFrom doRNG %dorng%
 #' 
 #' @param object Fitted model object.
-#' @param X An (n x p) matrix, data.frame, tibble or data.table of rows to be explained. 
+#' @param X A (n x p) matrix, data.frame, tibble or data.table of rows to be explained. 
 #' The columns should only represent model features, not the response.
 #' @param bg_X Background data used to integrate out "switched off" features, 
 #' often a subset of the training data (typically 50 to 500 rows)
@@ -133,21 +133,21 @@
 #'}
 #' @export
 #' @examples
+#' # MODEL ONE: Linear regression
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
 #' 
-#' # Select rows to explain (only features)
+#' # Select rows to explain (only feature columns)
 #' X_explain <- iris[1:2, -1]
 #' 
-#' # Select small background set of 50 to 500 rows 
-#' # Because iris is a small dataset, we could also use the full data here
+#' # Select small background dataset (could use all rows here because iris is small) 
 #' set.seed(1)
-#' bg_X <- iris[sample(nrow(iris), 50), ]
+#' bg_X <- iris[sample(nrow(iris), 100), ]
 #' 
 #' # Calculate SHAP values
 #' s <- kernelshap(fit, X_explain, bg_X = bg_X)
 #' s
 #' 
-#' # Multivariate model
+#' # MODEL TWO: Multi-response linear regression
 #' fit <- stats::lm(
 #'   as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris
 #' )
@@ -158,7 +158,7 @@
 #' s <- kernelshap(
 #'   fit, 
 #'   iris[1:4, ],
-#'   bg_X = iris, 
+#'   bg_X = bg_X, 
 #'   feature_names = c("Petal.Length", "Petal.Width", "Species")
 #' )
 #' s

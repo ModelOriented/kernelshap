@@ -15,7 +15,7 @@ The default behaviour depends on the number of features $p$:
 The main function `kernelshap()` has three key arguments:
 
 - `object`: Fitted model object.
-- `X`: A (n x p) `matrix`, `data.frame`, `tibble` or `data.table` of rows to be explained. Important: The columns should only represent model features, not the response.
+- `X`: A (n x p) `matrix`, `data.frame`, `tibble` or `data.table` of rows to be explained. The columns should only represent model features, not the response.
 - `bg_X`: Background data used to integrate out "switched off" features, 
 often a subset of the training data (typically 50 to 500 rows). It should contain the same columns as `X`. In cases with a natural "off" value (like MNIST digits), this can also be a single row with all values set to the off value.
 
@@ -35,17 +35,19 @@ Additional arguments of `kernelshap()` can be used to control details of the alg
 devtools::install_github("mayer79/kernelshap")
 ```
 
-## Workflow to explain whole model
+## Workflow to explain any model
 
-The typical workflow of a SHAP analysis to explain any model:
+The typical workflow to explain any model with Kernel SHAP:
 
-1. **Model** `object`: Fit a model `object` on some training data, e.g., a linear regression, an additive model, a random forest or a deep neural net. The only requirement is that predictions are numeric.
-2. **Rows to explain** `X`: Sample 500 to 2000 rows to be explained from the training data. `X` should contain only feature columns. If the training dataset is small, simply use the full training data for this purpose. Calculations will be done row by row, so the algorithm scales linearly in the number of rows of `X`.
-3. **Background data** `bg_X`: Kernel SHAP requires a representative background data to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data. `kernelshap()` will need to calculate model predictions on datasets that are typically up to 500 times larger than `bg_X`.
+1. **Fit**: Fit a model `object` on some training data, e.g., a linear regression, an additive model, a random forest or a deep neural net. The only requirement is that predictions are numeric.
+2. **Sample rows to explain**: Sample 500 to 2000 rows `X` to be explained. If the training dataset is small, simply use the full training data for this purpose. `X` should only contain feature columns.
+3. **Select background data**: Kernel SHAP requires a representative background dataset `bg_X` to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data.
+4. **Crunch**: Use `kernelshap(object, X, bg_X, ...)` to calculate SHAP values.
+5. **Analyze**: Show SHAP importance or SHAP summary plot and study SHAP dependence plots of features.
 
 ### Example: Linear regression
 
-Let's illustrate this on the famous diamonds data in the "ggplot2" package.
+Let's illustrate this on the diamonds data in the "ggplot2" package.
 
 ```r
 library(tidyverse)
@@ -59,15 +61,18 @@ diamonds <- diamonds %>%
   log_carat = log(carat)
 )
 
-# Fit model
+# 1) Fit model
 fit_lm <- lm(log_price ~ log_carat + clarity + color + cut, data = diamonds)
 
+# 2) Sample rows to be explained
 set.seed(10)
 xvars <- c("log_carat", "clarity", "color", "cut")
 X <- diamonds[sample(nrow(diamonds), 1000), xvars]
+
+# 3) Select background data
 bg_X <- diamonds[sample(nrow(diamonds), 200), ]
 
-# Crunch SHAP values for all rows of X
+# 4) Crunch SHAP values for all 1000 rows of X (~6 seconds)
 system.time(
   shap_lm <- kernelshap(fit_lm, X, bg_X = bg_X)
 )
@@ -78,24 +83,39 @@ shap_lm
 # [1,]  1.2692479  0.1081900 -0.07847065 0.004630899
 # [2,] -0.4499226 -0.1111329  0.11832292 0.026503850
 
-# Plot with shapviz
+# 5) SHAP analysis
 sv_lm <- shapviz(shap_lm)
 sv_importance(sv_lm)
 sv_dependence(sv_lm, "log_carat")
+# ... more dependence plots
 ```
 
 ![](man/figures/README-lm-imp.svg)
 
 ![](man/figures/README-lm-dep.svg)
 
+We can also explain a single prediction instead of the full model:
+
+```r
+single_row <- diamonds[5000, xvars]
+
+fit_lm %>% 
+  kernelshap(single_row, bg_X = bg_X) %>% 
+  shapviz() %>% 
+  sv_waterfall()
+
+```
+
+![](man/figures/README-lm-waterfall.svg)
 
 ### Example: Random forest
 
-We can use the same `X` and `bg_X` for other models, e.g., a random forest:
+We can use the same `X` and `bg_X` for other models:
 
 ```r
 library(ranger)
 
+# 1) Fit
 fit_rf <- ranger(
   log_price ~ log_carat + clarity + color + cut, 
   data = diamonds, 
@@ -103,13 +123,18 @@ fit_rf <- ranger(
   seed = 20
 )
 
-# An alternative to Kernel SHAP would be TreeSHAP
+# 4) Crunch
 shap_rf <- kernelshap(fit_rf, X, bg_X = bg_X)
+# SHAP values of first 2 observations:
+#       log_carat     clarity      color         cut
+# [1,]  1.1987785  0.09578879 -0.1397765 0.002761832
+# [2,] -0.4969451 -0.12006207  0.1050928 0.029680717
 
-# Plot
+# 5) Analyze
 sv_rf <- shapviz(shap_rf)
 sv_importance(sv_rf, kind = "bee", show_numbers = TRUE)
 sv_dependence(sv_rf, "log_carat", color_var = "auto")
+# More dependence plots
 ```
 
 ![](man/figures/README-rf-imp.jpeg)
@@ -123,6 +148,7 @@ Or a deep neural net (results not fully reproducible):
 ```r
 library(keras)
 
+1) Fit
 nn <- keras_model_sequential()
 nn %>% 
   layer_dense(units = 30, activation = "relu", input_shape = 4) %>% 
@@ -132,28 +158,30 @@ nn %>%
 nn %>% 
   compile(optimizer = optimizer_adam(learning_rate = 0.1), loss = "mse")
 
-# Callbacks
 cb <- list(
   callback_early_stopping(patience = 20),
   callback_reduce_lr_on_plateau(patience = 5)
 )
        
-# Fit model
-nn %>% fit(
-  x = data.matrix(diamonds[xvars]),
-  y = diamonds$log_price,
-  epochs = 100,
-  batch_size = 400, 
-  validation_split = 0.2,
-  callbacks = cb
-)
+nn %>% 
+  fit(
+    x = data.matrix(diamonds[xvars]),
+    y = diamonds$log_price,
+    epochs = 100,
+    batch_size = 400, 
+    validation_split = 0.2,
+    callbacks = cb
+  )
 
-shap_nn <- kernelshap(nn, data.matrix(X), bg_X = data.matrix(bg_X), batch_size = 10000)
+# 4) Crunch
+pred_fun <- function(mod, X) predict(mod, data.matrix(X), batch_size = 10000)
+shap_nn <- kernelshap(nn, X, bg_X = bg_X, pred_fun = pred_fun)
 
-# Plot
-sv_nn <- shapviz(shap_nn, X = X)
+# 5) Analyze
+sv_nn <- shapviz(shap_nn)
 sv_importance(sv_nn, show_numbers = TRUE)
 sv_dependence(sv_nn, "clarity", color_var = "auto")
+# More dependence plots
 ```
 
 ![](man/figures/README-nn-imp.svg)
@@ -161,14 +189,14 @@ sv_dependence(sv_nn, "clarity", color_var = "auto")
 ![](man/figures/README-nn-dep.svg)
 
 
-## tidymodels, caret, mlr3
-
-Meta-learner packages like "tidyvmodels", "caret", and "mlr3" are supported as well.
-
 ### Example: tidymodels
+
+Meta-learner packages like "tidyvmodels", "caret", and "mlr3" are straightforward to use.
+
 ```r
 library(tidymodels)
 
+# 1) Fit
 dia_recipe <- diamonds %>%
   recipe(log_price ~ log_carat + clarity + color + cut)
 
@@ -181,61 +209,66 @@ dia_wf <- workflow() %>%
 
 fit_tidy <- dia_wf %>%
   fit(diamonds)
-  
+ 
+# 4) Crunch 
 shap_tidy <- kernelshap(fit_tidy, X, bg_X = bg_X)
-
+# ...
 ```
 
 ## Parallel computing
 
-As long as you have set up a parallel processing backend, parallel computing is supported via `foreach` and `%dorng`. The latter ensures that `set.seed()` will lead to reproducible results.
+As long as you have set up a parallel processing backend, parallel computing is supported via `foreach` and `%dorng%`. The latter ensures that `set.seed()` will lead to reproducible results. No progress bar though...
 
-### Linear regression continued
+### Example: Linear regression continued
 
 ```r
 library(doFuture)
 
 # Set up parallel backend
 registerDoFuture()
-plan(multisession, workers = 2)  # Windows
-# plan(multicore, workers = 2)   # Linux, macOS, Solaris
+plan(multisession, workers = 4)  # Windows
+# plan(multicore, workers = 4)   # Linux, macOS, Solaris
 
-# With parallel computing (run twice to see the difference)
+# Crunch with parallel computing (~3 seconds on second run)
 system.time(
   s <- kernelshap(fit_lm, X, bg_X = bg_X, parallel = TRUE)
 )
 ```
 
-### Parallel GAM on Windows
+### Example: Parallel GAM
 
 On Windows, sometimes not all packages or global objects are passed to the parallel sessions. In this case, the necessary instructions to `foreach` can be specified through a named list via `parallel_args`, see the following example:
 
 ```r
 library(mgcv)
 
-fit_gam <- gam(Sepal.Length ~ s(Sepal.Width) + Species, data = iris)
+# 1) Fit
+fit_gam <- gam(log_price ~ s(log_carat) + clarity + color + cut, data = diamonds)
 
+# 4) Crunch
 shap_gam <- kernelshap(
   fit_gam, 
   X, 
-  bg_X = bg_X 
+  bg_X = bg_X,
   parallel = TRUE, 
   parallel_args = list(.packages = "mgcv")
-  )
 )
 shap_gam
 
-SHAP values of first 2 observations:
-     Sepal.Width   Species
-[1,]  0.35570963 -1.135187
-[2,] -0.04607082 -1.135187
+# SHAP values of first 2 observations:
+#       log_carat    clarity       color         cut
+# [1,]  1.2714988  0.1115546 -0.08454955 0.003220451
+# [2,] -0.5153642 -0.1080045  0.11967804 0.031341595
+
+# 5) Analyze
+# ...
 ```
 
 ## Exact/sampling/hybrid
 
-In above examples, since $p$ was small, exact Kernel SHAP values were calculated. Here, we want to show how to use the different strategies (exact, hybrid, and pure sampling) in a situation with ten features, see `?kernelshap` for details about those strategies.
+In above examples, since $p$ was small, exact Kernel SHAP values were calculated with respect to the background data. Here, we want to show how to use the different strategies (exact, hybrid, and pure sampling) in a situation with ten features, see `?kernelshap` for details about those strategies. The results will be mostly identical. Thus, you usually do not need to care about those options of `kernelshap()`.
 
-With ten features, a degree 2 hybrid is being used by default: 
+With ten features, a degree 2 hybrid is used by default: 
 
 ```r
 library(kernelshap)
