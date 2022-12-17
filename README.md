@@ -25,15 +25,8 @@ Additional arguments of `kernelshap()` can be used to control details of the alg
 
 - To visualize the result, you can use R package "shapviz".
 - Passing `bg_w` allows to weight background data according to case weights.
-- The algorithm tends to run faster if `X` is a matrix or tibble.
+- Meta-learner packages like "tidyvmodels", "caret", or "mlr3" are straightforward to use.
 - In order to use parallel processing, the backend must be set up beforehand, see the example below.
-
-## Installation
-
-``` r
-# install.packages("devtools")
-devtools::install_github("mayer79/kernelshap")
-```
 
 ## Workflow to explain any model
 
@@ -42,8 +35,9 @@ The typical workflow to explain any model with Kernel SHAP:
 1. **Fit**: Fit a model `object` on some training data, e.g., a linear regression, an additive model, a random forest or a deep neural net. The only requirement is that predictions are numeric.
 2. **Sample rows to explain**: Sample 500 to 2000 rows `X` to be explained. If the training dataset is small, simply use the full training data for this purpose. `X` should only contain feature columns.
 3. **Select background data**: Kernel SHAP requires a representative background dataset `bg_X` to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data.
-4. **Crunch**: Use `kernelshap(object, X, bg_X, ...)` to calculate SHAP values.
-5. **Analyze**: Show SHAP importance or SHAP summary plot and study SHAP dependence plots of features.
+If the training data is small, use the full training data.
+4. **Crunch**: Use `kernelshap(object, X, bg_X, ...)` to calculate SHAP values. Runtime is proportional to `nrow(X)`, while memory consumption scales linearly in `nrow(bg_X)`.
+5. **Analyze**: Show SHAP importance/summary plot and study SHAP dependence plots of features.
 
 ### Example: Linear regression
 
@@ -94,7 +88,7 @@ sv_dependence(sv_lm, "log_carat")
 
 ![](man/figures/README-lm-dep.svg)
 
-We can also explain a single prediction instead of the full model:
+We can also explain a specific prediction instead of the full model:
 
 ```r
 single_row <- diamonds[5000, xvars]
@@ -103,14 +97,13 @@ fit_lm %>%
   kernelshap(single_row, bg_X = bg_X) %>% 
   shapviz() %>% 
   sv_waterfall()
-
 ```
 
 ![](man/figures/README-lm-waterfall.svg)
 
 ### Example: Random forest
 
-We can use the same `X` and `bg_X` for other models:
+We can use the same `X` and `bg_X` to inspect other models:
 
 ```r
 library(ranger)
@@ -188,33 +181,6 @@ sv_dependence(sv_nn, "clarity", color_var = "auto")
 
 ![](man/figures/README-nn-dep.svg)
 
-
-### Example: tidymodels
-
-Meta-learner packages like "tidyvmodels", "caret", and "mlr3" are straightforward to use.
-
-```r
-library(tidymodels)
-
-# 1) Fit
-dia_recipe <- diamonds %>%
-  recipe(log_price ~ log_carat + clarity + color + cut)
-
-reg <- linear_reg() %>%
-  set_engine("lm")
-  
-dia_wf <- workflow() %>%
-  add_recipe(dia_recipe) %>%
-  add_model(reg)
-
-fit_tidy <- dia_wf %>%
-  fit(diamonds)
- 
-# 4) Crunch 
-shap_tidy <- kernelshap(fit_tidy, X, bg_X = bg_X)
-# ...
-```
-
 ## Parallel computing
 
 As long as you have set up a parallel processing backend, parallel computing is supported via `foreach` and `%dorng%`. The latter ensures that `set.seed()` will lead to reproducible results. No progress bar though...
@@ -229,7 +195,7 @@ registerDoFuture()
 plan(multisession, workers = 4)  # Windows
 # plan(multicore, workers = 4)   # Linux, macOS, Solaris
 
-# Crunch with parallel computing (~3 seconds on second run)
+# 4) Crunch with parallel computing (~3 seconds on second run)
 system.time(
   s <- kernelshap(fit_lm, X, bg_X = bg_X, parallel = TRUE)
 )
@@ -266,7 +232,7 @@ shap_gam
 
 ## Exact/sampling/hybrid
 
-In above examples, since $p$ was small, exact Kernel SHAP values were calculated with respect to the background data. Here, we want to show how to use the different strategies (exact, hybrid, and pure sampling) in a situation with ten features, see `?kernelshap` for details about those strategies. The results will be mostly identical. Thus, you usually do not need to care about those options of `kernelshap()`.
+In above examples, since $p$ was small, exact Kernel SHAP values were calculated. Here, we want to show how to use the different strategies (exact, hybrid, and pure sampling) in a situation with ten features, see `?kernelshap` for details about those strategies. The results will be mostly identical. Thus, you usually do not need to care about those options of `kernelshap()`.
 
 With ten features, a degree 2 hybrid is used by default: 
 
