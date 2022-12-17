@@ -1,12 +1,15 @@
 Hello CRAN team
 
-This update provides backward-compatible improvements of the interface.
+This is mainly a documentation update. All examples have been rewritten to better explain the typical workflow to produce a full fledged SHAP analysis.
 
 ## Checks
 
 ### `check(manual = TRUE, cran = TRUE)`
 
- errors ✔ | 0 warnings ✔ | 0 notes ✔
+── R CMD check results ──────────── kernelshap 0.3.2 ────
+Duration: 1m 19.6s
+
+0 errors ✔ | 0 warnings ✔ | 0 notes ✔
 
 ### `check_win_devel()`
 
@@ -14,7 +17,6 @@ Status: OK
 
 ### `check_rhub()`
 
-* checking HTML version of manual ... NOTE
-Skipping checking HTML validation: no command 'tidy' found
+Status: OK
 
 

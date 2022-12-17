@@ -72,7 +72,7 @@ kernelshap(object, ...)
 \item{...}{Additional arguments passed to \code{pred_fun(object, X, ...)}.}
 
 \item{X}{A (n x p) matrix, data.frame, tibble or data.table of rows to be explained.
-Important: The columns should only represent model features, not the response.}
+The columns should only represent model features, not the response.}
 
 \item{bg_X}{Background data used to integrate out "switched off" features,
 often a subset of the training data (typically 50 to 500 rows)
@@ -82,15 +82,13 @@ this can also be a single row with all values set to the off value.}
 
 \item{pred_fun}{Prediction function of the form \code{function(object, X, ...)},
 providing K >= 1 numeric predictions per row. Its first argument represents the
-model \code{object}, its second argument a data structure like \code{X} and \code{bg_X}.
-(The names of the first two arguments do not matter.) Additional (named)
-arguments are passed via \code{...}. The default, \code{stats::predict}, will
-work in most cases. Some exceptions (classes "ranger" and mlr3 "Learner")
-are handled separately. In other cases, the function must be specified manually.}
+model \code{object}, its second argument a data structure like \code{X}.
+Additional (named) arguments are passed via \code{...}.
+The default, \code{stats::predict}, will work in most cases.}
 
 \item{feature_names}{Optional vector of column names in \code{X} used to calculate
-SHAP values. By default, this equals \code{colnames(X)}. Not supported for matrix
-\code{X}.}
+SHAP values. By default, this equals \code{colnames(X)}. Not supported if \code{X}
+is a matrix.}
 
 \item{bg_w}{Optional vector of case weights for each row of \code{bg_X}.}
 
@@ -224,47 +222,33 @@ For similar reasons, degree 2 hybrids are limited to p up to 30-40.
 
 }}
 \examples{
-# Linear regression
+# MODEL ONE: Linear regression
 fit <- stats::lm(Sepal.Length ~ ., data = iris)
-s <- kernelshap(fit, iris[1:2, -1], bg_X = iris)
+
+# Select rows to explain (only feature columns)
+X_explain <- iris[1:2, -1]
+
+# Select small background dataset (could use all rows here because iris is small) 
+set.seed(1)
+bg_X <- iris[sample(nrow(iris), 100), ]
+
+# Calculate SHAP values
+s <- kernelshap(fit, X_explain, bg_X = bg_X)
 s
 
-# Multivariate model
+# MODEL TWO: Multi-response linear regression
 fit <- stats::lm(
   as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris
 )
-s <- kernelshap(fit, iris[1:4, 3:5], bg_X = iris)
+s <- kernelshap(fit, iris[1:4, 3:5], bg_X = bg_X)
 summary(s)
 
-# Matrix input works as well, and pred_fun can be overwritten
-fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
-pred_fun <- function(fit, X) stats::predict(fit, as.data.frame(X))
-X <- data.matrix(iris[2:4])
-s <- kernelshap(fit, X[1:3, ], bg_X = X, pred_fun = pred_fun)
-s
-
-# Logistic regression
-fit <- stats::glm(
-  I(Species == "virginica") ~ Sepal.Length + Sepal.Width, 
-  data = iris, 
-  family = binomial
-)
-
-# On scale of linear predictor
-s <- kernelshap(fit, iris[1:2], bg_X = iris)
-s
-
-# On scale of response (probability)
-s <- kernelshap(fit, iris[1:2], bg_X = iris, type = "response")
-s
-
 # Non-feature columns can be dropped via 'feature_names'
-fit <- stats::lm(Sepal.Length ~ . - Species, data = iris)
 s <- kernelshap(
   fit, 
-  iris[1:2, ], 
-  bg_X = iris, 
-  feature_names = c("Sepal.Width", "Petal.Length", "Petal.Width")
+  iris[1:4, ],
+  bg_X = bg_X, 
+  feature_names = c("Petal.Length", "Petal.Width", "Species")
 )
 s
 }
