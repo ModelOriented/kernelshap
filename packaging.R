@@ -15,7 +15,7 @@ library(usethis)
 use_description(
   fields = list(
     Title = "Kernel SHAP",
-    Version = "0.3.2",
+    Version = "0.3.3",
     Description = "Multidimensional refinement of the Kernel SHAP algorithm described in
     Ian Covert and Su-In Lee (2021) <http://proceedings.mlr.press/v130/covert21a>.
     The package allows to calculate Kernel SHAP values in an exact way, by iterative 
@@ -39,7 +39,6 @@ use_package("stats", "Imports")
 use_package("utils", "Imports")
 use_package("MASS", "Imports")
 use_package("foreach", "Imports")
-use_package("doRNG", "Imports")
 
 use_package("doFuture", "Suggests")
 

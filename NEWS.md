@@ -1,3 +1,9 @@
+# kernelshap 0.3.3
+
+## Dependencies
+
+- Removed "dorng" dependency due to orphaned maintainer. This might have an impact on the seeding if in parallel mode.
+
 # kernelshap 0.3.2
 
 ## Documentation

@@ -44,13 +44,13 @@ If the training data is small, use the full training data.
 Let's illustrate this on the diamonds data in the "ggplot2" package.
 
 ```r
-library(tidyverse)
+library(ggplot2)
 library(kernelshap)
 library(shapviz)
 
 # Prepare data
-diamonds <- diamonds %>% 
-  mutate(
+diamonds <- transform(
+  diamonds,
   log_price = log(price), 
   log_carat = log(carat)
 )
@@ -93,9 +93,9 @@ We can also explain a specific prediction instead of the full model:
 ```r
 single_row <- diamonds[5000, xvars]
 
-fit_lm %>% 
-  kernelshap(single_row, bg_X = bg_X) %>% 
-  shapviz() %>% 
+fit_lm |>
+  kernelshap(single_row, bg_X = bg_X) |> 
+  shapviz() |>
   sv_waterfall()
 ```
 
@@ -118,6 +118,8 @@ fit_rf <- ranger(
 
 # 4) Crunch
 shap_rf <- kernelshap(fit_rf, X, bg_X = bg_X)
+shap_rf
+
 # SHAP values of first 2 observations:
 #       log_carat     clarity      color         cut
 # [1,]  1.1987785  0.09578879 -0.1397765 0.002761832
@@ -141,22 +143,22 @@ Or a deep neural net (results not fully reproducible):
 ```r
 library(keras)
 
-1) Fit
+# 1) Fit
 nn <- keras_model_sequential()
-nn %>% 
-  layer_dense(units = 30, activation = "relu", input_shape = 4) %>% 
-  layer_dense(units = 15, activation = "relu") %>% 
+nn |>
+  layer_dense(units = 30, activation = "relu", input_shape = 4) |>
+  layer_dense(units = 15, activation = "relu") |>
   layer_dense(units = 1)
 
-nn %>% 
-  compile(optimizer = optimizer_adam(learning_rate = 0.1), loss = "mse")
+nn |>
+  compile(optimizer = optimizer_adam(0.1), loss = "mse")
 
 cb <- list(
   callback_early_stopping(patience = 20),
   callback_reduce_lr_on_plateau(patience = 5)
 )
        
-nn %>% 
+nn |>
   fit(
     x = data.matrix(diamonds[xvars]),
     y = diamonds$log_price,
@@ -183,7 +185,7 @@ sv_dependence(sv_nn, "clarity", color_var = "auto")
 
 ## Parallel computing
 
-As long as you have set up a parallel processing backend, parallel computing is supported via `foreach` and `%dorng%`. The latter ensures that `set.seed()` will lead to reproducible results. No progress bar though...
+As long as you have set up a parallel processing backend, parallel computing is supported via `foreach`. This will deactivate the progress bar.
 
 ### Example: Linear regression continued
 
@@ -212,13 +214,16 @@ library(mgcv)
 fit_gam <- gam(log_price ~ s(log_carat) + clarity + color + cut, data = diamonds)
 
 # 4) Crunch
-shap_gam <- kernelshap(
-  fit_gam, 
-  X, 
-  bg_X = bg_X,
-  parallel = TRUE, 
-  parallel_args = list(.packages = "mgcv")
+system.time(
+  shap_gam <- kernelshap(
+    fit_gam, 
+    X, 
+    bg_X = bg_X,
+    parallel = TRUE, 
+    parallel_args = list(.packages = "mgcv")
+  )
 )
+
 shap_gam
 
 # SHAP values of first 2 observations:
