@@ -48,7 +48,7 @@
 #' p should not be much higher than 10 for exact calculations. 
 #' For similar reasons, degree 2 hybrids are limited to p up to 30-40.
 #' 
-#' @importFrom doRNG %dorng%
+#' @importFrom foreach %dopar%
 #' 
 #' @param object Fitted model object.
 #' @param X A (n x p) matrix, data.frame, tibble or data.table of rows to be explained. 
@@ -252,7 +252,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
   # Apply Kernel SHAP to each row of X
   if (isTRUE(parallel)) {
     parallel_args <- c(list(i = seq_len(n)), parallel_args)
-    res <- do.call(foreach::foreach, parallel_args) %dorng% kernelshap_one(
+    res <- do.call(foreach::foreach, parallel_args) %dopar% kernelshap_one(
       x = X[i, , drop = FALSE], 
       v1 = v1[i, , drop = FALSE], 
       object = object,
