@@ -299,6 +299,71 @@ s$S[1:5]
 
 The results are again identical here and the algorithm converged in two steps. In this case, two calls to `predict()` were necessary and a total of 160 $z$ vectors were required.
 
+## Meta-learning Packages
+
+Here, we provide some working examples for "tidymodels", "caret", and "mlr3":
+
+### tidymodels
+
+```r
+library(tidymodels)
+library(kernelshap)
+
+iris_recipe <- iris %>%
+  recipe(Sepal.Length ~ .)
+
+reg <- linear_reg() %>%
+  set_engine("lm")
+  
+iris_wf <- workflow() %>%
+  add_recipe(iris_recipe) %>%
+  add_model(reg)
+
+fit <- iris_wf %>%
+  fit(iris)
+  
+ks <- kernelshap(fit, iris[, -1], bg_X = iris)
+ks
+```
+
+### caret
+
+```r
+library(caret)
+library(kernelshap)
+library(shapviz)
+
+fit <- train(
+  Sepal.Length ~ ., 
+  data = iris, 
+  method = "lm", 
+  tuneGrid = data.frame(intercept = TRUE),
+  trControl = trainControl(method = "none")
+)
+
+s <- kernelshap(fit, iris[, -1], predict, bg_X = iris)
+sv <- shapviz(s)
+sv_waterfall(sv, 1)
+```
+
+### mlr3
+
+```r
+library(mlr3)
+library(mlr3learners)
+library(kernelshap)
+library(shapviz)
+
+mlr_tasks$get("iris")
+tsk("iris")
+task_iris <- TaskRegr$new(id = "iris", backend = iris, target = "Sepal.Length")
+fit_lm <- lrn("regr.lm")
+fit_lm$train(task_iris)
+s <- kernelshap(fit_lm, iris[-1], bg_X = iris)
+sv <- shapviz(s)
+sv_dependence(sv, "Species")
+```
+
 ## References
 
 [1] Scott M. Lundberg and Su-In Lee. A Unified Approach to Interpreting Model Predictions. Advances in Neural Information Processing Systems 30, 2017.
