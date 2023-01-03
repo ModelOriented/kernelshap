@@ -1,8 +1,9 @@
 # kernelshap 0.3.3
 
-## Dependencies
+## Less dependencies
 
-- Removed "dorng" dependency to reduce dependency footprint. This might have an impact on the seeding if in parallel mode.
+- Removed dependency "dorng". This might have an impact on the seeding if in parallel mode.
+- Removed dependency "MASS"
 
 # kernelshap 0.3.2
 
