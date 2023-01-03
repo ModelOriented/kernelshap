@@ -88,9 +88,35 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
 # A: (p x p), b: (p x k), constraint: (1 x K)
 solver <- function(A, b, constraint) {
   p <- ncol(A)
-  Ainv <- MASS::ginv(A)
+  Ainv <- ginv(A)
   s <- (matrix(colSums(Ainv %*% b), nrow = 1L) - constraint) / sum(Ainv)     #  (1 x K)
   Ainv %*% (b - s[rep(1L, p), , drop = FALSE])                               #  (p x K)
+}
+
+ginv <- function (X, tol = sqrt(.Machine$double.eps)) {
+  ##
+  ## Based on an original version in package MASS 7.3.56
+  ## (with permission)
+  ##
+  if (length(dim(X)) > 2L || !(is.numeric(X) || is.complex(X))) {
+    stop("'X' must be a numeric or complex matrix")
+  }
+  if (!is.matrix(X)) {
+    X <- as.matrix(X)
+  }
+  Xsvd <- svd(X)
+  if (is.complex(X)) {
+    Xsvd$u <- Conj(Xsvd$u)
+  }
+  Positive <- Xsvd$d > max(tol * Xsvd$d[1L], 0)
+  if (all(Positive)) {
+    Xsvd$v %*% (1 / Xsvd$d * t(Xsvd$u))
+  } else if (!any(Positive)) {
+    array(0, dim(X)[2L:1L])
+  } else {
+    Xsvd$v[, Positive, drop = FALSE] %*% 
+      ((1 / Xsvd$d[Positive]) * t(Xsvd$u[, Positive, drop = FALSE]))
+  }
 }
 
 # Calculates all vz of an iteration and thus takes time
