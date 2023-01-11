@@ -1,4 +1,7 @@
-# The "kernelshap" package <a href='https://github.com/mayer79/kernelshap'><img src='man/figures/logo.png' align="right" height="138.5" /></a>
+# kernelshap <a href='https://github.com/mayer79/kernelshap'><img src='man/figures/logo.png' align="right" height="138.5" /></a>
+
+[![CRAN version](http://www.r-pkg.org/badges/version/kernelshap)](https://cran.r-project.org/package=kernelshap) [![](https://cranlogs.r-pkg.org/badges/kernelshap)](https://cran.r-project.org/package=kernelshap) [![](https://cranlogs.r-pkg.org/badges/grand-total/kernelshap?color=orange)](https://cran.r-project.org/package=kernelshap)
+
 
 ## Introduction
 
@@ -27,6 +30,17 @@ Additional arguments of `kernelshap()` can be used to control details of the alg
 - Passing `bg_w` allows to weight background data according to case weights.
 - Meta-learner packages like "tidyvmodels", "caret", or "mlr3" are straightforward to use.
 - In order to use parallel processing, the backend must be set up beforehand, see the example below.
+
+## Installation
+
+``` r
+# From CRAN
+install.packages("kernelshap")
+
+# Or the newest version from GitHub:
+# install.packages("devtools")
+devtools::install_github("mayer79/kernelshap")
+```
 
 ## Workflow to explain any model
 
