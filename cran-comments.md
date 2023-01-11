@@ -1,7 +1,6 @@
 Hello CRAN team
 
-I am aware that the last package update is not too long ago. Still, I saw that
-one of its dependencies (dorng) has status ORPHANED. While this might only be a 
+I saw that a strong dependency ("dorng"") has status ORPHANED. While this might only be a 
 temporary problem with "dorng", I have removed that package from the dependencies.
 
 ## Checks
