@@ -1,6 +1,6 @@
 # kernelshap 0.3.4
 
-- Documentation improvement
+- Documentation
 
 # kernelshap 0.3.3
 
