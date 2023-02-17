@@ -1,3 +1,7 @@
+# kernelshap 0.3.4
+
+- Documentation improvement
+
 # kernelshap 0.3.3
 
 ## Less dependencies
