@@ -28,7 +28,7 @@ Additional arguments of `kernelshap()` can be used to control details of the alg
 
 - To visualize the result, you can use R package "shapviz".
 - Passing `bg_w` allows to weight background data according to case weights.
-- Meta-learner packages like "tidyvmodels", "caret", or "mlr3" are straightforward to use.
+- Meta-learner packages like "tidymodels", "caret", or "mlr3" are straightforward to use.
 - In order to use parallel processing, the backend must be set up beforehand, see the example below.
 
 ## Installation
