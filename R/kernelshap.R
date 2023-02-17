@@ -3,7 +3,8 @@
 #' Multidimensional refinement of the Kernel SHAP Algorithm described in Covert and Lee (2021), 
 #' in the following abbreviated by "CL21". 
 #' The function allows to calculate Kernel SHAP values in an exact way, by iterative sampling 
-#' as in CL21, or by a hybrid of these two options. As soon as sampling is involved, 
+#' as in CL21, or by a partly exact hybrid of these two options. 
+#' As soon as sampling is involved, 
 #' the algorithm iterates until convergence, and standard errors are provided.
 #' The default behaviour depends on the number of features p, see also Details below:
 #' \itemize{
