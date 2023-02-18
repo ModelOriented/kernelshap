@@ -31,7 +31,9 @@ install.packages("kernelshap")
 devtools::install_github("mayer79/kernelshap")
 ```
 
-### Example: Linear regression
+## Illustration
+
+### Linear regression
 
 Let's illustrate this on the diamonds data in the "ggplot2" package.
 
@@ -92,7 +94,7 @@ fit_lm |>
 
 ![](man/figures/README-lm-waterfall.svg)
 
-### Example: Random forest
+### Random forest
 
 We can use the same `X` and `bg_X` to inspect other models:
 
@@ -125,7 +127,7 @@ sv_dependence(sv_rf, "log_carat", color_var = "auto")
 
 ![](man/figures/README-rf-dep.svg)
 
-### Example: Deep neural net
+### Deep neural net
 
 Or a deep neural net (results not fully reproducible):
 
