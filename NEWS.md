@@ -1,6 +1,6 @@
 # kernelshap 0.3.4
 
-- Documentation
+- Better package description and README.
 - New logo
 
 # kernelshap 0.3.3

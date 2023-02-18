@@ -1,20 +1,11 @@
 #' Kernel SHAP
-#'
-#' Multidimensional refinement of the Kernel SHAP Algorithm described in Covert and Lee (2021), 
-#' in the following abbreviated by "CL21". 
-#' The function allows to calculate Kernel SHAP values in an exact way, by iterative sampling 
-#' as in CL21, or by a partly exact hybrid of these two options. 
-#' As soon as sampling is involved, 
-#' the algorithm iterates until convergence, and standard errors are provided.
-#' The default behaviour depends on the number of features p, see also Details below:
-#' \itemize{
-#'   \item 2 <= p <= 8: Exact Kernel SHAP values are returned (for the given background data). 
-#'   \item p > 8: Hybrid (partly exact) iterative version of Kernel SHAP
-#'   (degree 2 up to p = 16, degree 1 for p > 16, see Details).
-#'   \item p = 1: Exact Shapley values are returned (independent of the background data).
-#' }
 #' 
-#' The iterative Kernel SHAP sampling algorithm (CL21) works by randomly sample 
+#' Efficient implementation of Kernel SHAP (Lundberg and Lee, 2017). 
+#' For up to p=8 features, the resulting SHAP values are exact regarding the selected background data. 
+#' For larger p, an almost exact hybrid algorithm involving iterative sampling is used by default.
+#'
+#' Pure iterative Kernel SHAP sampling (see Covert and Lee, 2021, abbreviated by "CL21") 
+#' works by randomly sample 
 #' m on-off vectors z so that their sum follows the SHAP Kernel weight distribution 
 #' (renormalized to the range from 1 to p-1). Based on these vectors, many predictions 
 #' are formed. Then, Kernel SHAP values are derived as the solution of a constrained 
@@ -130,6 +121,7 @@
 #' }
 #' @references
 #' \enumerate{
+#'   \item Scott M. Lundberg and Su-In Lee. A unified approach to interpreting model predictions. Proceedings of the 31st International Conference on Neural Information Processing Systems, 2017.
 #'   \item Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value Estimation Using Linear Regression. Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.
 #'}
 #' @export

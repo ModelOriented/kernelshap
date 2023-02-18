@@ -2,34 +2,23 @@
 
 [![CRAN version](http://www.r-pkg.org/badges/version/kernelshap)](https://cran.r-project.org/package=kernelshap) [![](https://cranlogs.r-pkg.org/badges/kernelshap)](https://cran.r-project.org/package=kernelshap) [![](https://cranlogs.r-pkg.org/badges/grand-total/kernelshap?color=orange)](https://cran.r-project.org/package=kernelshap)
 
-
 ## Introduction
 
-SHAP values (Lundberg and Lee, 2017) decompose model predictions into additive contributions of the features in a fair way. A model agnostic approach is called Kernel SHAP, introduced in Lundberg and Lee (2017), and investigated in detail in Covert and Lee (2021). 
+This package offers an efficient implementation of Kernel SHAP (Lundberg and Lee, 2017). For up to $p=8$ features, the resulting SHAP values are exact regarding the selected background data. For larger $p$, an almost exact hybrid algorithm involving iterative sampling is used by default.
 
-This package implements a multidimensional refinement of the Kernel SHAP Algorithm described in Covert and Lee (2021). The package allows to calculate Kernel SHAP values in an exact way, by iterative sampling (as in Covert and Lee, 2021), or by a hybrid of the two. As soon as sampling is involved, the algorithm iterates until convergence, and standard errors are provided.
+The typical workflow to explain any model `object`:
 
-The default behaviour depends on the number of features $p$:
-
-- $2 \le p \le 8$: Exact Kernel SHAP values are returned. (Exact regarding the given background data.)
-- $p > 8$: Hybrid (partly exact) iterative version of Kernel SHAP. The algorithm iterates until Kernel SHAP values are sufficiently accurate. Two iterations usually suffice.
-- $p = 1$: Exact Shapley values are returned.
-
-The main function `kernelshap()` has three key arguments:
-
-- `object`: Fitted model object.
-- `X`: A (n x p) `matrix`, `data.frame`, `tibble` or `data.table` of rows to be explained. The columns should only represent model features, not the response.
-- `bg_X`: Background data used to integrate out "switched off" features, 
-often a subset of the training data (typically 50 to 500 rows). It should contain the same columns as `X`. In cases with a natural "off" value (like MNIST digits), this can also be a single row with all values set to the off value.
-
-Additional arguments of `kernelshap()` can be used to control details of the algorithm, to activate parallel processing, or to manually pass a prediction function.
+1. *Sample rows to explain:* Sample 500 to 2000 rows `X` to be explained. If the training dataset is small, simply use the full training data for this purpose. `X` should only contain feature columns.
+2. *Select background data:* Kernel SHAP requires a representative background dataset `bg_X` to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data.
+If the training data is small, use the full training data. In cases with a natural "off" value (like MNIST digits), this can also be a single row with all values set to the off value.
+3. *Crunch:* Use `kernelshap(object, X, bg_X, ...)` to calculate SHAP values. Runtime is proportional to `nrow(X)`, while memory consumption scales linearly in `nrow(bg_X)`.
+4. *Analyze:* Use the "shapviz" package to visualize the SHAP values.
 
 **Remarks**
 
-- To visualize the result, you can use R package "shapviz".
-- Passing `bg_w` allows to weight background data according to case weights.
-- Meta-learner packages like "tidymodels", "caret", or "mlr3" are straightforward to use.
-- In order to use parallel processing, the backend must be set up beforehand, see the example below.
+- Multivariate predictions are handled at no additional computational cost.
+- By changing the defaults, the iterative pure sampling approach by Covert and Lee (2021) can be enforced.
+- Case weights are supported via the argument `bg_w`.
 
 ## Installation
 
@@ -41,17 +30,6 @@ install.packages("kernelshap")
 # install.packages("devtools")
 devtools::install_github("mayer79/kernelshap")
 ```
-
-## Workflow to explain any model
-
-The typical workflow to explain any model with Kernel SHAP:
-
-1. **Fit**: Fit a model `object` on some training data, e.g., a linear regression, an additive model, a random forest or a deep neural net. The only requirement is that predictions are numeric.
-2. **Sample rows to explain**: Sample 500 to 2000 rows `X` to be explained. If the training dataset is small, simply use the full training data for this purpose. `X` should only contain feature columns.
-3. **Select background data**: Kernel SHAP requires a representative background dataset `bg_X` to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data.
-If the training data is small, use the full training data.
-4. **Crunch**: Use `kernelshap(object, X, bg_X, ...)` to calculate SHAP values. Runtime is proportional to `nrow(X)`, while memory consumption scales linearly in `nrow(bg_X)`.
-5. **Analyze**: Show SHAP importance/summary plot and study SHAP dependence plots of features.
 
 ### Example: Linear regression
 
@@ -69,18 +47,17 @@ diamonds <- transform(
   log_carat = log(carat)
 )
 
-# 1) Fit model
 fit_lm <- lm(log_price ~ log_carat + clarity + color + cut, data = diamonds)
 
-# 2) Sample rows to be explained
+# 1) Sample rows to be explained
 set.seed(10)
 xvars <- c("log_carat", "clarity", "color", "cut")
 X <- diamonds[sample(nrow(diamonds), 1000), xvars]
 
-# 3) Select background data
+# 2) Select background data
 bg_X <- diamonds[sample(nrow(diamonds), 200), ]
 
-# 4) Crunch SHAP values for all 1000 rows of X (~6 seconds)
+# 3) Crunch SHAP values for all 1000 rows of X (~6 seconds)
 system.time(
   shap_lm <- kernelshap(fit_lm, X, bg_X = bg_X)
 )
@@ -91,7 +68,7 @@ shap_lm
 # [1,]  1.2692479  0.1081900 -0.07847065 0.004630899
 # [2,] -0.4499226 -0.1111329  0.11832292 0.026503850
 
-# 5) SHAP analysis
+# 4) Analyze
 sv_lm <- shapviz(shap_lm)
 sv_importance(sv_lm)
 sv_dependence(sv_lm, "log_carat")
@@ -122,7 +99,6 @@ We can use the same `X` and `bg_X` to inspect other models:
 ```r
 library(ranger)
 
-# 1) Fit
 fit_rf <- ranger(
   log_price ~ log_carat + clarity + color + cut, 
   data = diamonds, 
@@ -130,7 +106,7 @@ fit_rf <- ranger(
   seed = 20
 )
 
-# 4) Crunch
+# 3) Crunch
 shap_rf <- kernelshap(fit_rf, X, bg_X = bg_X)
 shap_rf
 
@@ -139,11 +115,10 @@ shap_rf
 # [1,]  1.1987785  0.09578879 -0.1397765 0.002761832
 # [2,] -0.4969451 -0.12006207  0.1050928 0.029680717
 
-# 5) Analyze
+# 4) Analyze
 sv_rf <- shapviz(shap_rf)
 sv_importance(sv_rf, kind = "bee", show_numbers = TRUE)
 sv_dependence(sv_rf, "log_carat", color_var = "auto")
-# More dependence plots
 ```
 
 ![](man/figures/README-rf-imp.jpeg)
@@ -157,7 +132,6 @@ Or a deep neural net (results not fully reproducible):
 ```r
 library(keras)
 
-# 1) Fit
 nn <- keras_model_sequential()
 nn |>
   layer_dense(units = 30, activation = "relu", input_shape = 4) |>
@@ -182,11 +156,11 @@ nn |>
     callbacks = cb
   )
 
-# 4) Crunch
+# 3) Crunch
 pred_fun <- function(mod, X) predict(mod, data.matrix(X), batch_size = 10000)
 shap_nn <- kernelshap(nn, X, bg_X = bg_X, pred_fun = pred_fun)
 
-# 5) Analyze
+# 4) Analyze
 sv_nn <- shapviz(shap_nn)
 sv_importance(sv_nn, show_numbers = TRUE)
 sv_dependence(sv_nn, "clarity", color_var = "auto")
@@ -199,7 +173,7 @@ sv_dependence(sv_nn, "clarity", color_var = "auto")
 
 ## Parallel computing
 
-As long as you have set up a parallel processing backend, parallel computing is supported via `foreach`. This will deactivate the progress bar.
+Parallel computing is supported via `foreach`, at the price of losing the progress bar. Note that this does not work with Keras models (and some others).
 
 ### Example: Linear regression continued
 
@@ -211,7 +185,7 @@ registerDoFuture()
 plan(multisession, workers = 4)  # Windows
 # plan(multicore, workers = 4)   # Linux, macOS, Solaris
 
-# 4) Crunch with parallel computing (~3 seconds on second run)
+# 3) Crunch with parallel computing (~3 seconds on second run)
 system.time(
   s <- kernelshap(fit_lm, X, bg_X = bg_X, parallel = TRUE)
 )
@@ -224,10 +198,9 @@ On Windows, sometimes not all packages or global objects are passed to the paral
 ```r
 library(mgcv)
 
-# 1) Fit
 fit_gam <- gam(log_price ~ s(log_carat) + clarity + color + cut, data = diamonds)
 
-# 4) Crunch
+# 3) Crunch
 system.time(
   shap_gam <- kernelshap(
     fit_gam, 
@@ -244,78 +217,11 @@ shap_gam
 #       log_carat    clarity       color         cut
 # [1,]  1.2714988  0.1115546 -0.08454955 0.003220451
 # [2,] -0.5153642 -0.1080045  0.11967804 0.031341595
-
-# 5) Analyze
-# ...
 ```
 
-## Exact/sampling/hybrid
+## Meta-learning packages
 
-In above examples, since $p$ was small, exact Kernel SHAP values were calculated (with respect to the background data). Here, we want to show how to use the different strategies (exact, hybrid, and pure sampling) in a situation with ten features, see `?kernelshap` for details about those strategies. The results will be mostly identical. Thus, you usually do not need to care about those options of `kernelshap()`.
-
-With ten features, a degree 2 hybrid is used by default: 
-
-```r
-library(kernelshap)
-
-set.seed(1)
-X <- data.frame(matrix(rnorm(1000), ncol = 10))
-y <- rnorm(10000L)
-fit <- lm(y ~ ., data = cbind(y = y, X))
-
-s <- kernelshap(fit, X[1L, ], bg_X = X)
-summary(s)
-s$S[1:5]
-# Kernel SHAP values by the hybrid strategy of degree 2
-#   - SHAP matrix of dim 1 x 10
-#   - baseline: -0.005390948
-#   - average number of iterations: 2 
-#   - rows not converged: 0 
-#   - proportion exact: 0.9487952 
-#   - m/iter: 20
-#   - m_exact: 110
-# 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
-```
-
-The algorithm converged in the minimal possible number of two iterations and used $110 + 2\cdot 20 = 150$ on-off vectors $z$. For each $z$, predictions on a data set with the same size as the background data are done. Three calls to `predict()` were necessary (one for the exact part and one per sampling iteration).
-
-Since $p$ is not very large in this case, we can also force the algorithm to use exact calculations:
-
-```r
-s <- kernelshap(fit, X[1L, ], bg_X = X, exact = TRUE)
-summary(s)
-s$S[1:5]
-# Exact Kernel SHAP values
-#   - SHAP matrix of dim 1 x 10
-#   - baseline: -0.005390948
-#   - m_exact: 1022
-# 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
-```
-
-The results are identical. While more on-off vectors $z$ were required (1022), only a single call to `predict()` was necessary.
-
-Pure sampling (not recommended!) can be enforced by setting the hybrid degree to 0:
-
-```r
-s <- kernelshap(fit, X[1L, ], bg_X = X, hybrid_degree = 0)
-summary(s)
-s$S[1:5]
-# Kernel SHAP values by iterative sampling
-#   - SHAP matrix of dim 1 x 10
-#   - baseline: -0.005390948
-#   - average number of iterations: 2 
-#   - rows not converged: 0 
-#   - proportion exact: 0 
-#   - m/iter: 80
-#   - m_exact: 0
-# 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
-```
-
-The results are again identical here and the algorithm converged in two steps. In this case, two calls to `predict()` were necessary and a total of 160 $z$ vectors were required.
-
-## Meta-learning Packages
-
-Here, we provide some working examples for "tidymodels", "caret", and "mlr3":
+Here, we provide some working examples for "tidymodels", "caret", and "mlr3".
 
 ### tidymodels
 
@@ -377,6 +283,70 @@ s <- kernelshap(fit_lm, iris[-1], bg_X = iris)
 sv <- shapviz(s)
 sv_dependence(sv, "Species")
 ```
+
+## Technical details: Exact/sampling/hybrid
+
+In above examples, since $p$ was small, exact Kernel SHAP values were calculated (with respect to the background data). Here, we want to show how to use the different strategies (exact, hybrid, and pure sampling) in a situation with ten features, see `?kernelshap` for details about those strategies. The results will be mostly identical. Thus, you usually do not need to care about those options of `kernelshap()`.
+
+With ten features, a degree 2 hybrid is used by default: 
+
+```r
+library(kernelshap)
+
+set.seed(1)
+X <- data.frame(matrix(rnorm(1000), ncol = 10))
+y <- rnorm(10000L)
+fit <- lm(y ~ ., data = cbind(y = y, X))
+
+s <- kernelshap(fit, X[1L, ], bg_X = X)
+summary(s)
+s$S[1:5]
+# Kernel SHAP values by the hybrid strategy of degree 2
+#   - SHAP matrix of dim 1 x 10
+#   - baseline: -0.005390948
+#   - average number of iterations: 2 
+#   - rows not converged: 0 
+#   - proportion exact: 0.9487952 
+#   - m/iter: 20
+#   - m_exact: 110
+# 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
+```
+
+The algorithm converged in the minimal possible number of two iterations and used $110 + 2\cdot 20 = 150$ on-off vectors $z$. For each $z$, predictions on a data set with the same size as the background data are done. Three calls to `predict()` were necessary (one for the exact part and one per sampling iteration).
+
+Since $p$ is not very large in this case, we can also force the algorithm to use exact calculations:
+
+```r
+s <- kernelshap(fit, X[1L, ], bg_X = X, exact = TRUE)
+summary(s)
+s$S[1:5]
+# Exact Kernel SHAP values
+#   - SHAP matrix of dim 1 x 10
+#   - baseline: -0.005390948
+#   - m_exact: 1022
+# 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
+```
+
+The results are identical. While more on-off vectors $z$ were required (1022), only a single call to `predict()` was necessary.
+
+Pure sampling can be enforced by setting the hybrid degree to 0:
+
+```r
+s <- kernelshap(fit, X[1L, ], bg_X = X, hybrid_degree = 0)
+summary(s)
+s$S[1:5]
+# Kernel SHAP values by iterative sampling
+#   - SHAP matrix of dim 1 x 10
+#   - baseline: -0.005390948
+#   - average number of iterations: 2 
+#   - rows not converged: 0 
+#   - proportion exact: 0 
+#   - m/iter: 80
+#   - m_exact: 0
+# 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
+```
+
+The results are again identical here and the algorithm converged in two steps. In this case, two calls to `predict()` were necessary and a total of 160 $z$ vectors were required.
 
 ## References
 
