@@ -1,6 +1,7 @@
 # kernelshap 0.3.4
 
 - Documentation
+- New logo
 
 # kernelshap 0.3.3
 
