@@ -2,7 +2,7 @@
 #' 
 #' Efficient implementation of Kernel SHAP (Lundberg and Lee, 2017). 
 #' For up to p=8 features, the resulting SHAP values are exact regarding the selected background data. 
-#' For larger p, an almost exact hybrid algorithm involving iterative sampling is used by default.
+#' For larger p, an almost exact hybrid algorithm involving iterative sampling is used, see Details.
 #'
 #' Pure iterative Kernel SHAP sampling (see Covert and Lee, 2021, abbreviated by "CL21") 
 #' works by randomly sample 
