@@ -8,11 +8,11 @@ This package offers an efficient implementation of Kernel SHAP (Lundberg and Lee
 
 The typical workflow to explain any model `object`:
 
-1. *Sample rows to explain:* Sample 500 to 2000 rows `X` to be explained. If the training dataset is small, simply use the full training data for this purpose. `X` should only contain feature columns.
-2. *Select background data:* Kernel SHAP requires a representative background dataset `bg_X` to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data.
+1. **Sample rows to explain:** Sample 500 to 2000 rows `X` to be explained. If the training dataset is small, simply use the full training data for this purpose. `X` should only contain feature columns.
+2. **Select background data:** Kernel SHAP requires a representative background dataset `bg_X` to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data.
 If the training data is small, use the full training data. In cases with a natural "off" value (like MNIST digits), this can also be a single row with all values set to the off value.
-3. *Crunch:* Use `kernelshap(object, X, bg_X, ...)` to calculate SHAP values. Runtime is proportional to `nrow(X)`, while memory consumption scales linearly in `nrow(bg_X)`.
-4. *Analyze:* Use the "shapviz" package to visualize the SHAP values.
+3. **Crunch:** Use `kernelshap(object, X, bg_X, ...)` to calculate SHAP values. Runtime is proportional to `nrow(X)`, while memory consumption scales linearly in `nrow(bg_X)`.
+4. **Analyze:** Use the "shapviz" package to visualize the result.
 
 **Remarks**
 
@@ -20,29 +20,17 @@ If the training data is small, use the full training data. In cases with a natur
 - By changing the defaults, the iterative pure sampling approach by Covert and Lee (2021) can be enforced.
 - Case weights are supported via the argument `bg_w`.
 
-## Installation
-
-``` r
-# From CRAN
-install.packages("kernelshap")
-
-# Or the newest version from GitHub:
-# install.packages("devtools")
-devtools::install_github("mayer79/kernelshap")
-```
-
 ## Illustration
 
-### Linear regression
+Let's model diamonds prices!
 
-Let's illustrate this on the diamonds data in the "ggplot2" package.
+### Linear regression
 
 ```r
 library(ggplot2)
 library(kernelshap)
 library(shapviz)
 
-# Prepare data
 diamonds <- transform(
   diamonds,
   log_price = log(price), 
@@ -74,7 +62,6 @@ shap_lm
 sv_lm <- shapviz(shap_lm)
 sv_importance(sv_lm)
 sv_dependence(sv_lm, "log_carat")
-# ... more dependence plots
 ```
 
 ![](man/figures/README-lm-imp.svg)
@@ -108,7 +95,6 @@ fit_rf <- ranger(
   seed = 20
 )
 
-# 3) Crunch
 shap_rf <- kernelshap(fit_rf, X, bg_X = bg_X)
 shap_rf
 
@@ -117,7 +103,6 @@ shap_rf
 # [1,]  1.1987785  0.09578879 -0.1397765 0.002761832
 # [2,] -0.4969451 -0.12006207  0.1050928 0.029680717
 
-# 4) Analyze
 sv_rf <- shapviz(shap_rf)
 sv_importance(sv_rf, kind = "bee", show_numbers = TRUE)
 sv_dependence(sv_rf, "log_carat", color_var = "auto")
@@ -158,15 +143,12 @@ nn |>
     callbacks = cb
   )
 
-# 3) Crunch
 pred_fun <- function(mod, X) predict(mod, data.matrix(X), batch_size = 10000)
 shap_nn <- kernelshap(nn, X, bg_X = bg_X, pred_fun = pred_fun)
 
-# 4) Analyze
 sv_nn <- shapviz(shap_nn)
 sv_importance(sv_nn, show_numbers = TRUE)
 sv_dependence(sv_nn, "clarity", color_var = "auto")
-# More dependence plots
 ```
 
 ![](man/figures/README-nn-imp.svg)
@@ -187,7 +169,7 @@ registerDoFuture()
 plan(multisession, workers = 4)  # Windows
 # plan(multicore, workers = 4)   # Linux, macOS, Solaris
 
-# 3) Crunch with parallel computing (~3 seconds on second run)
+# ~3 seconds on second run
 system.time(
   s <- kernelshap(fit_lm, X, bg_X = bg_X, parallel = TRUE)
 )
@@ -202,7 +184,6 @@ library(mgcv)
 
 fit_gam <- gam(log_price ~ s(log_carat) + clarity + color + cut, data = diamonds)
 
-# 3) Crunch
 system.time(
   shap_gam <- kernelshap(
     fit_gam, 
@@ -285,70 +266,6 @@ s <- kernelshap(fit_lm, iris[-1], bg_X = iris)
 sv <- shapviz(s)
 sv_dependence(sv, "Species")
 ```
-
-## Technical details: Exact/sampling/hybrid
-
-In above examples, since $p$ was small, exact Kernel SHAP values were calculated (with respect to the background data). Here, we want to show how to use the different strategies (exact, hybrid, and pure sampling) in a situation with ten features, see `?kernelshap` for details about those strategies. The results will be mostly identical. Thus, you usually do not need to care about those options of `kernelshap()`.
-
-With ten features, a degree 2 hybrid is used by default: 
-
-```r
-library(kernelshap)
-
-set.seed(1)
-X <- data.frame(matrix(rnorm(1000), ncol = 10))
-y <- rnorm(10000L)
-fit <- lm(y ~ ., data = cbind(y = y, X))
-
-s <- kernelshap(fit, X[1L, ], bg_X = X)
-summary(s)
-s$S[1:5]
-# Kernel SHAP values by the hybrid strategy of degree 2
-#   - SHAP matrix of dim 1 x 10
-#   - baseline: -0.005390948
-#   - average number of iterations: 2 
-#   - rows not converged: 0 
-#   - proportion exact: 0.9487952 
-#   - m/iter: 20
-#   - m_exact: 110
-# 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
-```
-
-The algorithm converged in the minimal possible number of two iterations and used $110 + 2\cdot 20 = 150$ on-off vectors $z$. For each $z$, predictions on a data set with the same size as the background data are done. Three calls to `predict()` were necessary (one for the exact part and one per sampling iteration).
-
-Since $p$ is not very large in this case, we can also force the algorithm to use exact calculations:
-
-```r
-s <- kernelshap(fit, X[1L, ], bg_X = X, exact = TRUE)
-summary(s)
-s$S[1:5]
-# Exact Kernel SHAP values
-#   - SHAP matrix of dim 1 x 10
-#   - baseline: -0.005390948
-#   - m_exact: 1022
-# 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
-```
-
-The results are identical. While more on-off vectors $z$ were required (1022), only a single call to `predict()` was necessary.
-
-Pure sampling can be enforced by setting the hybrid degree to 0:
-
-```r
-s <- kernelshap(fit, X[1L, ], bg_X = X, hybrid_degree = 0)
-summary(s)
-s$S[1:5]
-# Kernel SHAP values by iterative sampling
-#   - SHAP matrix of dim 1 x 10
-#   - baseline: -0.005390948
-#   - average number of iterations: 2 
-#   - rows not converged: 0 
-#   - proportion exact: 0 
-#   - m/iter: 80
-#   - m_exact: 0
-# 0.0101998581  0.0027579289 -0.0002294437  0.0005337086  0.0001179876
-```
-
-The results are again identical here and the algorithm converged in two steps. In this case, two calls to `predict()` were necessary and a total of 160 $z$ vectors were required.
 
 ## References
 
