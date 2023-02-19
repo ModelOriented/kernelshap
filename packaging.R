@@ -16,8 +16,9 @@ use_description(
   fields = list(
     Title = "Kernel SHAP",
     Version = "0.3.4",
-    Description = "Efficient implementation of Kernel SHAP, see Lundberg and Lee (2017)
-    <https://dl.acm.org/doi/10.5555/3295222.3295230>.
+    Description = "Efficient implementation of Kernel SHAP, 
+    see Lundberg and Lee (2017) <https://dl.acm.org/doi/10.5555/3295222.3295230>,
+    and Covert and Lee (2021) <http://proceedings.mlr.press/v130/covert21a>.
     For models with up to eight features, the results are exact regarding the selected background data.
     Otherwise, an almost exact hybrid algorithm involving iterative sampling is used.
     The package plays well together with meta-learning packages like 'tidymodels', 'caret' or 'mlr3'.

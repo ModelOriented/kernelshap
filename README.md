@@ -4,7 +4,7 @@
 
 ## Introduction
 
-This package offers an efficient implementation of Kernel SHAP (Lundberg and Lee, 2017). For up to $p=8$ features, the resulting SHAP values are exact regarding the selected background data. For larger $p$, an almost exact hybrid algorithm involving iterative sampling is used by default.
+This package offers an efficient implementation of Kernel SHAP, see [1] and [2]. For up to $p=8$ features, the resulting SHAP values are exact regarding the selected background data. For larger $p$, an almost exact hybrid algorithm involving iterative sampling is used by default.
 
 The typical workflow to explain any model `object`:
 
@@ -17,7 +17,7 @@ If the training data is small, use the full training data. In cases with a natur
 **Remarks**
 
 - Multivariate predictions are handled at no additional computational cost.
-- By changing the defaults, the iterative pure sampling approach by Covert and Lee (2021) can be enforced.
+- By changing the defaults, the iterative pure sampling approach in [2] can be enforced.
 - Case weights are supported via the argument `bg_w`.
 
 ## Illustration
