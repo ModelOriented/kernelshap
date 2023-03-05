@@ -51,7 +51,7 @@ ks3
 
 library(shapviz)
 sv <- shapviz(ks)
-sv_dependence(sv, "carat", "auto")
+sv_dependence(sv, "carat")
 
 
 # More features (but non-sensical model)

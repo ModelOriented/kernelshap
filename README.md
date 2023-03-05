@@ -61,7 +61,7 @@ shap_lm
 # 4) Analyze
 sv_lm <- shapviz(shap_lm)
 sv_importance(sv_lm)
-sv_dependence(sv_lm, "log_carat")
+sv_dependence(sv_lm, "log_carat", color_var = NULL)
 ```
 
 ![](man/figures/README-lm-imp.svg)
@@ -105,7 +105,7 @@ shap_rf
 
 sv_rf <- shapviz(shap_rf)
 sv_importance(sv_rf, kind = "bee", show_numbers = TRUE)
-sv_dependence(sv_rf, "log_carat", color_var = "auto")
+sv_dependence(sv_rf, "log_carat")
 ```
 
 ![](man/figures/README-rf-imp.jpeg)
@@ -148,7 +148,7 @@ shap_nn <- kernelshap(nn, X, bg_X = bg_X, pred_fun = pred_fun)
 
 sv_nn <- shapviz(shap_nn)
 sv_importance(sv_nn, show_numbers = TRUE)
-sv_dependence(sv_nn, "clarity", color_var = "auto")
+sv_dependence(sv_nn, "clarity")
 ```
 
 ![](man/figures/README-nn-imp.svg)
