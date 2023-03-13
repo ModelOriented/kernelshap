@@ -1,4 +1,6 @@
-# Kernel SHAP algorithm for a single row x with paired sampling
+# Kernel SHAP algorithm for a single row x
+# If exact, a single call to predict() is necessary.
+# If sampling is involved, we need at least two additional calls to predict().
 kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, deg, 
                            paired, m, tol, max_iter, v0, precalc, ...) {
   p <- length(feature_names)
@@ -119,7 +121,7 @@ ginv <- function (X, tol = sqrt(.Machine$double.eps)) {
   }
 }
 
-# Calculates all vz of an iteration and thus takes time
+# Calculates all vz of an iteration by a single call to predict()
 get_vz <- function(X, bg, Z, object, pred_fun, feature_names, w, ...) {
   m <- nrow(Z)
   not_Z <- !Z
@@ -210,28 +212,12 @@ check_pred <- function(x, n) {
   stop("Predictions must be a length n vector or a matrix/data.frame/array with n rows.")
 }
 
-# # Given p and maximum m, determine hybrid degree (currently not used)
-# find_degree <- function(p, m_max) {
-#   if (p < 2L) {
-#     "p must be at least 2"
-#   }
-#   if (m_max < 2L * p) {
-#     return(list(degree = 0L, m_exact = 0L))
-#   }
-#   # Non-integers are rounded down
-#   S <- seq_len(p / 2)
-#   const <- (2L - (p == 2L * S))
-#   m_kum <- cumsum(const * choose(p, S))
-#   degree <- max(S[m_kum <= m_max])
-#   list(degree = degree, m_exact = m_kum[degree])
-# }
-
 # Helper function in print() and summary()
 head_list <- function(x, n) {
   if (!is.list(x)) print(utils::head(x, n)) else print(lapply(x, utils::head, n))
 }
 
-# Describe what is happening
+# Summarize details about the chosen algorithm (exact, hybrid, sampling)
 summarize_strategy <- function(p, exact, deg) {
   if (exact || trunc(p / 2) == deg) {
     txt <- "Exact Kernel SHAP values"
