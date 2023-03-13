@@ -1,11 +1,10 @@
 # Functions required only for the sampling version of Kernel SHAP
 
-# Functions required only for the sampling version of Kernel SHAP
-
-# Draw m binary vectors z of length p with sum(z) distributed according to Kernel SHAP 
-# weights -> (m x p) matrix. The argument S can be used to restrict the range of sum(z)
+# Draw m binary vectors z of length p with sum(z) distributed according 
+# to Kernel SHAP weights -> (m x p) matrix. 
+# The argument S can be used to restrict the range of sum(z).
 sample_Z <- function(p, m, S = 1:(p - 1L)) {
-  # First draw s = sum(z)
+  # First draw s = sum(z) according to Kernel weights (renormalized to sum 1)
   probs <- kernel_weights(p, S = S)
   N <- S[sample.int(length(S), m, replace = TRUE, prob = probs)]
   
@@ -39,8 +38,14 @@ conv_crit <- function(sig, bet) {
   apply(sig, 2L, FUN = max) / apply(bet, 2L, FUN = function(z) diff(range(z)))
 }
 
-# Create Z, w, A from sampling. deg > 0 means that we need to compensate the remaining
-# mass after creating exact z up to degree deg.
+# Provides random input for SHAP sampling:
+# - Z: Matrix with m on-off vectors z with sum(z) following Kernel weight distribution.
+# - w: Vector (1/m, 1/m, ...) of length m (if pure sampling)
+# - A: Matrix A = Z'wZ
+# The weights are constant (Kernel weights have been used to draw the z vectors).
+#
+# If deg > 0, vectors z with sum(z) restricted to [deg+1, p-deg-1] are sampled.
+# This case is used in combination with input_partly_hybrid(). Consequently, sum(w) < 1.
 input_sampling <- function(p, m, deg, paired) {
   if (p < 2L * deg + 2L) {
     stop("p must be >=2*deg + 2")

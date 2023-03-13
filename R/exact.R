@@ -7,12 +7,14 @@
 # - A: Exact matrix A = Z'wZ
 input_exact <- function(p) {
   Z <- exact_Z(p)
+  # Each Kernel weight(j) is divided by the number of vectors z having sum(z) = j
   w <- kernel_weights(p) / choose(p, 1:(p - 1L))
   list(Z = Z, w = w[rowSums(Z)], A = exact_A(p))
 }
 
-# Calculates exact A. Notice the difference in the off-diagnonals to Appendix 1 of 
-# Covert and Lee (2021), which seems slightly off. Credits to David Watson.
+# Calculates exact A. Notice the difference to the off-diagnonals in the Supplement of 
+# Covert and Lee (2021). Credits to David Watson for figuring out the correct formula,
+# see our discussions in https://github.com/mayer79/kernelshap/issues/22
 exact_A <- function(p) {
   S <- 1:(p - 1L)
   c_pr <- S * (S - 1) / p / (p - 1)
@@ -23,6 +25,8 @@ exact_A <- function(p) {
 }
 
 # Creates (2^p-2) x p matrix with all on-off vectors z of length p
+# Instead of calculating this object, we could evaluate it for different p <= p_max
+# and store it as a list in the package.
 exact_Z <- function(p) {
   Z <- as.matrix(do.call(expand.grid, replicate(p, 0:1, simplify = FALSE)))
   dimnames(Z) <- NULL
@@ -50,7 +54,10 @@ partly_exact_Z <- function(p, k) {
   return(rbind(Z, 1 - Z))
 }
 
-# Create Z, w, A for vectors with sum(z) in {k, p-k} for k in deg
+# Create Z, w, A for vectors z with sum(z) in {k, p-k} for k in {1, ..., deg}.
+# The total weights do not sum to one, except in the special (exact) case deg=p-deg.
+# (The remaining weight will be added via input_sampling(p, deg=deg)).
+# Note that for a given k, the weights are constant.
 input_partly_exact <- function(p, deg) {
   if (deg < 1L) {
     stop("deg must be at least 1")
