@@ -14,7 +14,7 @@ input_exact <- function(p) {
 
 # Calculates exact A. Notice the difference to the off-diagnonals in the Supplement of 
 # Covert and Lee (2021). Credits to David Watson for figuring out the correct formula,
-# see our discussions in https://github.com/mayer79/kernelshap/issues/22
+# see our discussions in https://github.com/ModelOriented/kernelshap/issues/22
 exact_A <- function(p) {
   S <- 1:(p - 1L)
   c_pr <- S * (S - 1) / p / (p - 1)
