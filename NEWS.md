@@ -1,3 +1,9 @@
+# kernelshap 0.3.5
+
+## Github repository
+
+- My new cozy home: https://github.com/ModelOriented/kernelshap
+
 # kernelshap 0.3.4
 
 ## Documentation
