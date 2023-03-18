@@ -119,6 +119,7 @@
 #'   \item \code{prop_exact}: Proportion of the Kernel SHAP weight distribution covered by exact calculations.
 #'   \item \code{exact}: Logical flag indicating whether calculations are exact or not.
 #'   \item \code{txt}: Summary text.
+#'   \item \code{predictions}: (n x K) matrix of predictions of \code{X}.
 #' }
 #' @references
 #' \enumerate{
@@ -308,7 +309,8 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
     m_exact = m_exact,
     prop_exact = prop_exact,
     exact = exact || trunc(p / 2) == hybrid_degree,
-    txt = txt
+    txt = txt,
+    predictions = v1
   )
   class(out) <- "kernelshap"
   out
