@@ -4,6 +4,10 @@
 
 - My new cozy home: https://github.com/ModelOriented/kernelshap
 
+## Small changes
+
+- Adding $(n \times K)$ matrix of predictions to the output, where $n$ is the number of rows in the explainer data `X`, and $K$ is the dimension of a single prediction (usually 1).
+
 # kernelshap 0.3.4
 
 ## Documentation
