@@ -71,6 +71,9 @@ use_cran_comments()
 
 use_github_links() # use this if this project is on github
 
+# Build website
+use_pkgdown(config_file = "pkgdown/_pkgdown.yml")
+
 #=============================================================================
 # Finish package building (can use fresh session)
 #=============================================================================
@@ -83,6 +86,8 @@ check(manual = TRUE, cran = TRUE)
 build()
 # build(binary = TRUE)
 install(upgrade = FALSE)
+
+pkgdown::build_site(run_dont_run = TRUE)
 
 # Run only if package is public(!) and should go to CRAN
 if (FALSE) {
