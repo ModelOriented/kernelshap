@@ -148,7 +148,7 @@ additive model fitted with package "mgcv", then one might need to set
 \value{
 An object of class "kernelshap" with the following components:
 \itemize{
-\item \code{S}: (n x p) matrix with SHAP values or, if the model output has dimension K > 1,
+\item \code{S}: A (n x p) matrix with SHAP values or, if the model output has dimension K > 1,
 a list of K such matrices.
 \item \code{X}: Same as input argument \code{X}.
 \item \code{baseline}: A vector of length K representing the average prediction on the background data.
@@ -160,7 +160,7 @@ a list of K such matrices.
 \item \code{prop_exact}: Proportion of the Kernel SHAP weight distribution covered by exact calculations.
 \item \code{exact}: Logical flag indicating whether calculations are exact or not.
 \item \code{txt}: Summary text.
-\item \code{predictions}: (n x K) matrix of predictions of \code{X}.
+\item \code{predictions}: A (n x K) matrix of predictions of \code{X}.
 }
 }
 \description{

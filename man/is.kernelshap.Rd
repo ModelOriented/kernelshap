@@ -10,7 +10,7 @@ is.kernelshap(object)
 \item{object}{An R object.}
 }
 \value{
-Returns \code{TRUE} if \code{object} has "\code{kernelshap}" among its classes,
+Returns \code{TRUE} if \code{object} has "kernelshap" among its classes,
 and \code{FALSE} otherwise.
 }
 \description{
