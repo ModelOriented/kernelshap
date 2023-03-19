@@ -57,7 +57,7 @@
         <a class="navbar-brand" href="index.html">kernelshap</a>
         <div class="info">
           <span class="partof">part of the <a href="https://github.com/ModelOriented/DrWhy" class="external-link">DrWhy.AI</a>
-           developed by the <a href="https://mi2.ai/" class="external-link">MI^2.AI</a> </span>
+           developed by the <a href="https://mi2.ai/" class="external-link">MI².AI</a> </span>
           <span class="version version-default">0.3.5</span>
         </div>
       </div>
@@ -92,7 +92,7 @@
 <div class="page-header"><h1 id="kernelshap-">kernelshap <a href="https://github.com/ModelOriented/kernelshap" class="external-link"><img src="reference/figures/logo.png" align="right" height="138.5"></a>
 <a class="anchor" aria-label="anchor" href="#kernelshap-"></a>
 </h1></div>
-
+<p><a href="https://cran.r-project.org/package=kernelshap" class="external-link"><img src="http://www.r-pkg.org/badges/version/kernelshap" alt="CRAN version"></a> <a href="https://cran.r-project.org/package=kernelshap" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/kernelshap"></a> <a href="https://cran.r-project.org/package=kernelshap" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/kernelshap?color=orange"></a></p>
 <div class="section level2">
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
@@ -205,22 +205,22 @@
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tensorflow.rstudio.com/" class="external-link">keras</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">nn</span> <span class="op">&lt;-</span> <span class="fu">keras_model_sequential</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">nn</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/keras/man/keras_model_sequential.html" class="external-link">keras_model_sequential</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">nn</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">layer_dense</span><span class="op">(</span>units <span class="op">=</span> <span class="fl">30</span>, activation <span class="op">=</span> <span class="st">"relu"</span>, input_shape <span class="op">=</span> <span class="fl">4</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">layer_dense</span><span class="op">(</span>units <span class="op">=</span> <span class="fl">15</span>, activation <span class="op">=</span> <span class="st">"relu"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">layer_dense</span><span class="op">(</span>units <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/keras/man/layer_dense.html" class="external-link">layer_dense</a></span><span class="op">(</span>units <span class="op">=</span> <span class="fl">30</span>, activation <span class="op">=</span> <span class="st">"relu"</span>, input_shape <span class="op">=</span> <span class="fl">4</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/keras/man/layer_dense.html" class="external-link">layer_dense</a></span><span class="op">(</span>units <span class="op">=</span> <span class="fl">15</span>, activation <span class="op">=</span> <span class="st">"relu"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/keras/man/layer_dense.html" class="external-link">layer_dense</a></span><span class="op">(</span>units <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">nn</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">compile</span><span class="op">(</span>optimizer <span class="op">=</span> <span class="fu">optimizer_adam</span><span class="op">(</span><span class="fl">0.1</span><span class="op">)</span>, loss <span class="op">=</span> <span class="st">"mse"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://generics.r-lib.org/reference/compile.html" class="external-link">compile</a></span><span class="op">(</span>optimizer <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/keras/man/optimizer_adam.html" class="external-link">optimizer_adam</a></span><span class="op">(</span><span class="fl">0.1</span><span class="op">)</span>, loss <span class="op">=</span> <span class="st">"mse"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">cb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>  <span class="fu">callback_early_stopping</span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span>,</span>
-<span>  <span class="fu">callback_reduce_lr_on_plateau</span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/keras/man/callback_early_stopping.html" class="external-link">callback_early_stopping</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/keras/man/callback_reduce_lr_on_plateau.html" class="external-link">callback_reduce_lr_on_plateau</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span>       </span>
 <span><span class="va">nn</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">fit</span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span></span>
 <span>    x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.matrix.html" class="external-link">data.matrix</a></span><span class="op">(</span><span class="va">diamonds</span><span class="op">[</span><span class="va">xvars</span><span class="op">]</span><span class="op">)</span>,</span>
 <span>    y <span class="op">=</span> <span class="va">diamonds</span><span class="op">$</span><span class="va">log_price</span>,</span>
 <span>    epochs <span class="op">=</span> <span class="fl">100</span>,</span>
@@ -250,8 +250,8 @@
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://doFuture.futureverse.org" class="external-link">doFuture</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Set up parallel backend</span></span>
-<span><span class="fu">registerDoFuture</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="fu">plan</span><span class="op">(</span><span class="va">multisession</span>, workers <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>  <span class="co"># Windows</span></span>
+<span><span class="fu"><a href="https://doFuture.futureverse.org/reference/registerDoFuture.html" class="external-link">registerDoFuture</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">multisession</span>, workers <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>  <span class="co"># Windows</span></span>
 <span><span class="co"># plan(multicore, workers = 4)   # Linux, macOS, Solaris</span></span>
 <span></span>
 <span><span class="co"># ~3 seconds on second run</span></span>
@@ -297,18 +297,18 @@
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidymodels.tidymodels.org" class="external-link">tidymodels</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ModelOriented/kernelshap" class="external-link">kernelshap</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">iris_recipe</span> <span class="op">&lt;-</span> <span class="va">iris</span> <span class="op">%&gt;%</span></span>
+<span><span class="va">iris_recipe</span> <span class="op">&lt;-</span> <span class="va">iris</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu">recipe</span><span class="op">(</span><span class="va">Sepal.Length</span> <span class="op">~</span> <span class="va">.</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">reg</span> <span class="op">&lt;-</span> <span class="fu">linear_reg</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span></span>
+<span><span class="va">reg</span> <span class="op">&lt;-</span> <span class="fu">linear_reg</span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu">set_engine</span><span class="op">(</span><span class="st">"lm"</span><span class="op">)</span></span>
 <span>  </span>
-<span><span class="va">iris_wf</span> <span class="op">&lt;-</span> <span class="fu">workflow</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span></span>
-<span>  <span class="fu">add_recipe</span><span class="op">(</span><span class="va">iris_recipe</span><span class="op">)</span> <span class="op">%&gt;%</span></span>
+<span><span class="va">iris_wf</span> <span class="op">&lt;-</span> <span class="fu">workflow</span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu">add_recipe</span><span class="op">(</span><span class="va">iris_recipe</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu">add_model</span><span class="op">(</span><span class="va">reg</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="va">iris_wf</span> <span class="op">%&gt;%</span></span>
-<span>  <span class="fu">fit</span><span class="op">(</span><span class="va">iris</span><span class="op">)</span></span>
+<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="va">iris_wf</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="va">iris</span><span class="op">)</span></span>
 <span>  </span>
 <span><span class="va">ks</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">iris</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1</span><span class="op">]</span>, bg_X <span class="op">=</span> <span class="va">iris</span><span class="op">)</span></span>
 <span><span class="va">ks</span></span></code></pre></div>
@@ -395,25 +395,20 @@
 </ul>
 </div>
 
-<div class="dev-status">
-<h2 data-toc-skip>Dev status</h2>
-<ul class="list-unstyled">
-<li><a href="https://cran.r-project.org/package=kernelshap" class="external-link"><img src="http://www.r-pkg.org/badges/version/kernelshap" alt="CRAN version"></a></li>
-<li><a href="https://cran.r-project.org/package=kernelshap" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/kernelshap"></a></li>
-<li><a href="https://cran.r-project.org/package=kernelshap" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/kernelshap?color=orange"></a></li>
-</ul>
-</div>
+
 
   </div>
 </div>
 
 
       <footer><div class="copyright">
-  <p>Developed by .</p>
+  <p></p>
+<p>Developed by Michael Mayer.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a>.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer>

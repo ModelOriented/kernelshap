@@ -14,7 +14,7 @@
 #' @seealso \code{\link{kernelshap}}.
 print.kernelshap <- function(x, n = 2L, ...) {
   cat("SHAP values of first", n, "observations:\n")
-  head_list(ks_extract(x, "S"), n = n)
+  head_list(getElement(x, "S"), n = n)
   invisible(x)
 }
 
@@ -33,9 +33,9 @@ print.kernelshap <- function(x, n = 2L, ...) {
 #' summary(s)
 #' @seealso \code{\link{kernelshap}}.
 summary.kernelshap <- function(object, compact = FALSE, n = 2L, ...) {
-  cat(ks_extract(object, "txt"))
+  cat(getElement(object, "txt"))
 
-  S <- ks_extract(object, "S")
+  S <- getElement(object, "S")
   if (!is.list(S)) {
     n <- min(n, nrow(S))
     cat(paste("\n  - SHAP matrix of dim",  nrow(S), "x", ncol(S)))
@@ -45,23 +45,23 @@ summary.kernelshap <- function(object, compact = FALSE, n = 2L, ...) {
       "\n  -", length(S), "SHAP matrices of dim", nrow(S[[1L]]), "x", ncol(S[[1L]])
     )
   }
-  cat("\n  - baseline:", ks_extract(object, "baseline"))
-  ex <- ks_extract(object, "exact")
+  cat("\n  - baseline:", getElement(object, "baseline"))
+  ex <- getElement(object, "exact")
   if (!ex) {
     cat(
-      "\n  - average number of iterations:", mean(ks_extract(object, "n_iter")),
-      "\n  - rows not converged:", sum(!ks_extract(object, "converged")),
-      "\n  - proportion exact:", ks_extract(object, "prop_exact"),
-      "\n  - m/iter:", ks_extract(object, "m")
+      "\n  - average number of iterations:", mean(getElement(object, "n_iter")),
+      "\n  - rows not converged:", sum(!getElement(object, "converged")),
+      "\n  - proportion exact:", getElement(object, "prop_exact"),
+      "\n  - m/iter:", getElement(object, "m")
     )
   }
-  cat("\n  - m_exact:", ks_extract(object, "m_exact"))
+  cat("\n  - m_exact:", getElement(object, "m_exact"))
   if (!compact) {
     cat("\n\nSHAP values of first", n, "observations:\n")
     head_list(S, n = n)
     if (!ex) {
       cat("\nCorresponding standard errors:\n")
-      head_list(ks_extract(object, "SE"), n = n) 
+      head_list(getElement(object, "SE"), n = n) 
     }
   }
   invisible(object)
@@ -72,7 +72,7 @@ summary.kernelshap <- function(object, compact = FALSE, n = 2L, ...) {
 #' Is object of class "kernelshap"?
 #'
 #' @param object An R object.
-#' @return Returns \code{TRUE} if \code{object} has "\code{kernelshap}" among its classes, 
+#' @return Returns \code{TRUE} if \code{object} has "kernelshap" among its classes, 
 #' and \code{FALSE} otherwise.
 #' @export
 #' @examples
@@ -82,38 +82,4 @@ summary.kernelshap <- function(object, compact = FALSE, n = 2L, ...) {
 #' is.kernelshap("a")
 is.kernelshap <- function(object){
   inherits(object, "kernelshap")
-}
-
-#' Extractor Function
-#'
-#' Function to extract an element of a "kernelshap" object, e.g., the SHAP values "S".
-#'
-#' @param object Object to extract something.
-#' @param what Element to extract. One of "S", "X", "baseline", "SE", "n_iter", 
-#' "converged", "m", "m_exact", "prop_exact", "exact", or "txt".
-#' @param ... Currently unused.
-#' @return The corresponding object is returned.
-#' @export
-ks_extract <- function(object, ...){
-  UseMethod("ks_extract")
-}
-
-#' @describeIn ks_extract Method for "kernelshap" object.
-#' @export
-#' @examples
-#' fit <- stats::lm(Sepal.Length ~ ., data = iris)
-#' s <- kernelshap(fit, iris[1:2, -1], bg_X = iris[-1])
-#' ks_extract(s, what = "S")
-ks_extract.kernelshap = function(object, 
-                                 what = c("S", "X", "baseline", "SE", "n_iter", "converged",
-                                          "m", "m_exact", "prop_exact", "exact", "txt"), 
-                                 ...) {
-  what <- match.arg(what)
-  object[[what]]
-}
-
-#' @describeIn ks_extract No default method available.
-#' @export
-ks_extract.default = function(object, ...) {
-  stop("ks_extract() only accepts 'kernelshap' objects.")
 }

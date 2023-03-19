@@ -27,7 +27,7 @@ For larger p, an almost exact hybrid algorithm involving iterative sampling is u
         <a class="navbar-brand" href="../index.html">kernelshap</a>
         <div class="info">
           <span class="partof">part of the <a href="https://github.com/ModelOriented/DrWhy" class="external-link">DrWhy.AI</a>
-           developed by the <a href="https://mi2.ai/" class="external-link">MI^2.AI</a> </span>
+           developed by the <a href="https://mi2.ai/" class="external-link">MI².AI</a> </span>
           <span class="version version-default">0.3.5</span>
         </div>
       </div>
@@ -244,7 +244,7 @@ additive model fitted with package "mgcv", then one might need to set
     <h2>Value</h2>
     
 
-<p>An object of class "kernelshap" with the following components:</p><ul><li><p><code>S</code>: (n x p) matrix with SHAP values or, if the model output has dimension K &gt; 1,
+<p>An object of class "kernelshap" with the following components:</p><ul><li><p><code>S</code>: A (n x p) matrix with SHAP values or, if the model output has dimension K &gt; 1,
 a list of K such matrices.</p></li>
 <li><p><code>X</code>: Same as input argument <code>X</code>.</p></li>
 <li><p><code>baseline</code>: A vector of length K representing the average prediction on the background data.</p></li>
@@ -256,6 +256,7 @@ a list of K such matrices.</p></li>
 <li><p><code>prop_exact</code>: Proportion of the Kernel SHAP weight distribution covered by exact calculations.</p></li>
 <li><p><code>exact</code>: Logical flag indicating whether calculations are exact or not.</p></li>
 <li><p><code>txt</code>: Summary text.</p></li>
+<li><p><code>predictions</code>: A (n x K) matrix of predictions of <code>X</code>.</p></li>
 </ul></div>
     <div id="details">
     <h2>Details</h2>
@@ -381,11 +382,11 @@ For similar reasons, degree 2 hybrids are limited to p up to 30-40.</p>
 
 
       <footer><div class="copyright">
-  <p>Developed by .</p>
+  <p></p><p>Developed by Michael Mayer.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a>.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>
