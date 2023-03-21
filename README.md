@@ -1,8 +1,11 @@
-# kernelshap <a href='https://github.com/ModelOriented/kernelshap'><img src='man/figures/logo.png' align="right" height="138.5" /></a>
+# kernelshap: Efficient Implementation of Kernel SHAP <a href='https://github.com/ModelOriented/kernelshap'><img src='man/figures/logo.png' align="right" width="150px" /></a>
 
-[![CRAN version](http://www.r-pkg.org/badges/version/kernelshap)](https://cran.r-project.org/package=kernelshap) [![](https://cranlogs.r-pkg.org/badges/kernelshap)](https://cran.r-project.org/package=kernelshap) [![](https://cranlogs.r-pkg.org/badges/grand-total/kernelshap?color=orange)](https://cran.r-project.org/package=kernelshap)
+[![R-CMD-check](https://github.com/ModelOriented/kernelshap/actions/workflows/check-standard.yaml/badge.svg)](https://github.com/ModelOriented/kernelshap/actions/workflows/check-standard.yaml)
+[![CRAN version](http://www.r-pkg.org/badges/version/kernelshap)](https://cran.r-project.org/package=kernelshap)
+[![Codecov test coverage](https://codecov.io/gh/ModelOriented/kernelshap/branch/main/graph/badge.svg)](https://app.codecov.io/gh/ModelOriented/kernelshap?branch=main)
+[![](https://cranlogs.r-pkg.org/badges/kernelshap)](https://cran.r-project.org/package=kernelshap) [![](https://cranlogs.r-pkg.org/badges/grand-total/kernelshap?color=orange)](https://cran.r-project.org/package=kernelshap)
 
-## Introduction
+## Overview
 
 This package offers an efficient implementation of Kernel SHAP, see [1] and [2]. For up to $p=8$ features, the resulting SHAP values are exact regarding the selected background data. For larger $p$, an almost exact hybrid algorithm involving iterative sampling is used by default.
 

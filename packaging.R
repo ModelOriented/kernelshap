@@ -74,6 +74,12 @@ use_github_links() # use this if this project is on github
 # Build website
 use_pkgdown(config_file = "pkgdown/_pkgdown.yml")
 
+# Github actions
+use_github_action("document")
+use_github_action("check-standard")
+use_github_action("test-coverage")
+use_github_action("pkgdown")
+
 #=============================================================================
 # Finish package building (can use fresh session)
 #=============================================================================
