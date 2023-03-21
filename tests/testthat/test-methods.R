@@ -5,3 +5,4 @@ test_that("is_kernelshap() works", {
   expect_true(is.kernelshap(s))
   expect_false(is.kernelshap(1))
 })
+

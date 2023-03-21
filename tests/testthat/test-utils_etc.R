@@ -99,6 +99,17 @@ test_that("hybrid weights sum to 1 for different p and degree 2", {
   }
 })
 
+test_that("partly_exact_Z(p, k) fails for bad p or k", {
+  expect_error(partly_exact_Z(0L, k = 1L))
+  expect_error(partly_exact_Z(5L, k = 3L))
+})
+
+test_that("input_partly_exact(p, deg) fails for bad p or deg", {
+  expect_error(input_partly_exact(2L, deg = 0L))
+  expect_error(input_partly_exact(5L, deg = 3L))
+})
+
+
 # Helper functions
 test_that("head_list(x) = head(x) for matrix x", {
   x <- cbind(1:10, 2:11)
