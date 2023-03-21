@@ -98,3 +98,20 @@ test_that("hybrid weights sum to 1 for different p and degree 2", {
     expect_equal(sum(pa$w) + sum(sa$w), 1)
   }
 })
+
+# Helper functions
+test_that("head_list(x) = head(x) for matrix x", {
+  x <- cbind(1:10, 2:11)
+  expect_equal(head_list(x), utils::head(x))
+})
+
+test_that("head_list(x)[[1L]] = head(x[[1L]]) for list of matries x", {
+  x1 <- cbind(1:10, 2:11)
+  x2 <- cbind(1:7, 2:8)
+  x <- list(x1, x2)
+  expect_equal(head_list(x)[[1L]], utils::head(x[[1L]]))
+})
+
+test_that("regoranize_list() fails for non-list inputs", {
+  expect_error(reorganize_list(alist = 1:10, nms = NULL))
+})
