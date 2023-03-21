@@ -213,8 +213,9 @@ check_pred <- function(x, n) {
 }
 
 # Helper function in print() and summary()
-head_list <- function(x, n) {
-  if (!is.list(x)) print(utils::head(x, n)) else print(lapply(x, utils::head, n))
+# x is either a matrix or a list of matrices
+head_list <- function(x, n = 6L) {
+  if (!is.list(x)) utils::head(x, n) else lapply(x, utils::head, n)
 }
 
 # Summarize details about the chosen algorithm (exact, hybrid, sampling)

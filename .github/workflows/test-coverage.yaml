@@ -31,7 +31,13 @@ jobs:
           covr::codecov(
             quiet = FALSE,
             clean = FALSE,
-            install_path = file.path(Sys.getenv("RUNNER_TEMP"), "package")
+            install_path = file.path(Sys.getenv("RUNNER_TEMP"), "package"),
+            function_exclusions = c(
+              "print\\.kernelshap.", 
+              "summary\\.kernelshap", 
+              "kernelshap\\.Learner",
+              "kernelshap\\.ranger"
+            )
           )
         shell: Rscript {0}
 

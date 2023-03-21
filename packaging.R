@@ -93,7 +93,7 @@ build()
 # build(binary = TRUE)
 install(upgrade = FALSE)
 
-pkgdown::build_site(run_dont_run = TRUE)
+# pkgdown::build_site(run_dont_run = TRUE)
 
 # Run only if package is public(!) and should go to CRAN
 if (FALSE) {
