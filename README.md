@@ -1,9 +1,15 @@
-# kernelshap: Efficient Implementation of Kernel SHAP <a href='https://github.com/ModelOriented/kernelshap'><img src='man/figures/logo.png' align="right" width="150px" /></a>
+# kernelshap <a href='https://github.com/ModelOriented/kernelshap'><img src='man/figures/logo.png' align="right" height="139"/></a>
 
-[![R-CMD-check](https://github.com/ModelOriented/kernelshap/actions/workflows/check-standard.yaml/badge.svg)](https://github.com/ModelOriented/kernelshap/actions/workflows/check-standard.yaml)
-[![CRAN version](http://www.r-pkg.org/badges/version/kernelshap)](https://cran.r-project.org/package=kernelshap)
+<!-- badges: start -->
+
+[![CRAN status](http://www.r-pkg.org/badges/version/kernelshap)](https://cran.r-project.org/package=kernelshap)
+[![R-CMD-check](https://github.com/ModelOriented/kernelshap/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ModelOriented/kernelshap/actions)
 [![Codecov test coverage](https://codecov.io/gh/ModelOriented/kernelshap/branch/main/graph/badge.svg)](https://app.codecov.io/gh/ModelOriented/kernelshap?branch=main)
-[![](https://cranlogs.r-pkg.org/badges/kernelshap)](https://cran.r-project.org/package=kernelshap) [![](https://cranlogs.r-pkg.org/badges/grand-total/kernelshap?color=orange)](https://cran.r-project.org/package=kernelshap)
+
+[![](https://cranlogs.r-pkg.org/badges/kernelshap)](https://cran.r-project.org/package=kernelshap) 
+[![](https://cranlogs.r-pkg.org/badges/grand-total/kernelshap?color=orange)](https://cran.r-project.org/package=kernelshap)
+
+<!-- badges: end -->
 
 ## Overview
 
@@ -23,7 +29,17 @@ If the training data is small, use the full training data. In cases with a natur
 - By changing the defaults, the iterative pure sampling approach in [2] can be enforced.
 - Case weights are supported via the argument `bg_w`.
 
-## Illustration
+## Installation
+
+```r
+# From CRAN
+install.packages("kernelshap")
+
+# Or the development version:
+devtools::install_github("ModelOriented/kernelshap")
+```
+
+## Usage
 
 Let's model diamonds prices!
 
