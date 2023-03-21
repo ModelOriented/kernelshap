@@ -26,6 +26,15 @@ test_that("Exact hybrid calculation is similar to exact (non-hybrid)", {
   expect_equal(s$S, s1$S)
 })
 
+test_that("using foreach (non-parallel) gives the same as normal mode", {
+  s_foreach <- suppressWarnings(
+    kernelshap(
+      fit, iris[c(1, 51, 101), x], bg_X = iris, verbose = FALSE, parallel = TRUE
+    )
+  )
+  expect_equal(s, s_foreach)
+})
+
 test_that("Decomposing a single row works", {
   s <- kernelshap(fit, iris[1L, x], bg_X = iris, verbose = FALSE)
   
