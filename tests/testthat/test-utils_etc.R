@@ -1,21 +1,21 @@
 test_that("Sum of kernel weights is 1", {
   for (p in 2:10) {
-    expect_equal(sum(kernel_weights(p)), 1)
+    expect_equal(sum(kernel_weights(p)), 1.0)
   }
 })
 
 test_that("Sum of kernel weights is 1, even for subset of domain", {
-  expect_equal(sum(kernel_weights(10, S = 2:5)), 1)
+  expect_equal(sum(kernel_weights(10L, S = 2:5)), 1.0)
 })
 
-p <- 10
-m <- 100
+p <- 10L
+m <- 100L
 
 test_that("Random z have right output dim and the sums are between 1 and p-1", {
   Z <- sample_Z(p, m = m)
   
   expect_equal(dim(Z), c(m, p))
-  expect_true(all(rowSums(Z) %in% 1:(p-1)))
+  expect_true(all(rowSums(Z) %in% 1:(p - 1L)))
 })
 
 test_that("Random z have right output dim and the sums are in subset S", {
@@ -27,37 +27,37 @@ test_that("Random z have right output dim and the sums are in subset S", {
 })
 
 test_that("Sampling input structure is ok (deg = 0)", {
-  input <- input_sampling(p, m = m, deg = 0, paired = TRUE)
+  input <- input_sampling(p, m = m, deg = 0L, paired = TRUE)
 
   expect_equal(dim(input$Z), c(m, p))
-  expect_equal(sum(input$w), 1)
+  expect_equal(sum(input$w), 1.0)
   expect_equal(dim(input$A), c(p, p))
   expect_equal(diag(input$A), rep(0.5, p))
 })
 
 test_that("Sampling input structure is ok (deg = 0, unpaired)", {
-  input <- input_sampling(p, m = m, deg = 0, paired = FALSE)
+  input <- input_sampling(p, m = m, deg = 0L, paired = FALSE)
   
   expect_equal(dim(input$Z), c(m, p))
-  expect_equal(sum(input$w), 1)
+  expect_equal(sum(input$w), 1.0)
   expect_equal(dim(input$A), c(p, p))
  # expect_equal(diag(input$A), rep(0.5, p)) # This is not TRUE
 })
 
 test_that("Sampling input structure is ok (deg = 1)", {
-  input <- input_sampling(p, m = m, deg = 1, paired = TRUE)
+  input <- input_sampling(p, m = m, deg = 1L, paired = TRUE)
   
   expect_equal(dim(input$Z), c(m, p))
-  expect_true(sum(input$w) < 1)
+  expect_true(sum(input$w) < 1.0)
   expect_equal(dim(input$A), c(p, p))
   expect_true(all(diag(input$A) < 0.5))
 })
 
 test_that("Sampling input input structure ok (deg = 2)", {
-  input <- input_sampling(p, m = m, deg = 2, paired = TRUE)
+  input <- input_sampling(p, m = m, deg = 2L, paired = TRUE)
   
   expect_equal(dim(input$Z), c(m, p))
-  expect_true(sum(input$w) < 1)
+  expect_true(sum(input$w) < 1.0)
   expect_equal(dim(input$A), c(p, p))
   expect_true(all(diag(input$A) < 0.5))
 })
@@ -76,26 +76,26 @@ test_that("Partly exact A, w, Z equal exact for sufficiently large deg", {
 })
 
 test_that("hybrid weights sum to 1 for different p and degree 1", {
-  deg <- 1
-  expect_error(input_sampling(2, deg = deg))
-  expect_error(input_sampling(3, deg = deg))
+  deg <- 1L
+  expect_error(input_sampling(2L, deg = deg))
+  expect_error(input_sampling(3L, deg = deg))
 
   for (p in 4:20) {
     pa <- input_partly_exact(p, deg = deg)
-    sa <- input_sampling(p, m = 100, deg = deg, paired = TRUE)
-    expect_equal(sum(pa$w) + sum(sa$w), 1)
+    sa <- input_sampling(p, m = 100L, deg = deg, paired = TRUE)
+    expect_equal(sum(pa$w) + sum(sa$w), 1.0)
   }
 })
 
 test_that("hybrid weights sum to 1 for different p and degree 2", {
-  deg <- 2
-  expect_error(input_sampling(4, deg = deg))
-  expect_error(input_sampling(5, deg = deg))
+  deg <- 2L
+  expect_error(input_sampling(4L, deg = deg))
+  expect_error(input_sampling(5L, deg = deg))
   
   for (p in 6:20) {
     pa <- input_partly_exact(p, deg = deg)
-    sa <- input_sampling(p, m = 100, deg = deg, paired = FALSE)
-    expect_equal(sum(pa$w) + sum(sa$w), 1)
+    sa <- input_sampling(p, m = 100L, deg = deg, paired = FALSE)
+    expect_equal(sum(pa$w) + sum(sa$w), 1L)
   }
 })
 

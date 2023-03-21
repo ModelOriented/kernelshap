@@ -6,8 +6,8 @@
 y <- iris$Sepal.Length
 Y <- as.matrix(iris[, c("Sepal.Length", "Sepal.Width")])
 
-fity <- stats::lm(y ~ poly(Petal.Width, 2) * Species, data = iris)
-fitY <- stats::lm(Y ~ poly(Petal.Width, 2) * Species, data = iris)
+fity <- stats::lm(y ~ poly(Petal.Width, degree = 2L) * Species, data = iris)
+fitY <- stats::lm(Y ~ poly(Petal.Width, degree = 2L) * Species, data = iris)
 
 x <- c("Petal.Width", "Species")
 
@@ -39,7 +39,7 @@ test_that("Decomposing a single row works", {
   expect_equal(rowSums(sY$S[[2L]]) + sY$baseline[2L], predsY[1L, 2L])
 })
 
-fitY <- stats::lm(Y ~ stats::poly(Petal.Width, 2), data = iris)
+fitY <- stats::lm(Y ~ stats::poly(Petal.Width, degree = 2L), data = iris)
 x <- "Petal.Width"
 predsY <- unname(stats::predict(fitY, iris))
 
@@ -65,7 +65,7 @@ test_that("Matrix input is fine", {
 
 ## Now with case weights
 fitY <- stats::lm(
-  Y ~ poly(Petal.Width, 2) * Species, data = iris, weights = Petal.Length
+  Y ~ poly(Petal.Width, degree = 2L) * Species, data = iris, weights = Petal.Length
 )
 x <- c("Petal.Width", "Species")
 predsY <- unname(stats::predict(fitY, iris))
