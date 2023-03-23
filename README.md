@@ -21,7 +21,7 @@ The typical workflow to explain any model `object`:
 2. **Select background data:** Kernel SHAP requires a representative background dataset `bg_X` to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data.
 If the training data is small, use the full training data. In cases with a natural "off" value (like MNIST digits), this can also be a single row with all values set to the off value.
 3. **Crunch:** Use `kernelshap(object, X, bg_X, ...)` to calculate SHAP values. Runtime is proportional to `nrow(X)`, while memory consumption scales linearly in `nrow(bg_X)`.
-4. **Analyze:** Use the "shapviz" package to visualize the result.
+4. **Analyze:** Use {shapviz} to visualize the result.
 
 **Remarks**
 
