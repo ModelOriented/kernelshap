@@ -6,3 +6,8 @@ test_that("is_kernelshap() works", {
   expect_false(is.kernelshap(1))
 })
 
+test_that("print() and summary() do not give an error", {
+  capture_output(expect_no_error(print(s)))
+  capture_output(expect_no_error(summary(s)))
+})
+

@@ -159,6 +159,9 @@ weighted_colMeans <- function(x, w = NULL, ...) {
   if (is.null(w)) {
     out <- colMeans(x, ...)
   } else {
+    if (nrow(x) != length(w)) {
+      stop("Weights w not compatible with matrix x")
+    }
     out <- colSums(x * w, ...) / sum(w)  
   }
   matrix(out, nrow = 1L)
