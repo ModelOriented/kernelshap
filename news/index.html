@@ -69,6 +69,10 @@
 <ul><li>Removed the <code>ks_extract()</code> function. It was designed to extract objects like the matrix <code>S</code> of SHAP values from the resulting “kernelshap” object <code>x</code>. We feel that the standard extraction options (<code>x$S</code>, <code>x[["S"]]</code>, or <code>getElement(x, "S")</code>) are sufficient.</li>
 <li>Adding <span class="math inline">(<em>n</em>×<em>K</em>)</span> matrix of predictions to the output, where <span class="math inline"><em>n</em></span> is the number of rows in the explainer data <code>X</code>, and <span class="math inline"><em>K</em></span> is the dimension of a single prediction (usually 1).</li>
 </ul></div>
+<div class="section level3">
+<h3 id="other-changes-0-3-5">Other changes<a class="anchor" aria-label="anchor" href="#other-changes-0-3-5"></a></h3>
+<ul><li>More unit tests</li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.3.4" id="kernelshap-034">kernelshap 0.3.4<small>2023-02-26</small><a class="anchor" aria-label="anchor" href="#kernelshap-034"></a></h2>
