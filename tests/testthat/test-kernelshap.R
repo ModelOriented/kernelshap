@@ -6,11 +6,11 @@ x <- c("Petal.Width", "Species", "Petal.Length")
 preds <- unname(predict(fit, iris))
 s <- kernelshap(fit, iris[c(1L, 51L, 101L), x], bg_X = iris, verbose = FALSE)
 
-test_that("Baseline equals average prediction on background data", {
+test_that("Baseline equals average prediction on background data in exact mode", {
   expect_equal(s$baseline, mean(iris$Sepal.Length))
 })
 
-test_that("SHAP + baseline = prediction", {
+test_that("SHAP + baseline = prediction for exact mode", {
   expect_equal(rowSums(s$S) + s$baseline, preds[c(1L, 51L, 101L)])
 })
 
@@ -24,6 +24,40 @@ test_that("Exact hybrid calculation is similar to exact (non-hybrid)", {
     verbose = FALSE
   )
   expect_equal(s$S, s1$S)
+})
+
+s_sampling <- kernelshap(
+  fit, 
+  iris[c(1L, 51L, 101L), x], 
+  bg_X = iris, 
+  hybrid_degree = 0L,
+  verbose = FALSE,
+  exact = FALSE
+)
+
+test_that("Baseline equals average prediction on background data in sampling mode", {
+  expect_equal(s_sampling$baseline, mean(iris$Sepal.Length))
+})
+
+test_that("SHAP + baseline = prediction for sampling mode", {
+  expect_equal(rowSums(s_sampling$S) + s_sampling$baseline, preds[c(1L, 51L, 101L)])
+})
+
+test_that("verbose is chatty", {
+  capture_output(
+    expect_message(
+      kernelshap(fit, iris[c(1L, 51L, 101L), x], bg_X = iris, verbose = TRUE)
+    )
+  )
+})
+
+test_that("large background data cause warning", {
+  large_bg <- iris[rep(1:150, 230), ]
+  suppressMessages(
+    expect_warning(
+      kernelshap(fit, iris[1L, x], bg_X = large_bg, verbose = TRUE)
+    )
+  )
 })
 
 test_that("using foreach (non-parallel) gives the same as normal mode", {
@@ -86,6 +120,14 @@ test_that("Special case p = 1 works", {
   expect_equal(s$SE[1L], 0)
 })
 
+test_that("Special case p = 1 is chatty with verbose = TRUE", {
+  capture_output(
+    expect_message(
+      kernelshap(fit, iris[1:5, x, drop = FALSE], bg_X = iris, verbose = TRUE)
+    )
+  )
+})
+
 fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
 X <- data.matrix(iris[2:4])
 pred_fun <- function(m, X) stats::predict(m, as.data.frame(X))
@@ -104,6 +146,20 @@ test_that("Matrix input works if bg data containts extra columns", {
   )
   expect_true(is.kernelshap(ks5))
 })
+
+test_that("Matrix input gives error with inconsistent feature_names", {
+  expect_error(
+    kernelshap(
+      fit, 
+      X[1:3, ], 
+      pred_fun = pred_fun, 
+      bg_X = X, 
+      verbose = FALSE, 
+      feature_names = "Sepal.Width"
+    )
+  )
+})
+
 
 ## Now with case weights
 fit <- stats::lm(

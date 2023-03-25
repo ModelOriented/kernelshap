@@ -13,3 +13,4 @@
 ^pkgdown$
 ^pkgdown/_pkgdown\.yml$
 ^\.github$
+^revdep$

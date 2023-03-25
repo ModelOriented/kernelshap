@@ -102,6 +102,7 @@ test_that("hybrid weights sum to 1 for different p and degree 2", {
 test_that("partly_exact_Z(p, k) fails for bad p or k", {
   expect_error(partly_exact_Z(0L, k = 1L))
   expect_error(partly_exact_Z(5L, k = 3L))
+  expect_error(partly_exact_Z(5L, k = 0L))
 })
 
 test_that("input_partly_exact(p, deg) fails for bad p or deg", {
@@ -126,3 +127,21 @@ test_that("head_list(x)[[1L]] = head(x[[1L]]) for list of matries x", {
 test_that("regoranize_list() fails for non-list inputs", {
   expect_error(reorganize_list(alist = 1:10, nms = NULL))
 })
+
+test_that("weighted_colMeans() fails for non-matrix inputs", {
+  expect_error(weighted_colMeans(1))
+})
+
+test_that("weighted_colMeans() fails if weights are not long enough", {
+  X <- cbind(1:3, 2:4)
+  expect_error(weighted_colMeans(X, w = 1))
+  expect_error(weighted_colMeans(X, w = 1:2))
+})
+
+test_that("weighted_colMeans() gives the same as colMeans() in unweighted case", {
+  X <- cbind(1:3, 2:4)
+  expect_equal(c(weighted_colMeans(X)), colMeans(X))
+  expect_equal(c(weighted_colMeans(X, w = c(1, 1, 1))), colMeans(X))
+  expect_equal(c(weighted_colMeans(X, w = c(2, 2, 2))), colMeans(X))
+})
+
