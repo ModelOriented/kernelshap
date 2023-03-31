@@ -23,8 +23,11 @@ use_description(
     Otherwise, an almost exact hybrid algorithm involving iterative sampling is used.
     The package plays well together with meta-learning packages like 'tidymodels', 'caret' or 'mlr3'.
     Visualizations can be done using the R package 'shapviz'.",
-    `Authors@R` = "c(person('Michael', family = 'Mayer', role = c('aut', 'cre'), email = 'mayermichael79@gmail.com'),
-       person('David', family = 'Watson', role = 'ctb', email = 'david.s.watson11@gmail.com'))",
+    `Authors@R` = 
+    "c(person('Michael', family='Mayer', role=c('aut', 'cre'), email='mayermichael79@gmail.com'),
+       person('David', family='Watson', role='aut', email='david.s.watson11@gmail.com'),
+       person('Przemyslaw', family='Biecek', email='przemyslaw.biecek@gmail.com', role='ctb', comment=c(ORCID='0000-0001-8423-1823'))
+      )",
     Depends = "R (>= 3.2.0)",
     LazyData = NULL
   ),
@@ -41,7 +44,7 @@ use_gpl_license(2)
 
 # Your files that do not belong to the package itself (others are added by "use_* function")
 use_build_ignore(c("^packaging.R$", "[.]Rproj$", "^compare_with_python.R$",
-                   "^cran-comments.md$", "^logo.png$", "^Z_exact.R$"), escape = FALSE)
+                   "^cran-comments.md$", "^logo.png$"), escape = FALSE)
 
 # If your code uses the pipe operator %>%
 # use_pipe()

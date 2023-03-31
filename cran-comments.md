@@ -1,26 +1,22 @@
-Dear CRAN team
+Hello CRAN
 
-This is mainly a documentation update (new logo, better DESCRIPTION, better README, adding a relevant link to the description file).
+This is mainly a documentation update (new contributor, new Github repo),
+with only some small code changes (removing unnecessary function).
 
 ## Checks
 
+### Revdep
+
+OK
+
 ### `check(manual = TRUE, cran = TRUE)`
 
-── R CMD check results ──────────── kernelshap 0.3.4 ────
-Duration: 30.9s
-
-unable to verify current time
-
-0 errors ✔ | 0 warnings ✔ | 1 note ✖
+Note: unable to verify current time
 
 ### `check_win_devel()`
 
-1 NOTE
-R Under development (unstable) (2023-02-23 r83894 ucrt)
-
+TODO
 
 ### `check_rhub()`
 
-Status: OK
-
-
+TODO
