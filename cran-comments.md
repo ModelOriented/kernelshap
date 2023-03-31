@@ -7,7 +7,7 @@ with only some small code changes (removing unnecessary function).
 
 ### Revdep
 
-OK
+survex: OK
 
 ### `check(manual = TRUE, cran = TRUE)`
 
@@ -19,4 +19,4 @@ TODO
 
 ### `check_rhub()`
 
-TODO
+Note: lastMiKTeXException
