@@ -53,10 +53,8 @@ test_that("verbose is chatty", {
 
 test_that("large background data cause warning", {
   large_bg <- iris[rep(1:150, 230), ]
-  suppressMessages(
-    expect_warning(
-      kernelshap(fit, iris[1L, x], bg_X = large_bg, verbose = TRUE)
-    )
+  expect_warning(
+    kernelshap(fit, iris[1L, x], bg_X = large_bg, verbose = FALSE)
   )
 })
 

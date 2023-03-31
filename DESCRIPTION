@@ -3,7 +3,9 @@ Title: Kernel SHAP
 Version: 0.3.5
 Authors@R: c(
     person("Michael", "Mayer", , "mayermichael79@gmail.com", role = c("aut", "cre")),
-    person("David", "Watson", , "david.s.watson11@gmail.com", role = "ctb")
+    person("David", "Watson", , "david.s.watson11@gmail.com", role = "aut"),
+    person("Przemyslaw", "Biecek", , "przemyslaw.biecek@gmail.com", role = "ctb",
+           comment = c(ORCID = "0000-0001-8423-1823"))
   )
 Description: Efficient implementation of Kernel SHAP, see Lundberg and Lee
     (2017) <https://dl.acm.org/doi/10.5555/3295222.3295230>, and Covert
