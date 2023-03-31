@@ -58,20 +58,19 @@
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.3.5" id="kernelshap-035">kernelshap 0.3.5<a class="anchor" aria-label="anchor" href="#kernelshap-035"></a></h2>
 <div class="section level3">
-<h3 id="github-repository-0-3-5">Github repository<a class="anchor" aria-label="anchor" href="#github-repository-0-3-5"></a></h3>
-<ul><li>My new cozy home: <a href="https://github.com/ModelOriented/kernelshap" class="external-link uri">https://github.com/ModelOriented/kernelshap</a>
+<h3 id="maintenance-0-3-5">Maintenance<a class="anchor" aria-label="anchor" href="#maintenance-0-3-5"></a></h3>
+<ul><li>New contributor: Przemyslaw Biecek - welcome on board!</li>
+<li>My new cozy home: <a href="https://github.com/ModelOriented/kernelshap" class="external-link uri">https://github.com/ModelOriented/kernelshap</a>
 </li>
-<li>Webpage created with “pgkdown”: <a href="https://modeloriented.github.io/kernelshap" class="external-link uri">https://modeloriented.github.io/kernelshap</a>
-</li>
+<li>Webpage created with “pkgdown”</li>
+<li>Introduced Github workflows</li>
+<li>More unit tests</li>
 </ul></div>
 <div class="section level3">
-<h3 id="user-visible-changes-0-3-5">User visible changes<a class="anchor" aria-label="anchor" href="#user-visible-changes-0-3-5"></a></h3>
+<h3 id="small-visible-changes-0-3-5">Small visible changes<a class="anchor" aria-label="anchor" href="#small-visible-changes-0-3-5"></a></h3>
 <ul><li>Removed the <code>ks_extract()</code> function. It was designed to extract objects like the matrix <code>S</code> of SHAP values from the resulting “kernelshap” object <code>x</code>. We feel that the standard extraction options (<code>x$S</code>, <code>x[["S"]]</code>, or <code>getElement(x, "S")</code>) are sufficient.</li>
 <li>Adding <span class="math inline">(<em>n</em>×<em>K</em>)</span> matrix of predictions to the output, where <span class="math inline"><em>n</em></span> is the number of rows in the explainer data <code>X</code>, and <span class="math inline"><em>K</em></span> is the dimension of a single prediction (usually 1).</li>
-</ul></div>
-<div class="section level3">
-<h3 id="other-changes-0-3-5">Other changes<a class="anchor" aria-label="anchor" href="#other-changes-0-3-5"></a></h3>
-<ul><li>More unit tests</li>
+<li>Setting <code>verbose = FALSE</code> now does not suppress the warning on too large background data anymore. Use <code><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings()</a></code> instead.</li>
 </ul></div>
 </div>
     <div class="section level2">
@@ -219,7 +218,7 @@
 
 
       <footer><div class="copyright">
-  <p></p><p>Developed by Michael Mayer.</p>
+  <p></p><p>Developed by Michael Mayer, David Watson.</p>
 </div>
 
 <div class="pkgdown">
