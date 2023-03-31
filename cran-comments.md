@@ -15,8 +15,8 @@ Note: unable to verify current time
 
 ### `check_win_devel()`
 
-TODO
+OK
 
 ### `check_rhub()`
 
-Note: lastMiKTeXException
+OK
