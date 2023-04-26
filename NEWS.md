@@ -2,7 +2,7 @@
 
 ## Maintenance
 
-- Replace term "exact SHAP" by "exact Kernel SHAP" in README.
+- Replace term "exact SHAP" by "exact Kernel SHAP" in README and help.
 
 # kernelshap 0.3.5
 
