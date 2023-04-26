@@ -163,7 +163,7 @@ kernelshap <- function(object, ...){
 
 #' @describeIn kernelshap Default Kernel SHAP method.
 #' @export
-kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, 
+kernelshap.default <- function(object, X, bg_X = NULL, pred_fun = stats::predict, 
                                feature_names = colnames(X), bg_w = NULL, 
                                exact = length(feature_names) <= 8L, 
                                hybrid_degree = 1L + length(feature_names) %in% 4:16, 
@@ -171,18 +171,13 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
                                m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)), 
                                tol = 0.005, max_iter = 100L, parallel = FALSE, 
                                parallel_args = NULL, verbose = TRUE, ...) {
+  # Initial checks (excluding those on bg_X)
   stopifnot(
     is.matrix(X) || is.data.frame(X),
-    is.matrix(bg_X) || is.data.frame(bg_X),
-    is.matrix(X) == is.matrix(bg_X),
     dim(X) >= 1L,
-    dim(bg_X) >= 1L,
     !is.null(colnames(X)),
-    !is.null(colnames(bg_X)),
     (p <- length(feature_names)) >= 1L,
     all(feature_names %in% colnames(X)),
-    all(feature_names %in% colnames(bg_X)),  # not necessary, but clearer
-    all(colnames(X) %in% colnames(bg_X)),
     is.function(pred_fun),
     exact %in% c(TRUE, FALSE),
     p == 1L || exact || hybrid_degree %in% 0:(p / 2),
@@ -190,6 +185,38 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
     "m must be even" = trunc(m / 2) == m / 2
   )
   n <- nrow(X)
+  
+  # Determine bg_X
+  if (is.null(bg_X)) {
+    if (!is.null(bg_w)) {
+      stopifnot(length(bg_w) == n)
+    }
+    if (n <= 200L) {
+      if (n < 20L) {
+        warning("X is to small to be used as background data. Pass larger background data via 'bg_X'.")
+      }
+      bg_X <- X
+    } else {
+      if (verbose) {
+        message("X is too large to be used as background data 'bg_X'. Randomly picking 200 rows.") 
+      }
+      ix <- sample(n, size = 200L)
+      bg_X <- X[ix, , drop = FALSE]
+      if (!is.null(bg_w)) {
+        bg_w <- bg_w[ix]
+      }
+    }
+  } else {
+    # Consistency checks on bg_X
+    stopifnot(
+      is.matrix(bg_X) || is.data.frame(bg_X),
+      is.matrix(X) == is.matrix(bg_X),
+      !is.null(colnames(bg_X)),
+      all(feature_names %in% colnames(bg_X)),  # not necessary, but clearer
+      all(colnames(X) %in% colnames(bg_X))
+    )
+  } 
+
   bg_n <- nrow(bg_X)
   if (!is.null(bg_w)) {
     stopifnot(length(bg_w) == bg_n, all(bg_w >= 0), !all(bg_w == 0))
@@ -318,7 +345,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
 
 #' @describeIn kernelshap Kernel SHAP method for "ranger" models, see Readme for an example.
 #' @export
-kernelshap.ranger <- function(object, X, bg_X,
+kernelshap.ranger <- function(object, X, bg_X = NULL,
                               pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
                               feature_names = colnames(X), 
                               bg_w = NULL, exact = length(feature_names) <= 8L, 
@@ -349,7 +376,7 @@ kernelshap.ranger <- function(object, X, bg_X,
 
 #' @describeIn kernelshap Kernel SHAP method for "mlr3" models, see Readme for an example.
 #' @export
-kernelshap.Learner <- function(object, X, bg_X,
+kernelshap.Learner <- function(object, X, bg_X = NULL,
                                pred_fun = function(m, X) m$predict_newdata(X)$response,
                                feature_names = colnames(X),
                                bg_w = NULL, exact = length(feature_names) <= 8L,

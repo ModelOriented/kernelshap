@@ -107,6 +107,25 @@ test_that("feature_names must be in colnames(X) and colnames(bg_X)", {
   expect_error(kernelshap(fit, cbind(iris, a = 1), bg_X = iris, feature_names = "a"))
 })
 
+test_that("kernelshap() without bg_X and too small X will give warning", {
+  expect_warning(kernelshap(fit, iris[c(1L, 51L, 101L), x], verbose = FALSE))
+})
+
+test_that("kernelshap() without bg_X works for sufficiently small X", {
+  s1 <- kernelshap(fit, X = iris[1:50, x], bg_X = iris[1:50, ], verbose = FALSE)
+  expect_no_error(
+    s2 <- kernelshap(fit, X = iris[1:50, x], verbose = FALSE)
+  )
+  expect_equal(s1, s2)
+})
+
+test_that("kernelshap() without bg_X works when nrow(X) > 200", {
+  iris_large <- iris[c(1:150, 1:51), ]
+  expect_no_error(kernelshap(fit, X = iris_large, verbose = FALSE))
+})
+
+# TOdo: weights
+
 fit <- stats::lm(Sepal.Length ~ stats::poly(Petal.Width, degree = 2L), data = iris)
 x <- "Petal.Width"
 preds <- unname(stats::predict(fit, iris))
@@ -126,6 +145,7 @@ test_that("Special case p = 1 is chatty with verbose = TRUE", {
   )
 })
 
+# Matrix case
 fit <- stats::lm(Sepal.Length ~ ., data = iris[1:4])
 X <- data.matrix(iris[2:4])
 pred_fun <- function(m, X) stats::predict(m, as.data.frame(X))
