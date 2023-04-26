@@ -15,7 +15,7 @@ library(usethis)
 use_description(
   fields = list(
     Title = "Kernel SHAP",
-    Version = "0.3.5",
+    Version = "0.3.6",
     Description = "Efficient implementation of Kernel SHAP, 
     see Lundberg and Lee (2017) <https://dl.acm.org/doi/10.5555/3295222.3295230>,
     and Covert and Lee (2021) <http://proceedings.mlr.press/v130/covert21a>.
@@ -78,7 +78,6 @@ use_github_links() # use this if this project is on github
 # use_pkgdown(config_file = "pkgdown/_pkgdown.yml")
 
 # Github actions
-use_github_action("document")
 use_github_action("check-standard")
 use_github_action("test-coverage")
 use_github_action("pkgdown")
