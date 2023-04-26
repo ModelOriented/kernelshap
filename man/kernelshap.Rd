@@ -12,7 +12,7 @@ kernelshap(object, ...)
 \method{kernelshap}{default}(
   object,
   X,
-  bg_X,
+  bg_X = NULL,
   pred_fun = stats::predict,
   feature_names = colnames(X),
   bg_w = NULL,
@@ -31,7 +31,7 @@ kernelshap(object, ...)
 \method{kernelshap}{ranger}(
   object,
   X,
-  bg_X,
+  bg_X = NULL,
   pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
   feature_names = colnames(X),
   bg_w = NULL,
@@ -50,7 +50,7 @@ kernelshap(object, ...)
 \method{kernelshap}{Learner}(
   object,
   X,
-  bg_X,
+  bg_X = NULL,
   pred_fun = function(m, X) m$predict_newdata(X)$response,
   feature_names = colnames(X),
   bg_w = NULL,
