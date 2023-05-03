@@ -25,5 +25,5 @@ s <- kernelshap(fit, iris[1:3, -1], bg_X = iris[-1])
 s
 }
 \seealso{
-\code{\link{kernelshap}}.
+\code{\link[=kernelshap]{kernelshap()}}
 }

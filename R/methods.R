@@ -5,13 +5,13 @@
 #' @param x An object of class "kernelshap".
 #' @param n Maximum number of rows of SHAP values to print.
 #' @param ... Further arguments passed from other methods.
-#' @return Invisibly, the input is returned.
+#' @returns Invisibly, the input is returned.
 #' @export
 #' @examples
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
 #' s <- kernelshap(fit, iris[1:3, -1], bg_X = iris[-1])
 #' s
-#' @seealso \code{\link{kernelshap}}.
+#' @seealso [kernelshap()]
 print.kernelshap <- function(x, n = 2L, ...) {
   cat("SHAP values of first", n, "observations:\n")
   print(head_list(getElement(x, "S"), n = n))
@@ -21,17 +21,18 @@ print.kernelshap <- function(x, n = 2L, ...) {
 #' Summary Method
 #'
 #' @param object An object of class "kernelshap".
-#' @param compact Set to \code{TRUE} to hide printing the top n SHAP values, 
-#' standard errors and feature values. 
-#' @param n Maximum number of rows of SHAP values, standard errors and feature values to print.
+#' @param compact Set to `TRUE` to hide printing the top n SHAP values, 
+#'   standard errors and feature values. 
+#' @param n Maximum number of rows of SHAP values, standard errors and feature values 
+#'   to print.
 #' @param ... Further arguments passed from other methods.
-#' @return Invisibly, the input is returned.
+#' @returns Invisibly, the input is returned.
 #' @export
 #' @examples
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
 #' s <- kernelshap(fit, iris[1:3, -1], bg_X = iris[-1])
 #' summary(s)
-#' @seealso \code{\link{kernelshap}}.
+#' @seealso [kernelshap()]
 summary.kernelshap <- function(object, compact = FALSE, n = 2L, ...) {
   cat(getElement(object, "txt"))
 
@@ -72,14 +73,14 @@ summary.kernelshap <- function(object, compact = FALSE, n = 2L, ...) {
 #' Is object of class "kernelshap"?
 #'
 #' @param object An R object.
-#' @return Returns \code{TRUE} if \code{object} has "kernelshap" among its classes, 
-#' and \code{FALSE} otherwise.
+#' @returns `TRUE` if `object` is of class "kernelshap", and `FALSE` otherwise.
 #' @export
 #' @examples
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
 #' s <- kernelshap(fit, iris[1:2, -1], bg_X = iris[-1])
 #' is.kernelshap(s)
 #' is.kernelshap("a")
+#' @seealso [kernelshap()]
 is.kernelshap <- function(object){
   inherits(object, "kernelshap")
 }
