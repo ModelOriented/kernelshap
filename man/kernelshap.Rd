@@ -71,8 +71,9 @@ kernelshap(object, ...)
 
 \item{...}{Additional arguments passed to \code{pred_fun(object, X, ...)}.}
 
-\item{X}{A (n x p) matrix, data.frame, tibble or data.table of rows to be explained.
-The columns should only represent model features, not the response.}
+\item{X}{\eqn{(n \times p)} matrix or \code{data.frame} with rows to be explained.
+The columns should only represent model features, not the response
+(but see \code{feature_names} on how to overrule this).}
 
 \item{bg_X}{Background data used to integrate out "switched off" features,
 often a subset of the training data (typically 50 to 500 rows)
@@ -80,11 +81,11 @@ It should contain the same columns as \code{X}.
 In cases with a natural "off" value (like MNIST digits),
 this can also be a single row with all values set to the off value.}
 
-\item{pred_fun}{Prediction function of the form \code{function(object, X, ...)},
-providing K >= 1 numeric predictions per row. Its first argument represents the
-model \code{object}, its second argument a data structure like \code{X}.
+\item{pred_fun}{Prediction function of the form \verb{function(object, X, ...)},
+providing \eqn{K \ge 1} numeric predictions per row. Its first argument
+represents the model \code{object}, its second argument a data structure like \code{X}.
 Additional (named) arguments are passed via \code{...}.
-The default, \code{stats::predict}, will work in most cases.}
+The default, \code{\link[stats:predict]{stats::predict()}}, will work in most cases.}
 
 \item{feature_names}{Optional vector of column names in \code{X} used to calculate
 SHAP values. By default, this equals \code{colnames(X)}. Not supported if \code{X}
@@ -98,113 +99,125 @@ with respect to the background data. In this case, the arguments \code{hybrid_de
 The default is \code{TRUE} up to eight features, and \code{FALSE} otherwise.}
 
 \item{hybrid_degree}{Integer controlling the exactness of the hybrid strategy. For
-4 <= p <= 16, the default is 2, otherwise it is 1. Ignored if \code{exact = TRUE}.
+\eqn{4 \le p \le 16}, the default is 2, otherwise it is 1.
+Ignored if \code{exact = TRUE}.
 \itemize{
 \item \code{0}: Pure sampling strategy not involving any exact part. It is strictly
 worse than the hybrid strategy and should therefore only be used for
 studying properties of the Kernel SHAP algorithm.
-\item \code{1}: Uses all 2p on-off vectors z with sum(z) equal to 1 or p-1 for the exact
-part, which covers at least 75\% of the mass of the Kernel weight distribution.
-The remaining mass is covered by sampling.
-\item \code{2}: Uses all p(p+1) on-off vectors z with sum(z) equal to 1, p-1, 2, or p-2.
-This covers at least 92\% of the mass of the Kernel weight distribution.
-The remaining mass is covered by sampling. Convergence usually happens in the
-minimal possible number of iterations of two.
-\item \code{k>2}: Uses all on-off vectors with sum(z) in 1,...,k and p-1,...,p-k.
+\item \code{1}: Uses all \eqn{2p} on-off vectors \eqn{z} with \eqn{\sum z \in \{1, p-1\}}
+for the exact part, which covers at least 75\% of the mass of the Kernel weight
+distribution. The remaining mass is covered by random sampling.
+\item \code{2}: Uses all \eqn{p(p+1)} on-off vectors \eqn{z} with
+\eqn{\sum z \in \{1, 2, p-2, p-1\}}. This covers at least 92\% of the mass of the
+Kernel weight distribution. The remaining mass is covered by sampling.
+Convergence usually happens in the minimal possible number of iterations of two.
+\item \code{k>2}: Uses all on-off vectors with
+\eqn{\sum z \in \{1, \dots, k, p-k, \dots, p-1\}}.
 }}
 
 \item{paired_sampling}{Logical flag indicating whether to do the sampling in a paired
-manner. This means that with every on-off vector z, also 1-z is considered.
-CL21 shows its superiority compared to standard sampling, therefore the
+manner. This means that with every on-off vector \eqn{z}, also \eqn{1-z} is
+considered. CL21 shows its superiority compared to standard sampling, therefore the
 default (\code{TRUE}) should usually not be changed except for studying properties
 of Kernel SHAP algorithms. Ignored if \code{exact = TRUE}.}
 
 \item{m}{Even number of on-off vectors sampled during one iteration.
-The default is 2p, except when \code{hybrid_degree == 0}. Then it is set to 8p.
-Ignored if \code{exact = TRUE}.}
+The default is \eqn{2p}, except when \code{hybrid_degree == 0}.
+Then it is set to \eqn{8p}. Ignored if \code{exact = TRUE}.}
 
 \item{tol}{Tolerance determining when to stop. The algorithm keeps iterating until
-max(sigma_n)/diff(range(beta_n)) < tol, where the beta_n are the SHAP values
-of a given observation and sigma_n their standard errors, see CL21. For multidimensional
-predictions, the criterion must be satisfied for each dimension separately.
-The stopping criterion uses the fact that standard errors and SHAP values are all
-on the same scale. Ignored if \code{exact = TRUE}.}
+\eqn{\text{max}(\sigma_n)/(\text{max}(\beta_n) - \text{min}(\beta_n)) < \text{tol}},
+where the \eqn{\beta_n} are the SHAP values of a given observation,
+and \eqn{\sigma_n} their standard errors, see CL21.
+For multidimensional predictions, the criterion must be satisfied for each
+dimension separately. The stopping criterion uses the fact that standard errors
+and SHAP values are all on the same scale. Ignored if \code{exact = TRUE}.}
 
 \item{max_iter}{If the stopping criterion (see \code{tol}) is not reached after
 \code{max_iter} iterations, the algorithm stops. Ignored if \code{exact = TRUE}.}
 
-\item{parallel}{If \code{TRUE}, use parallel \code{foreach::foreach()} to loop over rows
-to be explained. Must register backend beforehand, e.g. via "doFuture" package,
-see Readme for an example. Parallelization automatically disables the progress bar.}
+\item{parallel}{If \code{TRUE}, use parallel \code{\link[foreach:foreach]{foreach::foreach()}} to loop over rows
+to be explained. Must register backend beforehand, e.g., via {doFuture} package,
+see README for an example. Parallelization automatically disables the progress bar.}
 
-\item{parallel_args}{A named list of arguments passed to \code{foreach::foreach()}, see
-\code{?foreach::foreach}. Ideally, this is \code{NULL} (default). Only relevant
-if \code{parallel = TRUE}. Example on Windows: if \code{object} is a generalized
-additive model fitted with package "mgcv", then one might need to set
-\code{parallel_args = list(.packages = "mgcv")}.}
+\item{parallel_args}{Named list of arguments passed to \code{\link[foreach:foreach]{foreach::foreach()}}.
+Ideally, this is \code{NULL} (default). Only relevant if \code{parallel = TRUE}.
+Example on Windows: if \code{object} is a GAM fitted with package {mgcv},
+then one might need to set \code{parallel_args = list(.packages = "mgcv")}.}
 
 \item{verbose}{Set to \code{FALSE} to suppress messages and the progress bar.}
 }
 \value{
 An object of class "kernelshap" with the following components:
 \itemize{
-\item \code{S}: A (n x p) matrix with SHAP values or, if the model output has dimension K > 1,
-a list of K such matrices.
+\item \code{S}: \eqn{(n \times p)} matrix with SHAP values or, if the model output has
+dimension \eqn{K > 1}, a list of \eqn{K} such matrices.
 \item \code{X}: Same as input argument \code{X}.
-\item \code{baseline}: A vector of length K representing the average prediction on the background data.
+\item \code{baseline}: Vector of length K representing the average prediction on the
+background data.
 \item \code{SE}: Standard errors corresponding to \code{S} (and organized like \code{S}).
-\item \code{n_iter}: Integer vector of length n providing the number of iterations per row of \code{X}.
+\item \code{n_iter}: Integer vector of length n providing the number of iterations
+per row of \code{X}.
 \item \code{converged}: Logical vector of length n indicating convergence per row of \code{X}.
-\item \code{m}: Integer providing the effective number of sampled on-off vectors used per iteration.
-\item \code{m_exact}: Integer providing the effective number of exact on-off vectors used per iteration.
-\item \code{prop_exact}: Proportion of the Kernel SHAP weight distribution covered by exact calculations.
+\item \code{m}: Integer providing the effective number of sampled on-off vectors used
+per iteration.
+\item \code{m_exact}: Integer providing the effective number of exact on-off vectors used
+per iteration.
+\item \code{prop_exact}: Proportion of the Kernel SHAP weight distribution covered by
+exact calculations.
 \item \code{exact}: Logical flag indicating whether calculations are exact or not.
 \item \code{txt}: Summary text.
-\item \code{predictions}: A (n x K) matrix of predictions of \code{X}.
+\item \code{predictions}: \eqn{(n \times K)} matrix with predictions of \code{X}.
 }
 }
 \description{
 Efficient implementation of Kernel SHAP, see Lundberg and Lee (2017), and
 Covert and Lee (2021).
-For up to p=8 features, the resulting Kernel SHAP values are exact regarding the selected background data.
-For larger p, an almost exact hybrid algorithm involving iterative sampling is used, see Details.
+For up to \eqn{p=8} features, the resulting Kernel SHAP values are exact regarding
+the selected background data. For larger \eqn{p}, an almost exact hybrid algorithm
+involving iterative sampling is used, see Details.
 }
 \details{
 Pure iterative Kernel SHAP sampling as in Covert and Lee (2021, abbreviated by "CL21")
-works by randomly sample
-m on-off vectors z so that their sum follows the SHAP Kernel weight distribution
-(renormalized to the range from 1 to p-1). Based on these vectors, many predictions
-are formed. Then, Kernel SHAP values are derived as the solution of a constrained
-linear regression. This is done multiple times until convergence, see CL21 for details.
+works by randomly sample \eqn{m} on-off vectors \eqn{z} so that their sum follows the
+SHAP Kernel weight distribution (normalized to the range \eqn{\{1, \dots, p-1\}}.
+Based on these vectors, many predictions are formed. Then, Kernel SHAP values are
+derived as the solution of a constrained linear regression.
+This is repeated multiple times until convergence, see CL21 for details.
 
-A drawback of this strategy is that many (at least 75\%) of the z vectors will have
-sum(z) equal to 1 or p-1, producing many duplicates. Similarly, at least 92\% of
-the mass will be used for the p(p+1) possible vectors with sum(z) in 1, 2, p-1, p-2.
-This inefficiency can be fixed by a hybrid strategy, combining exact calculations with sampling.
+A drawback of this strategy is that many (at least 75\%) of the \eqn{z} vectors will
+have \eqn{\sum z \in \{1, p-1\}}, producing many duplicates. Similarly, at least 92\%
+of the mass will be used for the \eqn{p(p+1)} possible vectors with
+\eqn{\sum z \in \{1, 2, p-2, p-1\}}.
+This inefficiency can be fixed by a hybrid strategy, combining exact calculations
+with sampling.
 
 The hybrid algorithm has two steps:
 \enumerate{
-\item Step 1 (exact part): There are 2p different on-off vectors z with sum(z) equals to
-1 or p-1, covering a large proportion of the Kernel SHAP distribution.
-The degree 1 hybrid will list those vectors and use them according to their weights
-in the upcoming calculations. Depending on p, we can also go a step further to
-a degree 2 hybrid by adding all p(p-1) vectors with sum(z) equals to 2 or p-2
-to the process etc. The necessary predictions are obtained along with other
-calculations similar to those described in CL21.
+\item Step 1 (exact part): There are \eqn{2p} different on-off vectors \eqn{z} with
+\eqn{\sum z \in \{1, p-1\}}, covering a large proportion of the Kernel SHAP
+distribution. The degree 1 hybrid will list those vectors and use them according
+to their weights in the upcoming calculations. Depending on \eqn{p}, we can also go
+a step further to a degree 2 hybrid by adding all \eqn{p(p-1)} vectors with
+\eqn{\sum z \in \{2, p-2\}} to the process etc. The necessary predictions are
+obtained along with other calculations similar to those described in CL21.
 \item Step 2 (sampling part): The remaining weight is filled by sampling vectors z
 according to Kernel SHAP weights renormalized to the values not yet covered by Step 1.
 Together with the results from Step 1 - correctly weighted - this now forms a
-complete iteration as in CL21. The difference is that most mass is covered by exact calculations.
-Afterwards, the algorithm iterates until convergence. The output of Step 1 is reused
-in every iteration, leading to an extremely efficient strategy.
+complete iteration as in CL21. The difference is that most mass is covered by exact
+calculations. Afterwards, the algorithm iterates until convergence.
+The output of Step 1 is reused in every iteration, leading to an extremely
+efficient strategy.
 }
 
-If p is sufficiently small, all possible 2^p-2 on-off vectors z can be evaluated.
-In this case, no sampling is required and the algorithm returns exact Kernel SHAP values
-with respect to the given background data. Since \code{kernelshap()} calculates predictions
-on data with MN rows (N is the background data size and M the number of z vectors),
-p should not be much higher than 10 for exact calculations.
-For similar reasons, degree 2 hybrids are limited to p up to 30-40.
+If \eqn{p} is sufficiently small, all possible \eqn{2^p-2} on-off vectors \eqn{z} can be
+evaluated. In this case, no sampling is required and the algorithm returns exact
+Kernel SHAP values with respect to the given background data.
+Since \code{\link[=kernelshap]{kernelshap()}} calculates predictions on data with \eqn{MN} rows
+(\eqn{N} is the background data size and \eqn{M} the number of \eqn{z} vectors), \eqn{p}
+should not be much higher than 10 for exact calculations.
+For similar reasons, degree 2 hybrids should not use \eqn{p} much larger than 40.
 }
 \section{Methods (by class)}{
 \itemize{

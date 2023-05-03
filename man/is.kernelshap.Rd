@@ -10,8 +10,7 @@ is.kernelshap(object)
 \item{object}{An R object.}
 }
 \value{
-Returns \code{TRUE} if \code{object} has "kernelshap" among its classes,
-and \code{FALSE} otherwise.
+\code{TRUE} if \code{object} is of class "kernelshap", and \code{FALSE} otherwise.
 }
 \description{
 Is object of class "kernelshap"?
@@ -21,4 +20,7 @@ fit <- stats::lm(Sepal.Length ~ ., data = iris)
 s <- kernelshap(fit, iris[1:2, -1], bg_X = iris[-1])
 is.kernelshap(s)
 is.kernelshap("a")
+}
+\seealso{
+\code{\link[=kernelshap]{kernelshap()}}
 }
