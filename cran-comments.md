@@ -1,17 +1,20 @@
 Hello CRAN
 
-This is mainly a documentation update (new contributor, new Github repo),
-with only some small code changes (removing unnecessary function).
+I have made the help files much more professional, now using Latex formulas and more markdown.
+Otherwise, the package is unchanged.
 
 ## Checks
 
 ### Revdep
 
-survex: OK
+survex:
+
+- OK: 1
+- BROKEN: 0
 
 ### `check(manual = TRUE, cran = TRUE)`
 
-Note: unable to verify current time
+- Note: no command 'tidy' found
 
 ### `check_win_devel()`
 
@@ -19,4 +22,7 @@ OK
 
 ### `check_rhub()`
 
-OK
+Notes:
+
+- Skipping checking HTML validation: no command 'tidy' found
+- Skipping checking math rendering: package 'V8' unavailable
