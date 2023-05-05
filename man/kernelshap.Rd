@@ -261,7 +261,11 @@ s
 }
 \references{
 \enumerate{
-\item Scott M. Lundberg and Su-In Lee. A unified approach to interpreting model predictions. Proceedings of the 31st International Conference on Neural Information Processing Systems, 2017.
-\item Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value Estimation Using Linear Regression. Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.
+\item Scott M. Lundberg and Su-In Lee. A unified approach to interpreting model
+predictions. Proceedings of the 31st International Conference on Neural
+Information Processing Systems, 2017.
+\item Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value
+Estimation Using Linear Regression. Proceedings of The 24th International
+Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.
 }
 }
