@@ -1,3 +1,9 @@
+# kernelshap 0.3.7
+
+## Maintenance
+
+- Fixed problem in Latex math for MacOS.
+
 # kernelshap 0.3.6
 
 ## Maintenance
