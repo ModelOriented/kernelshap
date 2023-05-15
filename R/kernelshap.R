@@ -1,12 +1,12 @@
 #' Kernel SHAP
 #' 
 #' Efficient implementation of Kernel SHAP, see Lundberg and Lee (2017), and 
-#' Covert and Lee (2021).
+#' Covert and Lee (2021), abbreviated by CL21.
 #' For up to \eqn{p=8} features, the resulting Kernel SHAP values are exact regarding 
 #' the selected background data. For larger \eqn{p}, an almost exact hybrid algorithm 
 #' involving iterative sampling is used, see Details.
 #'
-#' Pure iterative Kernel SHAP sampling as in Covert and Lee (2021, abbreviated by "CL21") 
+#' Pure iterative Kernel SHAP sampling as in Covert and Lee (2021) 
 #' works by randomly sample \eqn{m} on-off vectors \eqn{z} so that their sum follows the 
 #' SHAP Kernel weight distribution (normalized to the range \eqn{\{1, \dots, p-1\}}. 
 #' Based on these vectors, many predictions are formed. Then, Kernel SHAP values are 
@@ -91,10 +91,10 @@
 #' @param m Even number of on-off vectors sampled during one iteration. 
 #'   The default is \eqn{2p}, except when `hybrid_degree == 0`. 
 #'   Then it is set to \eqn{8p}. Ignored if `exact = TRUE`.
-#' @param tol Tolerance determining when to stop. The algorithm keeps iterating until
-#'   \eqn{\text{max}(\sigma_n)/(\text{max}(\beta_n) - \text{min}(\beta_n)) < \text{tol}}, 
+#' @param tol Tolerance determining when to stop. Following CL21, the algorithm keeps
+#'   iterating until \eqn{\textrm{max}(\sigma_n)/(\textrm{max}(\beta_n) - \textrm{min}(\beta_n)) < \textrm{tol}}, 
 #'   where the \eqn{\beta_n} are the SHAP values of a given observation, 
-#'   and \eqn{\sigma_n} their standard errors, see CL21. 
+#'   and \eqn{\sigma_n} their standard errors. 
 #'   For multidimensional predictions, the criterion must be satisfied for each 
 #'   dimension separately. The stopping criterion uses the fact that standard errors 
 #'   and SHAP values are all on the same scale. Ignored if `exact = TRUE`.
