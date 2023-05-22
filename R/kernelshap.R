@@ -3,14 +3,26 @@
 #' Efficient implementation of Kernel SHAP, see Lundberg and Lee (2017), and 
 #' Covert and Lee (2021), abbreviated by CL21.
 #' For up to \eqn{p=8} features, the resulting Kernel SHAP values are exact regarding 
-#' the selected background data. For larger \eqn{p}, an almost exact hybrid algorithm 
-#' involving iterative sampling is used, see Details.
+#' the selected background data. For larger \eqn{p}, an almost exact 
+#' hybrid algorithm involving iterative sampling is used, see Details.
 #'
-#' Pure iterative Kernel SHAP sampling as in Covert and Lee (2021) 
-#' works by randomly sample \eqn{m} on-off vectors \eqn{z} so that their sum follows the 
-#' SHAP Kernel weight distribution (normalized to the range \eqn{\{1, \dots, p-1\}}. 
-#' Based on these vectors, many predictions are formed. Then, Kernel SHAP values are 
-#' derived as the solution of a constrained linear regression. 
+#' Pure iterative Kernel SHAP sampling as in Covert and Lee (2021) works like this:
+#' 
+#' 1. A binary "on-off" vector \eqn{z} is drawn from \eqn{\{0, 1\}^p} 
+#'   such that its sum follows the SHAP Kernel weight distribution 
+#'   (normalized to the range \eqn{\{1, \dots, p-1\}}).
+#' 2. For each \eqn{j} with \eqn{z_j = 1}, the \eqn{j}-th column of the 
+#'   original background data is replaced by the corresponding feature value \eqn{x_j} 
+#'   of the observation to be explained.
+#' 3. The average prediction \eqn{v_z} on the data of Step 2 is calculated, and the
+#'   average prediction \eqn{v_0} on the background data is subtracted.
+#' 4. Steps 1 to 3 are repeated \eqn{m} times. This produces a binary \eqn{m \times p}
+#'   matrix \eqn{Z} (each row equals one of the \eqn{z}) and a vector \eqn{v} of
+#'   shifted predictions.
+#' 5. \eqn{v} is regressed onto \eqn{Z} under the constraint that the sum of the
+#'   coefficients equals \eqn{v_1 - v_0}, where \eqn{v_1} is the prediction of the 
+#'   observation to be explained. The resulting coefficients are the Kernel SHAP values.
+#' 
 #' This is repeated multiple times until convergence, see CL21 for details.
 #' 
 #' A drawback of this strategy is that many (at least 75%) of the \eqn{z} vectors will 
@@ -139,7 +151,7 @@
 #' @export
 #' @examples
 #' # MODEL ONE: Linear regression
-#' fit <- stats::lm(Sepal.Length ~ ., data = iris)
+#' fit <- lm(Sepal.Length ~ ., data = iris)
 #' 
 #' # Select rows to explain (only feature columns)
 #' X_explain <- iris[1:2, -1]
@@ -153,9 +165,7 @@
 #' s
 #' 
 #' # MODEL TWO: Multi-response linear regression
-#' fit <- stats::lm(
-#'   as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris
-#' )
+#' fit <- lm(as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris)
 #' s <- kernelshap(fit, iris[1:4, 3:5], bg_X = bg_X)
 #' summary(s)
 #' 

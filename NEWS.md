@@ -3,6 +3,7 @@
 ## Maintenance
 
 - Fixed problem in Latex math for MacOS.
+- Added explanation to help file `?kernelshap` how the sampling version of Kernel SHAP works.
 
 # kernelshap 0.3.6
 
