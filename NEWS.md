@@ -1,9 +1,14 @@
+# kernelshap 0.3.8
+
+## Maintenance
+
+- Added explanation of sampling Kernel SHAP to help file
+
 # kernelshap 0.3.7
 
 ## Maintenance
 
 - Fixed problem in Latex math for MacOS.
-- Added explanation to help file `?kernelshap` how the sampling version of Kernel SHAP works.
 
 # kernelshap 0.3.6
 
