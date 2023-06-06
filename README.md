@@ -73,7 +73,7 @@ system.time(
 shap_lm
 
 # SHAP values of first 2 observations:
-#           carat    clarity       color         cut
+#       log_carat    clarity       color         cut
 # [1,]  1.2692479  0.1081900 -0.07847065 0.004630899
 # [2,] -0.4499226 -0.1111329  0.11832292 0.026503850
 
