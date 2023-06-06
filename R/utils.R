@@ -169,7 +169,10 @@ weighted_colMeans <- function(x, w = NULL, ...) {
 
 # Binds list of matrices along new first axis
 abind1 <- function(a) {
-  out <- array(dim = c(length(a), dim(a[[1L]])))
+  out <- array(
+    dim = c(length(a), dim(a[[1L]])), 
+    dimnames = c(list(NULL), dimnames(a[[1L]]))
+  )
   for (i in seq_along(a)) {
     out[i, , ] <- a[[i]]
   }
@@ -182,7 +185,7 @@ reorganize_list <- function(alist, nms) {
     stop("alist must be a list")
   }
   out <- abind1(alist)
-  dimnames(out) <- list(NULL, nms, NULL)
+  dimnames(out)[[2L]] <- nms
   out <- asplit(out, MARGIN = 3L)
   if (length(out) == 1L) {
     return(as.matrix(out[[1L]]))

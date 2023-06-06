@@ -1,5 +1,9 @@
 # kernelshap 0.3.8
 
+## API improvements
+
+- Multi-output case: column names of predictions are now used as list names of the resulting `S` and `SE` lists.
+
 ## Maintenance
 
 - Added explanation of sampling Kernel SHAP to help file
