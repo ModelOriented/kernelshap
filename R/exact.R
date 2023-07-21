@@ -9,19 +9,7 @@ input_exact <- function(p) {
   Z <- exact_Z(p)
   # Each Kernel weight(j) is divided by the number of vectors z having sum(z) = j
   w <- kernel_weights(p) / choose(p, 1:(p - 1L))
-  list(Z = Z, w = w[rowSums(Z)], A = exact_A(p))
-}
-
-# Calculates exact A. Notice the difference to the off-diagnonals in the Supplement of 
-# Covert and Lee (2021). Credits to David Watson for figuring out the correct formula,
-# see our discussions in https://github.com/ModelOriented/kernelshap/issues/22
-exact_A <- function(p) {
-  S <- 1:(p - 1L)
-  c_pr <- S * (S - 1) / p / (p - 1)
-  off_diag <- sum(kernel_weights(p) * c_pr)
-  A <- matrix(off_diag, nrow = p, ncol = p)
-  diag(A) <- 0.5
-  A
+  list(Z = Z, w = w[rowSums(Z)])
 }
 
 # Creates (2^p-2) x p matrix with all on-off vectors z of length p
@@ -65,10 +53,10 @@ input_partly_exact <- function(p, deg) {
   if (p < 2L * deg) {
     stop("p must be >=2*deg")
   }
-  
+
   kw <- kernel_weights(p)
   Z <- w <- vector("list", deg)
-  
+
   for (k in seq_len(deg)) {
     Z[[k]] <- partly_exact_Z(p, k = k)
     n <- nrow(Z[[k]])
@@ -77,40 +65,6 @@ input_partly_exact <- function(p, deg) {
   }
   w <- unlist(w, recursive = FALSE, use.names = FALSE)
   Z <- do.call(rbind, Z)
-  
-  list(Z = Z, w = w, A = crossprod(Z, w * Z))
-}
 
-# Case p = 1 returns exact Shapley values
-case_p1 <- function(n, nms, v0, v1, X, verbose) {
-  txt <- "Exact Shapley values (p = 1)"
-  if (verbose) {
-    message(txt)
-  }
-  S <- v1 - v0[rep(1L, n), , drop = FALSE]
-  SE <- matrix(numeric(n), dimnames = list(NULL, nms))
-  if (ncol(v1) > 1L) {
-    SE <- replicate(ncol(v1), SE, simplify = FALSE)
-    S <- lapply(
-      asplit(S, MARGIN = 2L), function(M) as.matrix(M, dimnames = list(NULL, nms))
-    )
-  } else {
-    colnames(S) <- nms      
-  }
-  out <- list(
-    S = S, 
-    X = X, 
-    baseline = as.vector(v0), 
-    SE = SE, 
-    n_iter = integer(n), 
-    converged = rep(TRUE, n),
-    m = 0L,
-    m_exact = 0L,
-    prop_exact = 1,
-    exact = TRUE,
-    txt = txt,
-    predictions = v1
-  )
-  class(out) <- "kernelshap"
-  out
+  list(Z = Z, w = w)
 }
