@@ -14,20 +14,16 @@ library(usethis)
 # Sketch of description file
 use_description(
   fields = list(
-    Title = "Kernel SHAP",
-    Version = "0.3.8",
-    Description = "Efficient implementation of Kernel SHAP, 
-    see Lundberg and Lee (2017) <https://dl.acm.org/doi/10.5555/3295222.3295230>,
-    and Covert and Lee (2021) <http://proceedings.mlr.press/v130/covert21a>.
+    Title = "Permutation SHAP",
+    Version = "0.1.0",
+    Description = "Multivariate implementation of the permutation SHAP algorithm.
     For models with up to eight features, the results are exact regarding the selected background data.
     Otherwise, an almost exact hybrid algorithm involving iterative sampling is used.
     The package plays well together with meta-learning packages like 'tidymodels', 'caret' or 'mlr3'.
     Visualizations can be done using the R package 'shapviz'.",
-    `Authors@R` = 
-    "c(person('Michael', family='Mayer', role=c('aut', 'cre'), email='mayermichael79@gmail.com'),
-       person('David', family='Watson', role='aut', email='david.s.watson11@gmail.com'),
-       person('Przemyslaw', family='Biecek', email='przemyslaw.biecek@gmail.com', role='ctb', comment=c(ORCID='0000-0001-8423-1823'))
-      )",
+    `Authors@R` =
+    "c(person('Michael', family='Mayer', role=c('aut', 'cre'), email='mayermichael79@gmail.com')
+     )",
     Depends = "R (>= 3.2.0)",
     LazyData = NULL
   ),
@@ -56,11 +52,11 @@ use_build_ignore(c("^packaging.R$", "[.]Rproj$", "^compare_with_python.R$",
 use_readme_md()
 
 # Longer docu in RMarkdown (with running R code). Often quite similar to readme.
-# use_vignette("kernelshap")
+# use_vignette("permshap")
 
 # If you want to add unit tests
 use_testthat()
-# use_test("kernelshap.R")
+# use_test("permshap.R")
 # use_test("methods.R")
 
 # On top of NEWS.md, describe changes made to the package
@@ -105,7 +101,7 @@ install(upgrade = FALSE)
 if (FALSE) {
   check_win_devel()
   check_rhub()
-  
+
   # Takes long
   revdepcheck::revdep_check(num_workers = 4L)
 

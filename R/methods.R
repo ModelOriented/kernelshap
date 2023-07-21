@@ -1,18 +1,18 @@
 #' Print Method
-#' 
-#' Prints the first two rows of the matrix (or matrices) of SHAP values. 
 #'
-#' @param x An object of class "kernelshap".
+#' Prints the first two rows of the matrix (or matrices) of SHAP values.
+#'
+#' @param x An object of class "permshap".
 #' @param n Maximum number of rows of SHAP values to print.
 #' @param ... Further arguments passed from other methods.
 #' @returns Invisibly, the input is returned.
 #' @export
 #' @examples
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
-#' s <- kernelshap(fit, iris[1:3, -1], bg_X = iris[-1])
+#' s <- permshap(fit, iris[1:3, -1], bg_X = iris[-1])
 #' s
-#' @seealso [kernelshap()]
-print.kernelshap <- function(x, n = 2L, ...) {
+#' @seealso [permshap()]
+print.permshap <- function(x, n = 2L, ...) {
   cat("SHAP values of first", n, "observations:\n")
   print(head_list(getElement(x, "S"), n = n))
   invisible(x)
@@ -20,20 +20,20 @@ print.kernelshap <- function(x, n = 2L, ...) {
 
 #' Summary Method
 #'
-#' @param object An object of class "kernelshap".
-#' @param compact Set to `TRUE` to hide printing the top n SHAP values, 
-#'   standard errors and feature values. 
-#' @param n Maximum number of rows of SHAP values, standard errors and feature values 
+#' @param object An object of class "permshap".
+#' @param compact Set to `TRUE` to hide printing the top n SHAP values,
+#'   standard errors and feature values.
+#' @param n Maximum number of rows of SHAP values, standard errors and feature values
 #'   to print.
 #' @param ... Further arguments passed from other methods.
 #' @returns Invisibly, the input is returned.
 #' @export
 #' @examples
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
-#' s <- kernelshap(fit, iris[1:3, -1], bg_X = iris[-1])
+#' s <- permshap(fit, iris[1:3, -1], bg_X = iris[-1])
 #' summary(s)
-#' @seealso [kernelshap()]
-summary.kernelshap <- function(object, compact = FALSE, n = 2L, ...) {
+#' @seealso [permshap()]
+summary.permshap <- function(object, compact = FALSE, n = 2L, ...) {
   cat(getElement(object, "txt"))
 
   S <- getElement(object, "S")
@@ -68,19 +68,19 @@ summary.kernelshap <- function(object, compact = FALSE, n = 2L, ...) {
   invisible(object)
 }
 
-#' Check for kernelshap
+#' Check for permshap
 #'
-#' Is object of class "kernelshap"?
+#' Is object of class "permshap"?
 #'
 #' @param object An R object.
-#' @returns `TRUE` if `object` is of class "kernelshap", and `FALSE` otherwise.
+#' @returns `TRUE` if `object` is of class "permshap", and `FALSE` otherwise.
 #' @export
 #' @examples
 #' fit <- stats::lm(Sepal.Length ~ ., data = iris)
-#' s <- kernelshap(fit, iris[1:2, -1], bg_X = iris[-1])
-#' is.kernelshap(s)
-#' is.kernelshap("a")
-#' @seealso [kernelshap()]
-is.kernelshap <- function(object){
-  inherits(object, "kernelshap")
+#' s <- permshap(fit, iris[1:2, -1], bg_X = iris[-1])
+#' is.permshap(s)
+#' is.permshap("a")
+#' @seealso [permshap()]
+is.permshap <- function(object){
+  inherits(object, "permshap")
 }
