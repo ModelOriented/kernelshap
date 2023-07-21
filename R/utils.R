@@ -1,8 +1,8 @@
 # Kernel SHAP algorithm for a single row x
 # If exact, a single call to predict() is necessary.
 # If sampling is involved, we need at least two additional calls to predict().
-permshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, deg,
-                         paired, m, tol, max_iter, v0, precalc, ...) {
+kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, deg, 
+                           paired, m, tol, max_iter, v0, precalc, ...) {
   p <- length(feature_names)
 
   # Calculate A_exact and b_exact
@@ -12,28 +12,28 @@ permshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, de
     Z <- precalc[["Z"]]                                           #  (m_ex x p)
     m_exact <- nrow(Z)
     v0_m_exact <- v0[rep(1L, m_exact), , drop = FALSE]            #  (m_ex x K)
-
+    
     # Most expensive part
     vz <- get_vz(                                                 #  (m_ex x K)
       X = x[rep(1L, times = nrow(bg_X_exact)), , drop = FALSE],   #  (m_ex*n_bg x p)
       bg = bg_X_exact,                                            #  (m_ex*n_bg x p)
       Z = Z,                                                      #  (m_ex x p)
-      object = object,
+      object = object, 
       pred_fun = pred_fun,
       feature_names = feature_names,
-      w = bg_w,
+      w = bg_w, 
       ...
     )
     # Note: w is correctly replicated along columns of (vz - v0_m_exact)
     b_exact <- crossprod(Z, precalc[["w"]] * (vz - v0_m_exact))   #  (p x K)
-
+    
     # Some of the hybrid cases are exact as well
     if (exact || trunc(p / 2) == deg) {
       beta <- solver(A_exact, b_exact, constraint = v1 - v0)      #  (p x K)
-      return(list(beta = beta, sigma = 0 * beta, n_iter = 1L, converged = TRUE))
+      return(list(beta = beta, sigma = 0 * beta, n_iter = 1L, converged = TRUE))  
     }
-  }
-
+  } 
+  
   # Iterative sampling part, always using A_exact and b_exact to fill up the weights
   bg_X_m <- precalc[["bg_X_m"]]                                   #  (m*n_bg x p)
   X <- x[rep(1L, times = nrow(bg_X_m)), , drop = FALSE]           #  (m*n_bg x p)
@@ -48,32 +48,32 @@ permshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, de
     A_exact <- A_sum
     b_exact <- b_sum
   }
-
+  
   while(!isTRUE(converged) && n_iter < max_iter) {
     n_iter <- n_iter + 1L
     input <- input_sampling(p = p, m = m, deg = deg, paired = paired)
     Z <- input[["Z"]]
-
+      
     # Expensive                                                              #  (m x K)
     vz <- get_vz(
-      X = X,
-      bg = bg_X_m,
-      Z = Z,
-      object = object,
-      pred_fun = pred_fun,
-      feature_names = feature_names,
-      w = bg_w,
+      X = X, 
+      bg = bg_X_m, 
+      Z = Z, 
+      object = object, 
+      pred_fun = pred_fun, 
+      feature_names = feature_names, 
+      w = bg_w, 
       ...
     )
-
+    
     # The sum of weights of A_exact and input[["A"]] is 1, same for b
     A_temp <- A_exact + input[["A"]]                                         #  (p x p)
     b_temp <- b_exact + crossprod(Z, input[["w"]] * (vz - v0_m))             #  (p x K)
     A_sum <- A_sum + A_temp                                                  #  (p x p)
     b_sum <- b_sum + b_temp                                                  #  (p x K)
-
-    # Least-squares with constraint that beta_1 + ... + beta_p = v_1 - v_0.
-    # The additional constraint beta_0 = v_0 is dealt via offset
+    
+    # Least-squares with constraint that beta_1 + ... + beta_p = v_1 - v_0. 
+    # The additional constraint beta_0 = v_0 is dealt via offset   
     est_m[[n_iter]] <- solver(A_temp, b_temp, constraint = v1 - v0)          #  (p x K)
 
     # Covariance calculation would fail in the first iteration
@@ -116,7 +116,7 @@ ginv <- function (X, tol = sqrt(.Machine$double.eps)) {
   } else if (!any(Positive)) {
     array(0, dim(X)[2L:1L])
   } else {
-    Xsvd$v[, Positive, drop = FALSE] %*%
+    Xsvd$v[, Positive, drop = FALSE] %*% 
       ((1 / Xsvd$d[Positive]) * t(Xsvd$u[, Positive, drop = FALSE]))
   }
 }
@@ -126,11 +126,11 @@ get_vz <- function(X, bg, Z, object, pred_fun, feature_names, w, ...) {
   m <- nrow(Z)
   not_Z <- !Z
   n_bg <- nrow(bg) / m   # because bg was replicated m times
-
+  
   # Replicate not_Z, so that X, bg, not_Z are all of dimension (m*n_bg x p)
   g <- rep(seq_len(m), each = n_bg)
   not_Z <- not_Z[g, , drop = FALSE]
-
+  
   if (is.matrix(X)) {
     # Remember that columns of X and bg are perfectly aligned in this case
     X[not_Z] <- bg[not_Z]
@@ -143,7 +143,7 @@ get_vz <- function(X, bg, Z, object, pred_fun, feature_names, w, ...) {
     }
   }
   preds <- check_pred(pred_fun(object, X, ...), n = nrow(X))
-
+  
   # Aggregate
   if (is.null(w)) {
     return(rowsum(preds, group = g, reorder = FALSE) / n_bg)
@@ -162,7 +162,7 @@ weighted_colMeans <- function(x, w = NULL, ...) {
     if (nrow(x) != length(w)) {
       stop("Weights w not compatible with matrix x")
     }
-    out <- colSums(x * w, ...) / sum(w)
+    out <- colSums(x * w, ...) / sum(w)  
   }
   matrix(out, nrow = 1L)
 }
@@ -170,7 +170,7 @@ weighted_colMeans <- function(x, w = NULL, ...) {
 # Binds list of matrices along new first axis
 abind1 <- function(a) {
   out <- array(
-    dim = c(length(a), dim(a[[1L]])),
+    dim = c(length(a), dim(a[[1L]])), 
     dimnames = c(list(NULL), dimnames(a[[1L]]))
   )
   for (i in seq_along(a)) {
@@ -196,9 +196,9 @@ reorganize_list <- function(alist, nms) {
 # Checks and reshapes predictions to (n x K) matrix
 check_pred <- function(x, n) {
   if (
-    !is.vector(x) &&
-    !is.matrix(x) &&
-    !is.data.frame(x) &&
+    !is.vector(x) && 
+    !is.matrix(x) && 
+    !is.data.frame(x) && 
     !(is.array(x) && length(dim(x)) <= 2L)
   ) {
     stop("Predictions must be a vector, matrix, data.frame, or <=2D array")
@@ -235,7 +235,7 @@ summarize_strategy <- function(p, exact, deg) {
   }
   if (deg == 0L) {
     return("Kernel SHAP values by iterative sampling")
-  }
+  } 
   paste("Kernel SHAP values by the hybrid strategy of degree", deg)
 }
 

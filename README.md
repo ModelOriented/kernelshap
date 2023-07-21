@@ -1,13 +1,13 @@
-# permshap (WIP - NOT IMPLEMENTED YET) <a href='https://github.com/mayer79/permshap'><img src='man/figures/logo.png' align="right" height="139"/></a>
+# kernelshap <a href='https://github.com/ModelOriented/kernelshap'><img src='man/figures/logo.png' align="right" height="139"/></a>
 
 <!-- badges: start -->
 
-[![CRAN status](http://www.r-pkg.org/badges/version/permshap)](https://cran.r-project.org/package=permshap)
-[![R-CMD-check](https://github.com/mayer79/permshap/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/mayer79/permshap/actions)
-[![Codecov test coverage](https://codecov.io/gh/mayer79/permshap/branch/main/graph/badge.svg)](https://app.codecov.io/gh/mayer79/permshap?branch=main)
+[![CRAN status](http://www.r-pkg.org/badges/version/kernelshap)](https://cran.r-project.org/package=kernelshap)
+[![R-CMD-check](https://github.com/ModelOriented/kernelshap/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ModelOriented/kernelshap/actions)
+[![Codecov test coverage](https://codecov.io/gh/ModelOriented/kernelshap/branch/main/graph/badge.svg)](https://app.codecov.io/gh/ModelOriented/kernelshap?branch=main)
 
-[![](https://cranlogs.r-pkg.org/badges/permshap)](https://cran.r-project.org/package=permshap) 
-[![](https://cranlogs.r-pkg.org/badges/grand-total/permshap?color=orange)](https://cran.r-project.org/package=permshap)
+[![](https://cranlogs.r-pkg.org/badges/kernelshap)](https://cran.r-project.org/package=kernelshap) 
+[![](https://cranlogs.r-pkg.org/badges/grand-total/kernelshap?color=orange)](https://cran.r-project.org/package=kernelshap)
 
 <!-- badges: end -->
 
@@ -20,7 +20,7 @@ The typical workflow to explain any model `object`:
 1. **Sample rows to explain:** Sample 500 to 2000 rows `X` to be explained. If the training dataset is small, simply use the full training data for this purpose. `X` should only contain feature columns.
 2. **Select background data:** Kernel SHAP requires a representative background dataset `bg_X` to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data.
 If the training data is small, use the full training data. In cases with a natural "off" value (like MNIST digits), this can also be a single row with all values set to the off value.
-3. **Crunch:** Use `permshap(object, X, bg_X, ...)` to calculate SHAP values. Runtime is proportional to `nrow(X)`, while memory consumption scales linearly in `nrow(bg_X)`.
+3. **Crunch:** Use `kernelshap(object, X, bg_X, ...)` to calculate SHAP values. Runtime is proportional to `nrow(X)`, while memory consumption scales linearly in `nrow(bg_X)`.
 4. **Analyze:** Use {shapviz} to visualize the result.
 
 **Remarks**
@@ -33,10 +33,10 @@ If the training data is small, use the full training data. In cases with a natur
 
 ```r
 # From CRAN
-install.packages("permshap")
+install.packages("kernelshap")
 
 # Or the development version:
-devtools::install_github("mayer79/permshap")
+devtools::install_github("ModelOriented/kernelshap")
 ```
 
 ## Usage
@@ -47,7 +47,7 @@ Let's model diamonds prices!
 
 ```r
 library(ggplot2)
-library(permshap)
+library(kernelshap)
 library(shapviz)
 
 diamonds <- transform(
@@ -68,7 +68,7 @@ bg_X <- diamonds[sample(nrow(diamonds), 200), ]
 
 # 3) Crunch SHAP values for all 1000 rows of X (~6 seconds)
 system.time(
-  shap_lm <- permshap(fit_lm, X, bg_X = bg_X)
+  shap_lm <- kernelshap(fit_lm, X, bg_X = bg_X)
 )
 shap_lm
 
@@ -93,7 +93,7 @@ We can also explain a specific prediction instead of the full model:
 single_row <- diamonds[5000, xvars]
 
 fit_lm |>
-  permshap(single_row, bg_X = bg_X) |> 
+  kernelshap(single_row, bg_X = bg_X) |> 
   shapviz() |>
   sv_waterfall()
 ```
@@ -114,7 +114,7 @@ fit_rf <- ranger(
   seed = 20
 )
 
-shap_rf <- permshap(fit_rf, X, bg_X = bg_X)
+shap_rf <- kernelshap(fit_rf, X, bg_X = bg_X)
 shap_rf
 
 # SHAP values of first 2 observations:
@@ -163,7 +163,7 @@ nn |>
   )
 
 pred_fun <- function(mod, X) predict(mod, data.matrix(X), batch_size = 10000)
-shap_nn <- permshap(nn, X, bg_X = bg_X, pred_fun = pred_fun)
+shap_nn <- kernelshap(nn, X, bg_X = bg_X, pred_fun = pred_fun)
 
 sv_nn <- shapviz(shap_nn)
 sv_importance(sv_nn, show_numbers = TRUE)
@@ -190,7 +190,7 @@ plan(multisession, workers = 4)  # Windows
 
 # ~3 seconds on second run
 system.time(
-  s <- permshap(fit_lm, X, bg_X = bg_X, parallel = TRUE)
+  s <- kernelshap(fit_lm, X, bg_X = bg_X, parallel = TRUE)
 )
 ```
 
@@ -204,7 +204,7 @@ library(mgcv)
 fit_gam <- gam(log_price ~ s(log_carat) + clarity + color + cut, data = diamonds)
 
 system.time(
-  shap_gam <- permshap(
+  shap_gam <- kernelshap(
     fit_gam, 
     X, 
     bg_X = bg_X,
@@ -229,7 +229,7 @@ Here, we provide some working examples for "tidymodels", "caret", and "mlr3".
 
 ```r
 library(tidymodels)
-library(permshap)
+library(kernelshap)
 
 iris_recipe <- iris %>%
   recipe(Sepal.Length ~ .)
@@ -244,7 +244,7 @@ iris_wf <- workflow() %>%
 fit <- iris_wf %>%
   fit(iris)
   
-ks <- permshap(fit, iris[, -1], bg_X = iris)
+ks <- kernelshap(fit, iris[, -1], bg_X = iris)
 ks
 ```
 
@@ -252,7 +252,7 @@ ks
 
 ```r
 library(caret)
-library(permshap)
+library(kernelshap)
 library(shapviz)
 
 fit <- train(
@@ -263,7 +263,7 @@ fit <- train(
   trControl = trainControl(method = "none")
 )
 
-s <- permshap(fit, iris[, -1], predict, bg_X = iris)
+s <- kernelshap(fit, iris[, -1], predict, bg_X = iris)
 sv <- shapviz(s)
 sv_waterfall(sv, 1)
 ```
@@ -273,7 +273,7 @@ sv_waterfall(sv, 1)
 ```r
 library(mlr3)
 library(mlr3learners)
-library(permshap)
+library(kernelshap)
 library(shapviz)
 
 mlr_tasks$get("iris")
@@ -281,7 +281,7 @@ tsk("iris")
 task_iris <- TaskRegr$new(id = "iris", backend = iris, target = "Sepal.Length")
 fit_lm <- lrn("regr.lm")
 fit_lm$train(task_iris)
-s <- permshap(fit_lm, iris[-1], bg_X = iris)
+s <- kernelshap(fit_lm, iris[-1], bg_X = iris)
 sv <- shapviz(s)
 sv_dependence(sv, "Species")
 ```
@@ -290,4 +290,4 @@ sv_dependence(sv, "Species")
 
 [1] Scott M. Lundberg and Su-In Lee. A Unified Approach to Interpreting Model Predictions. Advances in Neural Information Processing Systems 30, 2017.
 
-[2] Ian Covert and Su-In Lee. Improving permshap: Practical Shapley Value Estimation Using Linear Regression. Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.
+[2] Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value Estimation Using Linear Regression. Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.
