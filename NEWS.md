@@ -6,7 +6,7 @@
 
 ## Bug fixes
 
-- {mlr3} probabilistic classification would not work out-of-the-box. This has been fixed (with corresponding example in the README).
+- {mlr3} probabilistic classification would not work out-of-the-box. This has been fixed (with corresponding example in the README) in https://github.com/ModelOriented/kernelshap/pull/100
 
 ## Maintenance
 
