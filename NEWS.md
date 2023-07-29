@@ -4,9 +4,13 @@
 
 - Multi-output case: column names of predictions are now used as list names of the resulting `S` and `SE` lists.
 
+## Bug fixes
+
+- {mlr3} probabilistic classification would not work out-of-the-box. This has been fixed (with corresponding example in the README).
+
 ## Maintenance
 
-- Added explanation of sampling Kernel SHAP to help file
+- Added explanation of sampling Kernel SHAP to help file.
 
 # kernelshap 0.3.7
 
