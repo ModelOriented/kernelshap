@@ -51,7 +51,7 @@ kernelshap(object, ...)
   object,
   X,
   bg_X,
-  pred_fun = function(m, X) m$predict_newdata(X)$response,
+  pred_fun = NULL,
   feature_names = colnames(X),
   bg_w = NULL,
   exact = length(feature_names) <= 8L,

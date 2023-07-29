@@ -271,19 +271,24 @@ sv_waterfall(sv, 1)
 ### mlr3
 
 ```r
+library(kernelshap)
 library(mlr3)
 library(mlr3learners)
-library(kernelshap)
-library(shapviz)
 
+# Regression
 mlr_tasks$get("iris")
-tsk("iris")
-task_iris <- TaskRegr$new(id = "iris", backend = iris, target = "Sepal.Length")
+task_iris <- TaskRegr$new(id = "reg", backend = iris, target = "Sepal.Length")
 fit_lm <- lrn("regr.lm")
 fit_lm$train(task_iris)
 s <- kernelshap(fit_lm, iris[-1], bg_X = iris)
-sv <- shapviz(s)
-sv_dependence(sv, "Species")
+s
+
+# Probabilistic classification -> lrn(..., predict_type = "prob")
+task_iris <- TaskClassif$new(id = "class", backend = iris, target = "Species")
+fit_rf <- lrn("classif.ranger", predict_type = "prob", num.trees = 50)
+fit_rf$train(task_iris)
+s <- kernelshap(fit_rf, X = iris[-5], bg_X = iris)
+s
 ```
 
 ## References
