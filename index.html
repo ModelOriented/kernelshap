@@ -156,7 +156,7 @@
 <span><span class="co"># 2) Select background data</span></span>
 <span><span class="va">bg_X</span> <span class="op">&lt;-</span> <span class="va">diamonds</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">diamonds</span><span class="op">)</span>, <span class="fl">200</span><span class="op">)</span>, <span class="op">]</span></span>
 <span></span>
-<span><span class="co"># 3) Crunch SHAP values for all 1000 rows of X (~6 seconds)</span></span>
+<span><span class="co"># 3) Crunch SHAP values for all 1000 rows of X (~7 seconds)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span></span>
 <span>  <span class="va">shap_lm</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span><span class="va">fit_lm</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
@@ -267,7 +267,7 @@
 <span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">multisession</span>, workers <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>  <span class="co"># Windows</span></span>
 <span><span class="co"># plan(multicore, workers = 4)   # Linux, macOS, Solaris</span></span>
 <span></span>
-<span><span class="co"># ~3 seconds on second run</span></span>
+<span><span class="co"># ~3 seconds</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span></span>
 <span>  <span class="va">s</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span><span class="va">fit_lm</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span>, parallel <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -281,7 +281,7 @@
 <span></span>
 <span><span class="va">fit_gam</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">gam</a></span><span class="op">(</span><span class="va">log_price</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/s.html" class="external-link">s</a></span><span class="op">(</span><span class="va">log_carat</span><span class="op">)</span> <span class="op">+</span> <span class="va">clarity</span> <span class="op">+</span> <span class="va">color</span> <span class="op">+</span> <span class="va">cut</span>, data <span class="op">=</span> <span class="va">diamonds</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span>  <span class="co"># 11 seconds</span></span>
 <span>  <span class="va">shap_gam</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span></span>
 <span>    <span class="va">fit_gam</span>, </span>
 <span>    <span class="va">X</span>, </span>
