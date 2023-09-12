@@ -11,7 +11,7 @@
 ## Maintenance
 
 - Added explanation of sampling Kernel SHAP to help file.
-- In internal calculations, use explicit `feature_names` as dimnames (#96)
+- In internal calculations, use explicit `feature_names` as dimnames (https://github.com/ModelOriented/kernelshap/issues/96)
 
 # kernelshap 0.3.7
 
