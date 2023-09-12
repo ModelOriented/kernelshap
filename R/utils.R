@@ -142,7 +142,7 @@ get_vz <- function(X, bg, Z, object, pred_fun, feature_names, w, ...) {
       X[[nm]][s] <- bg[[nm]][s]
     }
   }
-  preds <- check_pred(pred_fun(object, X, ...), n = nrow(X))
+  preds <- align_pred(pred_fun(object, X, ...))
   
   # Aggregate
   if (is.null(w)) {
@@ -193,29 +193,23 @@ reorganize_list <- function(alist, nms) {
   lapply(out, as.matrix)
 }
 
-# Checks and reshapes predictions to (n x K) matrix
-check_pred <- function(x, n) {
-  if (
-    !is.vector(x) && 
-    !is.matrix(x) && 
-    !is.data.frame(x) && 
-    !(is.array(x) && length(dim(x)) <= 2L)
-  ) {
-    stop("Predictions must be a vector, matrix, data.frame, or <=2D array")
-  }
-  if (is.data.frame(x) || is.array(x)) {
+#' Aligns Predictions
+#'
+#' Turns predictions into matrix. Originally implemented in {hstats}.
+#'
+#' @noRd
+#' @keywords internal
+#'
+#' @param x Object representing model predictions.
+#' @returns Like `x`, but converted to matrix.
+align_pred <- function(x) {
+  if (!is.matrix(x)) {
     x <- as.matrix(x)
   }
   if (!is.numeric(x)) {
     stop("Predictions must be numeric")
   }
-  if (is.matrix(x) && nrow(x) == n) {
-    return(x)
-  }
-  if (length(x) == n) {
-    return(matrix(x, nrow = n))
-  }
-  stop("Predictions must be a length n vector or a matrix/data.frame/array with n rows.")
+  x
 }
 
 # Helper function in print() and summary()

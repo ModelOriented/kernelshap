@@ -219,10 +219,8 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
   }
   
   # Calculate v1 and v0
-  v1 <- check_pred(pred_fun(object, X, ...), n = n)  # Predictions on X:        n x K
-  bg_preds <- check_pred(
-    pred_fun(object, bg_X[, colnames(X), drop = FALSE], ...), n = bg_n
-  )
+  v1 <- align_pred(pred_fun(object, X, ...))         # Predictions on X:        n x K
+  bg_preds <- align_pred(pred_fun(object, bg_X[, colnames(X), drop = FALSE], ...))
   v0 <- weighted_colMeans(bg_preds, bg_w)            # Average pred of bg data: 1 x K
   
   # For p = 1, exact Shapley values are returned

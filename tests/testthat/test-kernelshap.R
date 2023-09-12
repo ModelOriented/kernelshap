@@ -114,7 +114,7 @@ preds <- unname(predict(fit, iris))
 test_that("Special case p = 1 works", {
   s <- kernelshap(fit, iris[1:5, x, drop = FALSE], bg_X = iris, verbose = FALSE)
   expect_equal(s$baseline, mean(iris$Sepal.Length))
-  expect_equal(rowSums(s$S) + s$baseline, preds[1:5])
+  expect_equal(unname(rowSums(s$S)) + s$baseline, preds[1:5])
   expect_equal(s$SE[1L], 0)
 })
 
@@ -204,7 +204,7 @@ test_that("Special case p = 1 works with case weights", {
   )
   
   expect_equal(s$baseline, weighted.mean(iris$Sepal.Length, iris$Petal.Length))
-  expect_equal(rowSums(s$S) + s$baseline, preds[1:5])
+  expect_equal(unname(rowSums(s$S)) + s$baseline, preds[1:5])
 })
 
 fit <- lm(
