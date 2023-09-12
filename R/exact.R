@@ -1,40 +1,59 @@
-# Functions required only for handling exact cases
+# Functions required only for handling (partly) exact cases
 
 # Provides fixed input for the exact case:
 # - Z: Matrix with all 2^p-2 on-off vectors z
 # - w: Vector with row weights of Z ensuring that the distribution of sum(z) matches
 #      the SHAP kernel distribution
 # - A: Exact matrix A = Z'wZ
-input_exact <- function(p) {
-  Z <- exact_Z(p)
+input_exact <- function(p, feature_names) {
+  Z <- exact_Z(p, feature_names = feature_names)
   # Each Kernel weight(j) is divided by the number of vectors z having sum(z) = j
   w <- kernel_weights(p) / choose(p, 1:(p - 1L))
-  list(Z = Z, w = w[rowSums(Z)], A = exact_A(p))
+  list(Z = Z, w = w[rowSums(Z)], A = exact_A(p, feature_names = feature_names))
 }
 
-# Calculates exact A. Notice the difference to the off-diagnonals in the Supplement of 
-# Covert and Lee (2021). Credits to David Watson for figuring out the correct formula,
-# see our discussions in https://github.com/ModelOriented/kernelshap/issues/22
-exact_A <- function(p) {
+#' Exact Matrix A
+#'
+#' Internal function that calculates exact A. 
+#' Notice the difference to the off-diagnonals in the Supplement of 
+#' Covert and Lee (2021). Credits to David Watson for figuring out the correct formula,
+#' see our discussions in https://github.com/ModelOriented/kernelshap/issues/22
+#'
+#' @noRd
+#' @keywords internal
+#'
+#' @param p Number of features.
+#' @param feature_names Feature names.
+#' @returns A (p x p) matrix.
+exact_A <- function(p, feature_names) {
   S <- 1:(p - 1L)
   c_pr <- S * (S - 1) / p / (p - 1)
   off_diag <- sum(kernel_weights(p) * c_pr)
-  A <- matrix(off_diag, nrow = p, ncol = p)
+  A <- matrix(
+    off_diag, nrow = p, ncol = p, dimnames = list(feature_names, feature_names)
+  )
   diag(A) <- 0.5
   A
 }
 
-# Creates (2^p-2) x p matrix with all on-off vectors z of length p
-# Instead of calculating this object, we could evaluate it for different p <= p_max
-# and store it as a list in the package.
-exact_Z <- function(p) {
+#' All on-off Vectors
+#'
+#' Internal function that creates matrix of all on-off vectors of length `p`.
+#'
+#' @noRd
+#' @keywords internal
+#'
+#' @param p Number of features.
+#' @param feature_names Feature names.
+#' @returns An integer ((2^p - 2) x p) matrix of all on-off vectors of length `p`.
+exact_Z <- function(p, feature_names) {
   Z <- as.matrix(do.call(expand.grid, replicate(p, 0:1, simplify = FALSE)))
-  dimnames(Z) <- NULL
+  colnames(Z) <- feature_names
   Z[2:(nrow(Z) - 1L), , drop = FALSE]
 }
 
 # List all length p vectors z with sum(z) in {k, p - k}
-partly_exact_Z <- function(p, k) {
+partly_exact_Z <- function(p, k, feature_names) {
   if (k < 1L) {
     stop("k must be at least 1")
   }
@@ -48,17 +67,18 @@ partly_exact_Z <- function(p, k) {
       utils::combn(seq_len(p), k, FUN = function(z) {x <- numeric(p); x[z] <- 1; x})
     )
   }
-  if (p == 2L * k) {
-    return(Z)
+  if (p != 2L * k) {
+    Z <- rbind(Z, 1 - Z)
   }
-  return(rbind(Z, 1 - Z))
+  colnames(Z) <- feature_names
+  Z
 }
 
 # Create Z, w, A for vectors z with sum(z) in {k, p-k} for k in {1, ..., deg}.
 # The total weights do not sum to one, except in the special (exact) case deg=p-deg.
 # (The remaining weight will be added via input_sampling(p, deg=deg)).
 # Note that for a given k, the weights are constant.
-input_partly_exact <- function(p, deg) {
+input_partly_exact <- function(p, deg, feature_names) {
   if (deg < 1L) {
     stop("deg must be at least 1")
   }
@@ -70,7 +90,7 @@ input_partly_exact <- function(p, deg) {
   Z <- w <- vector("list", deg)
   
   for (k in seq_len(deg)) {
-    Z[[k]] <- partly_exact_Z(p, k = k)
+    Z[[k]] <- partly_exact_Z(p, k = k, feature_names = feature_names)
     n <- nrow(Z[[k]])
     w_tot <- kw[k] * (2 - (p == 2L * k))
     w[[k]] <- rep(w_tot / n, n)
@@ -82,20 +102,21 @@ input_partly_exact <- function(p, deg) {
 }
 
 # Case p = 1 returns exact Shapley values
-case_p1 <- function(n, nms, v0, v1, X, verbose) {
+case_p1 <- function(n, feature_names, v0, v1, X, verbose) {
   txt <- "Exact Shapley values (p = 1)"
   if (verbose) {
     message(txt)
   }
-  S <- v1 - v0[rep(1L, n), , drop = FALSE]
-  SE <- matrix(numeric(n), dimnames = list(NULL, nms))
+  S <- v1 - v0[rep(1L, n), , drop = FALSE]                        #  (n x K)
+  SE <- matrix(numeric(n), dimnames = list(NULL, feature_names))  #  (n x 1)
   if (ncol(v1) > 1L) {
     SE <- replicate(ncol(v1), SE, simplify = FALSE)
     S <- lapply(
-      asplit(S, MARGIN = 2L), function(M) as.matrix(M, dimnames = list(NULL, nms))
+      asplit(S, MARGIN = 2L), function(M) 
+        as.matrix(M, dimnames = list(NULL, feature_names))
     )
   } else {
-    colnames(S) <- nms      
+    colnames(S) <- feature_names      
   }
   out <- list(
     S = S, 

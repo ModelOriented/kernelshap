@@ -226,7 +226,9 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
   # For p = 1, exact Shapley values are returned
   if (p == 1L) {
     return(
-      case_p1(n = n, nms = feature_names, v0 = v0, v1 = v1, X = X, verbose = verbose)
+      case_p1(
+        n = n, feature_names = feature_names, v0 = v0, v1 = v1, X = X, verbose = verbose
+      )
     )
   }
   
@@ -238,7 +240,11 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
   
   # Precalculations for the real Kernel SHAP
   if (exact || hybrid_degree >= 1L) {
-    precalc <- if (exact) input_exact(p) else input_partly_exact(p, hybrid_degree)
+    if (exact) {
+      precalc <- input_exact(p, feature_names = feature_names)
+    } else {
+      precalc <- input_partly_exact(p, deg = hybrid_degree, feature_names = feature_names)
+    }
     m_exact <- nrow(precalc[["Z"]])
     prop_exact <- sum(precalc[["w"]])
     precalc[["bg_X_exact"]] <- bg_X[rep(seq_len(bg_n), times = m_exact), , drop = FALSE]
@@ -317,10 +323,10 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
     warning("\nNon-convergence for ", sum(!converged), " rows.")
   }
   out <- list(
-    S = reorganize_list(lapply(res, `[[`, "beta"), nms = feature_names), 
+    S = reorganize_list(lapply(res, `[[`, "beta")), 
     X = X, 
     baseline = as.vector(v0), 
-    SE = reorganize_list(lapply(res, `[[`, "sigma"), nms = feature_names), 
+    SE = reorganize_list(lapply(res, `[[`, "sigma")), 
     n_iter = vapply(res, `[[`, "n_iter", FUN.VALUE = integer(1L)),
     converged = converged,
     m = m,

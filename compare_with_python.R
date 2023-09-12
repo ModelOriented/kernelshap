@@ -14,7 +14,7 @@ bg_X <- diamonds[seq(1, nrow(diamonds), 450), ]
 # Subset of 1018 diamonds to explain
 X_small <- diamonds[seq(1, nrow(diamonds), 53), c("carat", ord)]
 
-# Exact KernelSHAP (5s)
+# Exact KernelSHAP (4s)
 system.time(
   ks <- kernelshap(fit, X_small, bg_X = bg_X)  
 )

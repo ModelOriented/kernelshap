@@ -20,7 +20,6 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
       Z = Z,                                                      #  (m_ex x p)
       object = object, 
       pred_fun = pred_fun,
-      feature_names = feature_names,
       w = bg_w, 
       ...
     )
@@ -42,8 +41,12 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
   est_m = list()
   converged <- FALSE
   n_iter <- 0L
-  A_sum <- matrix(0, nrow = p, ncol = p)                          #  (p x p)
-  b_sum <- matrix(0, nrow = p, ncol = ncol(v0))                   #  (p x K)
+  A_sum <- matrix(                                                #  (p x p)
+    0, nrow = p, ncol = p, dimnames = list(feature_names, feature_names)
+  )
+  b_sum <- matrix(                                                #  (p x K)
+    0, nrow = p, ncol = ncol(v0), dimnames = list(feature_names, colnames(v1))
+  )      
   if (deg == 0L) {
     A_exact <- A_sum
     b_exact <- b_sum
@@ -51,19 +54,14 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
   
   while(!isTRUE(converged) && n_iter < max_iter) {
     n_iter <- n_iter + 1L
-    input <- input_sampling(p = p, m = m, deg = deg, paired = paired)
+    input <- input_sampling(
+      p = p, m = m, deg = deg, paired = paired, feature_names = feature_names
+    )
     Z <- input[["Z"]]
       
     # Expensive                                                              #  (m x K)
     vz <- get_vz(
-      X = X, 
-      bg = bg_X_m, 
-      Z = Z, 
-      object = object, 
-      pred_fun = pred_fun, 
-      feature_names = feature_names, 
-      w = bg_w, 
-      ...
+      X = X, bg = bg_X_m, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
     )
     
     # The sum of weights of A_exact and input[["A"]] is 1, same for b
@@ -91,6 +89,7 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
 solver <- function(A, b, constraint) {
   p <- ncol(A)
   Ainv <- ginv(A)
+  dimnames(Ainv) <- dimnames(A)
   s <- (matrix(colSums(Ainv %*% b), nrow = 1L) - constraint) / sum(Ainv)     #  (1 x K)
   Ainv %*% (b - s[rep(1L, p), , drop = FALSE])                               #  (p x K)
 }
@@ -136,7 +135,7 @@ ginv <- function (X, tol = sqrt(.Machine$double.eps)) {
 #' @param w A vector with case weights (of the same length as the unstacked
 #'   background data).
 #' @returns A (m x K) matrix with vz values.
-get_vz <- function(X, bg, Z, object, pred_fun, feature_names, w, ...) {
+get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
   m <- nrow(Z)
   not_Z <- !Z
   n_bg <- nrow(bg) / m   # because bg was replicated m times
@@ -149,11 +148,9 @@ get_vz <- function(X, bg, Z, object, pred_fun, feature_names, w, ...) {
     # Remember that columns of X and bg are perfectly aligned in this case
     X[not_Z] <- bg[not_Z]
   } else {
-    for (j in seq_along(feature_names)) {
-      # not_Z does not have column names, so we need to access its columns by integers
-      nm <- feature_names[j]
-      s <- not_Z[, j, drop = TRUE]
-      X[[nm]][s] <- bg[[nm]][s]
+    for (v in colnames(Z)) {
+      s <- not_Z[, v]
+      X[[v]][s] <- bg[[v]][s]
     }
   }
   preds <- align_pred(pred_fun(object, X, ...))
@@ -183,8 +180,7 @@ weighted_colMeans <- function(x, w = NULL, ...) {
   if (!is.matrix(x)) {
     x <- as.matrix(x)
   }
-  out <- if (is.null(w)) colMeans(x) else colSums(x * w) / sum(w)
-  matrix(out, nrow = 1L)
+  rbind(if (is.null(w)) colMeans(x) else colSums(x * w) / sum(w))
 }
 
 #' Combine Matrices
@@ -217,13 +213,11 @@ abind1 <- function(a) {
 #'
 #' @param alist List of n (p x K) matrices.
 #' @returns List of K (n x p) matrices.
-reorganize_list <- function(alist, nms) {
+reorganize_list <- function(alist) {
   if (!is.list(alist)) {
     stop("alist must be a list")
   }
-  out <- abind1(alist)
-  dimnames(out)[[2L]] <- nms
-  out <- asplit(out, MARGIN = 3L)
+  out <- asplit(abind1(alist), MARGIN = 3L)
   if (length(out) == 1L) {
     return(as.matrix(out[[1L]]))
   }
