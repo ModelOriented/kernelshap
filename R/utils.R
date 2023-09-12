@@ -148,22 +148,28 @@ get_vz <- function(X, bg, Z, object, pred_fun, feature_names, w, ...) {
   if (is.null(w)) {
     return(rowsum(preds, group = g, reorder = FALSE) / n_bg)
   }
-  rowsum(preds * rep(w, times = m), group = g, reorder = FALSE) / sum(w)
+  # w is recycled over rows and columns
+  rowsum(preds * w, group = g, reorder = FALSE) / sum(w)
 }
 
-# Weighted colMeans(). Always returns a (1 x ncol(x)) matrix
+#' Weighted Version of colMeans()
+#' 
+#' Internal function used to calculate column-wise weighted means.
+#' 
+#' @noRd
+#' @keywords internal
+#' 
+#' @param x A matrix-like object.
+#' @param w Optional case weights.
+#' @returns A (1 x ncol(x)) matrix of column means.
 weighted_colMeans <- function(x, w = NULL, ...) {
+  if (NCOL(x) == 1L && is.null(w)) {
+    return(matrix(mean(x)))
+  }
   if (!is.matrix(x)) {
-    stop("x must be a matrix")
+    x <- as.matrix(x)
   }
-  if (is.null(w)) {
-    out <- colMeans(x, ...)
-  } else {
-    if (nrow(x) != length(w)) {
-      stop("Weights w not compatible with matrix x")
-    }
-    out <- colSums(x * w, ...) / sum(w)  
-  }
+  out <- if (is.null(w)) colMeans(x) else colSums(x * w) / sum(w)
   matrix(out, nrow = 1L)
 }
 

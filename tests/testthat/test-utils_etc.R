@@ -128,16 +128,6 @@ test_that("regoranize_list() fails for non-list inputs", {
   expect_error(reorganize_list(alist = 1:10, nms = NULL))
 })
 
-test_that("weighted_colMeans() fails for non-matrix inputs", {
-  expect_error(weighted_colMeans(1))
-})
-
-test_that("weighted_colMeans() fails if weights are not long enough", {
-  X <- cbind(1:3, 2:4)
-  expect_error(weighted_colMeans(X, w = 1))
-  expect_error(weighted_colMeans(X, w = 1:2))
-})
-
 test_that("weighted_colMeans() gives the same as colMeans() in unweighted case", {
   X <- cbind(1:3, 2:4)
   expect_equal(c(weighted_colMeans(X)), colMeans(X))
