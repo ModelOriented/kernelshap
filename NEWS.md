@@ -11,6 +11,7 @@
 ## Maintenance
 
 - Added explanation of sampling Kernel SHAP to help file.
+- Internal code optimizations.
 
 # kernelshap 0.3.7
 
