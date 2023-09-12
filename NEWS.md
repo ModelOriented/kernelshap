@@ -11,7 +11,7 @@
 ## Maintenance
 
 - Added explanation of sampling Kernel SHAP to help file.
-- Internal code optimizations.
+- In internal calculations, use explicit `feature_names` as dimnames.
 
 # kernelshap 0.3.7
 
