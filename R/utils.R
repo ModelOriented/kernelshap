@@ -121,7 +121,21 @@ ginv <- function (X, tol = sqrt(.Machine$double.eps)) {
   }
 }
 
-# Calculates all vz of an iteration by a single call to predict()
+#' Masker
+#'
+#' Internal function. 
+#' For each on-off vector (rows in `Z`), the (weighted) average prediction is returned.
+#'
+#' @noRd
+#' @keywords internal
+#'
+#' @inheritParams kernelshap
+#' @param X Row to be explained stacked m*n_bg times.
+#' @param bg Background data stacked m times.
+#' @param Z A (m x p) matrix with on-off values.
+#' @param w A vector with case weights (of the same length as the unstacked
+#'   background data).
+#' @returns A (m x K) matrix with vz values.
 get_vz <- function(X, bg, Z, object, pred_fun, feature_names, w, ...) {
   m <- nrow(Z)
   not_Z <- !Z
@@ -173,7 +187,15 @@ weighted_colMeans <- function(x, w = NULL, ...) {
   matrix(out, nrow = 1L)
 }
 
-# Binds list of matrices along new first axis
+#' Combine Matrices
+#'
+#' Binds list of matrices along new first axis.
+#'
+#' @noRd
+#' @keywords internal
+#'
+#' @param a List of n (p x K) matrices.
+#' @returns A (n x p x K) array.
 abind1 <- function(a) {
   out <- array(
     dim = c(length(a), dim(a[[1L]])), 
@@ -185,7 +207,16 @@ abind1 <- function(a) {
   out
 }
 
-# Turn list of n (p x K) matrices into list of K (n x p) matrices. Reduce if K = 1.
+#' Reorganize List
+#'
+#' Internal function that turns list of n (p x K) matrices into list of K (n x p) 
+#' matrices. Reduce if K = 1.
+#'
+#' @noRd
+#' @keywords internal
+#'
+#' @param alist List of n (p x K) matrices.
+#' @returns List of K (n x p) matrices.
 reorganize_list <- function(alist, nms) {
   if (!is.list(alist)) {
     stop("alist must be a list")
@@ -218,8 +249,16 @@ align_pred <- function(x) {
   x
 }
 
-# Helper function in print() and summary()
-# x is either a matrix or a list of matrices
+#' Head of List Elements
+#'
+#' Internal function that returns the top n rows of each element in the input list.
+#'
+#' @noRd
+#' @keywords internal
+#'
+#' @param x A list or a matrix-like.
+#' @param n Number of rows to show.
+#' @returns List of first rows of each element in the input.
 head_list <- function(x, n = 6L) {
   if (!is.list(x)) utils::head(x, n) else lapply(x, utils::head, n)
 }
