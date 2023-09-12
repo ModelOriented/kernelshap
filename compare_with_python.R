@@ -25,7 +25,7 @@ ks
 # [1,] -2.050074 -0.28048747 0.1281222 0.01587382
 # [2,] -2.085838  0.04050415 0.1283010 0.03731644
 
-# Pure sampling version takes a bit longer (13 seconds)
+# Pure sampling version takes a bit longer (12 seconds)
 system.time(
   ks2 <- kernelshap(fit, X_small, bg_X = bg_X, exact = FALSE, hybrid_degree = 0)  
 )
@@ -43,7 +43,7 @@ registerDoFuture()
 plan(multisession, workers = 2)  # Windows
 # plan(multicore, workers = 2)   # Linux, macOS, Solaris
 
-# 3 seconds in the second call
+# 3 seconds
 system.time(
   ks3 <- kernelshap(fit, X_small, bg_X = bg_X, parallel = TRUE)  
 )

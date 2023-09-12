@@ -66,7 +66,7 @@ X <- diamonds[sample(nrow(diamonds), 1000), xvars]
 # 2) Select background data
 bg_X <- diamonds[sample(nrow(diamonds), 200), ]
 
-# 3) Crunch SHAP values for all 1000 rows of X (~6 seconds)
+# 3) Crunch SHAP values for all 1000 rows of X (~7 seconds)
 system.time(
   shap_lm <- kernelshap(fit_lm, X, bg_X = bg_X)
 )
@@ -188,7 +188,7 @@ registerDoFuture()
 plan(multisession, workers = 4)  # Windows
 # plan(multicore, workers = 4)   # Linux, macOS, Solaris
 
-# ~3 seconds on second run
+# ~3 seconds
 system.time(
   s <- kernelshap(fit_lm, X, bg_X = bg_X, parallel = TRUE)
 )
@@ -203,7 +203,7 @@ library(mgcv)
 
 fit_gam <- gam(log_price ~ s(log_carat) + clarity + color + cut, data = diamonds)
 
-system.time(
+system.time(  # 11 seconds
   shap_gam <- kernelshap(
     fit_gam, 
     X, 

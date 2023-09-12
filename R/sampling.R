@@ -3,7 +3,7 @@
 # Draw m binary vectors z of length p with sum(z) distributed according 
 # to Kernel SHAP weights -> (m x p) matrix. 
 # The argument S can be used to restrict the range of sum(z).
-sample_Z <- function(p, m, S = 1:(p - 1L)) {
+sample_Z <- function(p, m, feature_names, S = 1:(p - 1L)) {
   # First draw s = sum(z) according to Kernel weights (renormalized to sum 1)
   probs <- kernel_weights(p, S = S)
   N <- S[sample.int(length(S), m, replace = TRUE, prob = probs)]
@@ -22,6 +22,7 @@ sample_Z <- function(p, m, S = 1:(p - 1L)) {
   dim(out) <- c(p, m)
   ord <- order(col(out), sample.int(m * p))
   out[] <- out[ord]
+  rownames(out) <- feature_names
   t(out)
 }
 
@@ -46,12 +47,14 @@ conv_crit <- function(sig, bet) {
 #
 # If deg > 0, vectors z with sum(z) restricted to [deg+1, p-deg-1] are sampled.
 # This case is used in combination with input_partly_hybrid(). Consequently, sum(w) < 1.
-input_sampling <- function(p, m, deg, paired) {
+input_sampling <- function(p, m, deg, paired, feature_names) {
   if (p < 2L * deg + 2L) {
     stop("p must be >=2*deg + 2")
   }
   S <- (deg + 1L):(p - deg - 1L)
-  Z <- sample_Z(m = if (paired) m / 2 else m, p = p, S = S)
+  Z <- sample_Z(
+    p = p, m = if (paired) m / 2 else m, feature_names = feature_names, S = S
+  )
   if (paired) {
     Z <- rbind(Z, 1 - Z)
   }
@@ -59,4 +62,3 @@ input_sampling <- function(p, m, deg, paired) {
   w <- w_total / m
   list(Z = Z, w = rep(w, m), A = crossprod(Z) * w)
 }
-
