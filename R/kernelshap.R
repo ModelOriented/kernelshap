@@ -290,7 +290,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
     )
   } else {
     if (verbose && n >= 2L) {
-      pb <- utils::txtProgressBar(1L, n, style = 3)  
+      pb <- utils::txtProgressBar(max = n, style = 3)  
     }
     res <- vector("list", n)
     for (i in seq_len(n)) {

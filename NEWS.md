@@ -7,6 +7,7 @@
 ## Bug fixes
 
 - {mlr3} probabilistic classification would not work out-of-the-box. This has been fixed (with corresponding example in the README) in https://github.com/ModelOriented/kernelshap/pull/100
+- The progress bar was initialized at 1 instead of 0. This is fixed.
 
 ## Maintenance
 
