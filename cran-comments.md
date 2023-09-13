@@ -1,3 +1,18 @@
+# Resubmission
+
+I stumbled over a DOI: Uwe gently pointed this out:
+
+"
+   The Description field contains
+     <https://dl.acm.org/doi/10.5555/3295222.3295230>, and Covert and Lee
+   Please use permanent DOI markup for linking to publications as in 
+<doi:prefix/suffix>.
+"
+
+This resubmission fixes this.
+
+# Original message
+
 Hello CRAN
 
 This is a small maintenance release only.
