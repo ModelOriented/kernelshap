@@ -1,4 +1,27 @@
-# Resubmission
+# Resubmission II
+
+I have now removed the non-registered DOI from the description file.
+
+This was Uwe's comment:
+
+   Found the following (possibly) invalid DOIs:
+     DOI: 10.5555/3295222.3295230
+       From: DESCRIPTION
+       Status: 404
+       Message: Not Found
+
+and looking for the DOI shows it is not registered.
+Even when going to
+https://dl.acm.org/doi/10.5555/3295222.3295230
+and clicking on the "Publisher Site" link leads us into nirvana.
+
+So I guess the is ill registered and you have to revert the change. My 
+apologoies, I had not checked whether the DOI given is registreed or not.
+
+Best,
+
+
+# Resubmission I
 
 I stumbled over a DOI: Uwe gently pointed this out:
 
