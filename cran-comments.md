@@ -1,33 +1,75 @@
+# Resubmission II
+
+I have now removed the non-registered DOI from the description file.
+
+This was Uwe's comment:
+
+   Found the following (possibly) invalid DOIs:
+     DOI: 10.5555/3295222.3295230
+       From: DESCRIPTION
+       Status: 404
+       Message: Not Found
+
+and looking for the DOI shows it is not registered.
+Even when going to
+https://dl.acm.org/doi/10.5555/3295222.3295230
+and clicking on the "Publisher Site" link leads us into nirvana.
+
+So I guess the is ill registered and you have to revert the change. My 
+apologoies, I had not checked whether the DOI given is registreed or not.
+
+Best,
+
+
+# Resubmission I
+
+I stumbled over a DOI: Uwe gently pointed this out:
+
+"
+   The Description field contains
+     <https://dl.acm.org/doi/10.5555/3295222.3295230>, and Covert and Lee
+   Please use permanent DOI markup for linking to publications as in 
+<doi:prefix/suffix>.
+"
+
+This resubmission fixes this.
+
+# Original message
+
 Hello CRAN
 
-My recent change introduced Latex errors in help files on MacOS and "oldrel". The reason are "text" instead of "textrm" tags in eqn{} blocks. I will need to fix this in two additional packages, but I will test it with this one.
+This is a small maintenance release only.
 
-https://cran.r-project.org/web/checks/check_results_kernelshap.html
+Thanks a lot
+
+Michael
 
 ## Checks
 
 ### Revdep
 
-survex:
-
+survex 1.1.3                                                                             
 - OK: 1
 - BROKEN: 0
 
-### `check(manual = TRUE, cran = TRUE)`
-
-❯ checking for future file timestamps ... NOTE
-  unable to verify current time
+### Local check with innocent NOTE
 
 ❯ checking HTML version of manual ... NOTE
   Skipping checking HTML validation: no command 'tidy' found
   
-### `check_win_devel()`
+### `check_win_devel()` NOTE
 
-OK
+- R Under development (unstable) (2023-09-11 r85126 ucrt)
 
-### `check_rhub()` Notes
+### `check_rhub()` NOTES
 
-- kipping checking HTML validation: no command 'tidy' found
-- Skipping checking math rendering: package 'V8' unavailable
+-> Note sure where the 403 problem comes from. Is it relevant?
 
-
+Found the following (possibly) invalid URLs:
+  URL: https://dl.acm.org/doi/10.5555/3295222.3295230
+    From: DESCRIPTION
+    Status: 403
+    Message: Forbidden
+* checking HTML version of manual ... NOTE
+Skipping checking HTML validation: no command 'tidy' found
+Skipping checking math rendering: package 'V8' unavailable
