@@ -26,6 +26,7 @@ If the training data is small, use the full training data. In cases with a natur
 **Remarks**
 
 - Multivariate predictions are handled at no additional computational cost.
+- Factor-valued predictions are automatically turned into one-hot-encoded columns.
 - By changing the defaults, the iterative pure sampling approach in [2] can be enforced.
 - Case weights are supported via the argument `bg_w`.
 
