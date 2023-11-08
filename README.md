@@ -251,6 +251,10 @@ ks_class <- kernelshap(fit_class, X = iris, bg_X = iris) |>
 sv_importance(ks_class)
 ```
 
+![](man/figures/README-prob-class.svg)
+
+![](man/figures/README-fact-class.svg)
+
 ## Meta-learning packages
 
 Here, we provide some working examples for "tidymodels", "caret", and "mlr3".
