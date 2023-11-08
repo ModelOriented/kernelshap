@@ -87,3 +87,11 @@ test_that("SHAP + baseline = prediction works with case weights", {
   expect_equal(rowSums(sY$S[[2L]]) + sY$baseline[2L], predsY[5:10, 2L])
 })
 
+test_that("factor predictions work", {
+  pf <- function(m, X) factor(X[, "v1"], levels = 0:1, labels = c("zero", "one"))
+  X <- cbind(v1 = 0:1, v2 = 0)
+  out <- kernelshap(1, X = X, bg_X = X, pred_fun = pf, verbose = FALSE)
+  expect_equal(colnames(out$S$zero), c("v1", "v2"))
+  expect_equal(names(out$S), c("zero", "one"))
+  expect_equal(out$predictions, cbind(zero = 1:0, one = 0:1))
+})

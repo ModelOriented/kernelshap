@@ -26,6 +26,7 @@ If the training data is small, use the full training data. In cases with a natur
 **Remarks**
 
 - Multivariate predictions are handled at no additional computational cost.
+- Factor-valued predictions are automatically turned into one-hot-encoded columns.
 - By changing the defaults, the iterative pure sampling approach in [2] can be enforced.
 - Case weights are supported via the argument `bg_w`.
 
@@ -46,8 +47,8 @@ Let's model diamonds prices!
 ### Linear regression
 
 ```r
-library(ggplot2)
 library(kernelshap)
+library(ggplot2)
 library(shapviz)
 
 diamonds <- transform(
@@ -221,6 +222,40 @@ shap_gam
 # [2,] -0.5153642 -0.1080045  0.11967804 0.031341595
 ```
 
+## Multi-output models
+
+{kernelshap} supports multivariate predictions, such as:
+- probabilistic classification,
+- non-probabilistic classification (factor-valued responses are turned into dummies),
+- regression with multivariate response, and
+- predictions found by applying multiple regression models.
+
+### Classification
+
+We use {ranger} to fit a probabilistic and a non-probabilistic classification model.
+
+```r
+library(kernelshap)
+library(ranger)
+library(shapviz)
+
+# Probabilistic
+fit_prob <- ranger(Species ~ ., data = iris, num.trees = 20, probability = TRUE, seed = 1)
+ks_prob <- kernelshap(fit_prob, X = iris, bg_X = iris) |> 
+  shapviz()
+sv_importance(ks_prob)
+
+# Non-probabilistic: Predictions are factors
+fit_class <- ranger(Species ~ ., data = iris, num.trees = 20, seed = 1)
+ks_class <- kernelshap(fit_class, X = iris, bg_X = iris) |> 
+  shapviz()
+sv_importance(ks_class)
+```
+
+![](man/figures/README-prob-class.svg)
+
+![](man/figures/README-fact-class.svg)
+
 ## Meta-learning packages
 
 Here, we provide some working examples for "tidymodels", "caret", and "mlr3".
@@ -283,7 +318,7 @@ fit_lm$train(task_iris)
 s <- kernelshap(fit_lm, iris[-1], bg_X = iris)
 s
 
-# Probabilistic classification -> lrn(..., predict_type = "prob")
+# *Probabilistic* classification -> lrn(..., predict_type = "prob")
 task_iris <- TaskClassif$new(id = "class", backend = iris, target = "Species")
 fit_rf <- lrn("classif.ranger", predict_type = "prob", num.trees = 50)
 fit_rf$train(task_iris)
