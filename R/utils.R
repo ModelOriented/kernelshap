@@ -141,7 +141,7 @@ get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
   n_bg <- nrow(bg) / m   # because bg was replicated m times
   
   # Replicate not_Z, so that X, bg, not_Z are all of dimension (m*n_bg x p)
-  g <- rep(seq_len(m), each = n_bg)
+  g <- rep_each(m, each = n_bg)  # from_hstats.R
   not_Z <- not_Z[g, , drop = FALSE]
   
   if (is.matrix(X)) {
@@ -175,7 +175,7 @@ get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
 #' @returns A (1 x ncol(x)) matrix of column means.
 weighted_colMeans <- function(x, w = NULL, ...) {
   if (NCOL(x) == 1L && is.null(w)) {
-    return(matrix(mean(x)))
+    return(as.matrix(mean(x)))
   }
   if (!is.matrix(x)) {
     x <- as.matrix(x)
@@ -226,7 +226,7 @@ reorganize_list <- function(alist) {
 
 #' Aligns Predictions
 #'
-#' Turns predictions into matrix. Originally implemented in {hstats}.
+#' Turns predictions into matrix.
 #'
 #' @noRd
 #' @keywords internal
@@ -234,13 +234,13 @@ reorganize_list <- function(alist) {
 #' @param x Object representing model predictions.
 #' @returns Like `x`, but converted to matrix.
 align_pred <- function(x) {
-  if (!is.matrix(x)) {
-    x <- as.matrix(x)
+  if (is.data.frame(x) && ncol(x) == 1L) {
+    x <- x[[1L]]
   }
-  if (!is.numeric(x)) {
-    stop("Predictions must be numeric")
+  if (is.factor(x)) {
+    return(fdummy(x))  # from_hstats.R
   }
-  x
+  if (is.matrix(x)) x else as.matrix(x)
 }
 
 #' Head of List Elements

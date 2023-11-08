@@ -1,6 +1,6 @@
 Package: kernelshap
 Title: Kernel SHAP
-Version: 0.3.8
+Version: 0.4.0
 Authors@R: c(
     person("Michael", "Mayer", , "mayermichael79@gmail.com", role = c("aut", "cre")),
     person("David", "Watson", , "david.s.watson11@gmail.com", role = "aut"),

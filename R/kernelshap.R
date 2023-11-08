@@ -213,6 +213,9 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
   bg_n <- nrow(bg_X)
   if (!is.null(bg_w)) {
     stopifnot(length(bg_w) == bg_n, all(bg_w >= 0), !all(bg_w == 0))
+    if (!is.double(bg_w)) {
+      bg_w <- as.double(bg_w)
+    }
   }
   if (is.matrix(X) && !identical(colnames(X), feature_names)) {
     stop("If X is a matrix, feature_names must equal colnames(X)")  
