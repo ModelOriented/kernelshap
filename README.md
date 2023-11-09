@@ -232,24 +232,27 @@ shap_gam
 
 ### Classification
 
-We use {ranger} to fit a probabilistic and a non-probabilistic classification model.
+Let's use {ranger} to fit a probabilistic and a non-probabilistic classification model.
 
 ```r
 library(kernelshap)
 library(ranger)
 library(shapviz)
+library(ggplot2)
 
 # Probabilistic
 fit_prob <- ranger(Species ~ ., data = iris, num.trees = 20, probability = TRUE, seed = 1)
 ks_prob <- kernelshap(fit_prob, X = iris, bg_X = iris) |> 
   shapviz()
-sv_importance(ks_prob)
+sv_importance(ks_prob) +
+  ggtitle("Probabilistic")
 
 # Non-probabilistic: Predictions are factors
 fit_class <- ranger(Species ~ ., data = iris, num.trees = 20, seed = 1)
 ks_class <- kernelshap(fit_class, X = iris, bg_X = iris) |> 
   shapviz()
-sv_importance(ks_class)
+sv_importance(ks_class) +
+  ggtitle("Non-Probabilistic")
 ```
 
 ![](man/figures/README-prob-class.svg)
