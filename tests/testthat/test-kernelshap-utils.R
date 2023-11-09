@@ -30,7 +30,7 @@ test_that("Sampling input structure is ok (deg = 0)", {
   input <- input_sampling(
     p, m = m, deg = 0L, paired = TRUE, feature_names = LETTERS[1:p]
   )
-
+  
   expect_equal(dim(input$Z), c(m, p))
   expect_equal(sum(input$w), 1.0)
   expect_equal(dim(input$A), c(p, p))
@@ -45,7 +45,7 @@ test_that("Sampling input structure is ok (deg = 0, unpaired)", {
   expect_equal(dim(input$Z), c(m, p))
   expect_equal(sum(input$w), 1.0)
   expect_equal(dim(input$A), c(p, p))
- # expect_equal(diag(input$A), rep(0.5, p)) # This is not TRUE
+  # expect_equal(diag(input$A), rep(0.5, p)) # This is not TRUE
 })
 
 test_that("Sampling input structure is ok (deg = 1)", {
@@ -87,7 +87,7 @@ test_that("hybrid weights sum to 1 for different p and degree 1", {
   deg <- 1L
   expect_error(input_sampling(2L, deg = deg, feature_names = LETTERS[1:p]))
   expect_error(input_sampling(3L, deg = deg, feature_names = LETTERS[1:p]))
-
+  
   for (p in 4:20) {
     pa <- input_partly_exact(p, deg = deg, feature_names = LETTERS[1:p])
     sa <- input_sampling(
@@ -120,28 +120,4 @@ test_that("partly_exact_Z(p, k) fails for bad p or k", {
 test_that("input_partly_exact(p, deg) fails for bad p or deg", {
   expect_error(input_partly_exact(2L, deg = 0L, feature_names = LETTERS[1:p]))
   expect_error(input_partly_exact(5L, deg = 3L, feature_names = LETTERS[1:p]))
-})
-
-# Helper functions
-test_that("head_list(x) = head(x) for matrix x", {
-  x <- cbind(1:10, 2:11)
-  expect_equal(head_list(x), utils::head(x))
-})
-
-test_that("head_list(x)[[1L]] = head(x[[1L]]) for list of matries x", {
-  x1 <- cbind(1:10, 2:11)
-  x2 <- cbind(1:7, 2:8)
-  x <- list(x1, x2)
-  expect_equal(head_list(x)[[1L]], utils::head(x[[1L]]))
-})
-
-test_that("regoranize_list() fails for non-list inputs", {
-  expect_error(reorganize_list(alist = 1:10))
-})
-
-test_that("weighted_colMeans() gives the same as colMeans() in unweighted case", {
-  X <- cbind(1:3, 2:4)
-  expect_equal(c(weighted_colMeans(X)), colMeans(X))
-  expect_equal(c(weighted_colMeans(X, w = c(1, 1, 1))), colMeans(X))
-  expect_equal(c(weighted_colMeans(X, w = c(2, 2, 2))), colMeans(X))
 })

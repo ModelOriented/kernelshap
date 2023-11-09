@@ -13,7 +13,7 @@
 #' s
 #' @seealso [kernelshap()]
 print.kernelshap <- function(x, n = 2L, ...) {
-  cat("SHAP values of first", n, "observations:\n")
+  cat("SHAP values of first observations:\n")
   print(head_list(getElement(x, "S"), n = n))
   invisible(x)
 }
@@ -58,7 +58,7 @@ summary.kernelshap <- function(object, compact = FALSE, n = 2L, ...) {
   }
   cat("\n  - m_exact:", getElement(object, "m_exact"))
   if (!compact) {
-    cat("\n\nSHAP values of first", n, "observations:\n")
+    cat("\n\nSHAP values of first observations:\n")
     print(head_list(S, n = n))
     if (!ex) {
       cat("\nCorresponding standard errors:\n")

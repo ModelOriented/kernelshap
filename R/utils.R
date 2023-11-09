@@ -1,168 +1,3 @@
-# Kernel SHAP algorithm for a single row x
-# If exact, a single call to predict() is necessary.
-# If sampling is involved, we need at least two additional calls to predict().
-kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, deg, 
-                           paired, m, tol, max_iter, v0, precalc, ...) {
-  p <- length(feature_names)
-
-  # Calculate A_exact and b_exact
-  if (exact || deg >= 1L) {
-    A_exact <- precalc[["A"]]                                     #  (p x p)
-    bg_X_exact <- precalc[["bg_X_exact"]]                         #  (m_ex*n_bg x p)
-    Z <- precalc[["Z"]]                                           #  (m_ex x p)
-    m_exact <- nrow(Z)
-    v0_m_exact <- v0[rep(1L, m_exact), , drop = FALSE]            #  (m_ex x K)
-    
-    # Most expensive part
-    vz <- get_vz(                                                 #  (m_ex x K)
-      X = x[rep(1L, times = nrow(bg_X_exact)), , drop = FALSE],   #  (m_ex*n_bg x p)
-      bg = bg_X_exact,                                            #  (m_ex*n_bg x p)
-      Z = Z,                                                      #  (m_ex x p)
-      object = object, 
-      pred_fun = pred_fun,
-      w = bg_w, 
-      ...
-    )
-    # Note: w is correctly replicated along columns of (vz - v0_m_exact)
-    b_exact <- crossprod(Z, precalc[["w"]] * (vz - v0_m_exact))   #  (p x K)
-    
-    # Some of the hybrid cases are exact as well
-    if (exact || trunc(p / 2) == deg) {
-      beta <- solver(A_exact, b_exact, constraint = v1 - v0)      #  (p x K)
-      return(list(beta = beta, sigma = 0 * beta, n_iter = 1L, converged = TRUE))  
-    }
-  } 
-  
-  # Iterative sampling part, always using A_exact and b_exact to fill up the weights
-  bg_X_m <- precalc[["bg_X_m"]]                                   #  (m*n_bg x p)
-  X <- x[rep(1L, times = nrow(bg_X_m)), , drop = FALSE]           #  (m*n_bg x p)
-  v0_m <- v0[rep(1L, m), , drop = FALSE]                          #  (m x K)
-
-  est_m = list()
-  converged <- FALSE
-  n_iter <- 0L
-  A_sum <- matrix(                                                #  (p x p)
-    0, nrow = p, ncol = p, dimnames = list(feature_names, feature_names)
-  )
-  b_sum <- matrix(                                                #  (p x K)
-    0, nrow = p, ncol = ncol(v0), dimnames = list(feature_names, colnames(v1))
-  )      
-  if (deg == 0L) {
-    A_exact <- A_sum
-    b_exact <- b_sum
-  }
-  
-  while(!isTRUE(converged) && n_iter < max_iter) {
-    n_iter <- n_iter + 1L
-    input <- input_sampling(
-      p = p, m = m, deg = deg, paired = paired, feature_names = feature_names
-    )
-    Z <- input[["Z"]]
-      
-    # Expensive                                                              #  (m x K)
-    vz <- get_vz(
-      X = X, bg = bg_X_m, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
-    )
-    
-    # The sum of weights of A_exact and input[["A"]] is 1, same for b
-    A_temp <- A_exact + input[["A"]]                                         #  (p x p)
-    b_temp <- b_exact + crossprod(Z, input[["w"]] * (vz - v0_m))             #  (p x K)
-    A_sum <- A_sum + A_temp                                                  #  (p x p)
-    b_sum <- b_sum + b_temp                                                  #  (p x K)
-    
-    # Least-squares with constraint that beta_1 + ... + beta_p = v_1 - v_0. 
-    # The additional constraint beta_0 = v_0 is dealt via offset   
-    est_m[[n_iter]] <- solver(A_temp, b_temp, constraint = v1 - v0)          #  (p x K)
-
-    # Covariance calculation would fail in the first iteration
-    if (n_iter >= 2L) {
-      beta_n <- solver(A_sum / n_iter, b_sum / n_iter, constraint = v1 - v0) #  (p x K)
-      sigma_n <- get_sigma(est_m, iter = n_iter)                             #  (p x K)
-      converged <- all(conv_crit(sigma_n, beta_n) < tol)
-    }
-  }
-  list(beta = beta_n, sigma = sigma_n, n_iter = n_iter, converged = converged)
-}
-
-# Regression coefficients given sum(beta) = constraint
-# A: (p x p), b: (p x k), constraint: (1 x K)
-solver <- function(A, b, constraint) {
-  p <- ncol(A)
-  Ainv <- ginv(A)
-  dimnames(Ainv) <- dimnames(A)
-  s <- (matrix(colSums(Ainv %*% b), nrow = 1L) - constraint) / sum(Ainv)     #  (1 x K)
-  Ainv %*% (b - s[rep(1L, p), , drop = FALSE])                               #  (p x K)
-}
-
-ginv <- function (X, tol = sqrt(.Machine$double.eps)) {
-  ##
-  ## Based on an original version in package MASS 7.3.56
-  ## (with permission)
-  ##
-  if (length(dim(X)) > 2L || !(is.numeric(X) || is.complex(X))) {
-    stop("'X' must be a numeric or complex matrix")
-  }
-  if (!is.matrix(X)) {
-    X <- as.matrix(X)
-  }
-  Xsvd <- svd(X)
-  if (is.complex(X)) {
-    Xsvd$u <- Conj(Xsvd$u)
-  }
-  Positive <- Xsvd$d > max(tol * Xsvd$d[1L], 0)
-  if (all(Positive)) {
-    Xsvd$v %*% (1 / Xsvd$d * t(Xsvd$u))
-  } else if (!any(Positive)) {
-    array(0, dim(X)[2L:1L])
-  } else {
-    Xsvd$v[, Positive, drop = FALSE] %*% 
-      ((1 / Xsvd$d[Positive]) * t(Xsvd$u[, Positive, drop = FALSE]))
-  }
-}
-
-#' Masker
-#'
-#' Internal function. 
-#' For each on-off vector (rows in `Z`), the (weighted) average prediction is returned.
-#'
-#' @noRd
-#' @keywords internal
-#'
-#' @inheritParams kernelshap
-#' @param X Row to be explained stacked m*n_bg times.
-#' @param bg Background data stacked m times.
-#' @param Z A (m x p) matrix with on-off values.
-#' @param w A vector with case weights (of the same length as the unstacked
-#'   background data).
-#' @returns A (m x K) matrix with vz values.
-get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
-  m <- nrow(Z)
-  not_Z <- !Z
-  n_bg <- nrow(bg) / m   # because bg was replicated m times
-  
-  # Replicate not_Z, so that X, bg, not_Z are all of dimension (m*n_bg x p)
-  g <- rep_each(m, each = n_bg)  # from_hstats.R
-  not_Z <- not_Z[g, , drop = FALSE]
-  
-  if (is.matrix(X)) {
-    # Remember that columns of X and bg are perfectly aligned in this case
-    X[not_Z] <- bg[not_Z]
-  } else {
-    for (v in colnames(Z)) {
-      s <- not_Z[, v]
-      X[[v]][s] <- bg[[v]][s]
-    }
-  }
-  preds <- align_pred(pred_fun(object, X, ...))
-  
-  # Aggregate
-  if (is.null(w)) {
-    return(rowsum(preds, group = g, reorder = FALSE) / n_bg)
-  }
-  # w is recycled over rows and columns
-  rowsum(preds * w, group = g, reorder = FALSE) / sum(w)
-}
-
 #' Weighted Version of colMeans()
 #' 
 #' Internal function used to calculate column-wise weighted means.
@@ -238,7 +73,7 @@ align_pred <- function(x) {
     x <- x[[1L]]
   }
   if (is.factor(x)) {
-    return(fdummy(x))  # from_hstats.R
+    return(fdummy(x))
   }
   if (is.matrix(x)) x else as.matrix(x)
 }
@@ -272,10 +107,80 @@ summarize_strategy <- function(p, exact, deg) {
   paste("Kernel SHAP values by the hybrid strategy of degree", deg)
 }
 
-# Kernel weights normalized to a non-empty subset S of {1, ..., p-1}
-kernel_weights <- function(p, S = seq_len(p - 1L)) {
-  probs <- (p - 1L) / (choose(p, S) * S * (p - S))
-  probs / sum(probs)
+# Case p = 1 returns exact Shapley values
+case_p1 <- function(n, feature_names, v0, v1, X, verbose) {
+  txt <- "Exact Shapley values (p = 1)"
+  if (verbose) {
+    message(txt)
+  }
+  S <- v1 - v0[rep(1L, n), , drop = FALSE]                        #  (n x K)
+  SE <- matrix(numeric(n), dimnames = list(NULL, feature_names))  #  (n x 1)
+  if (ncol(v1) > 1L) {
+    SE <- replicate(ncol(v1), SE, simplify = FALSE)
+    S <- lapply(
+      asplit(S, MARGIN = 2L), function(M) 
+        as.matrix(M, dimnames = list(NULL, feature_names))
+    )
+  } else {
+    colnames(S) <- feature_names      
+  }
+  out <- list(
+    S = S, 
+    X = X, 
+    baseline = as.vector(v0), 
+    SE = SE, 
+    n_iter = integer(n), 
+    converged = rep(TRUE, n),
+    m = 0L,
+    m_exact = 0L,
+    prop_exact = 1,
+    exact = TRUE,
+    txt = txt,
+    predictions = v1
+  )
+  class(out) <- "kernelshap"
+  out
+}
+
+#' Fast Index Generation (from {hstats})
+#' 
+#' For not too small m, much faster than `rep(seq_len(m), each = each)`.
+#' 
+#' @noRd
+#' @keywords internal
+#' 
+#' @param m Integer. See `each`.
+#' @param each Integer. How many times should each value in `1:m` be repeated?
+#' @returns Like `x`, but converted to matrix.
+#' @examples
+#' rep_each(10, 2)
+#' rep(1:10, each = 2)  # Dito
+rep_each <- function(m, each) {
+  out <- .col(dim = c(each, m))
+  dim(out) <- NULL
+  out 
+}
+
+#' Fast OHE (from {hstats})
+#' 
+#' Turns vector/factor into its One-Hot-Encoding.
+#' Ingeniouly written by Mathias Ambuehl.
+#' 
+#' Working with integers instead of doubles would be slightly faster, but at the price
+#' of potential integer overflows in subsequent calculations.
+#' 
+#' @noRd
+#' @keywords internal
+#' 
+#' @param x Object representing model predictions.
+#' @returns Like `x`, but converted to matrix.
+fdummy <- function(x) {
+  x <- as.factor(x)
+  lev <- levels(x)
+  out <- matrix(0, nrow = length(x), ncol = length(lev))
+  out[cbind(seq_along(x), as.integer(x))] <- 1
+  colnames(out) <- lev
+  out 
 }
 
 #' mlr3 Helper
