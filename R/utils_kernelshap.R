@@ -120,49 +120,6 @@ ginv <- function (X, tol = sqrt(.Machine$double.eps)) {
   }
 }
 
-#' Masker
-#'
-#' Internal function. 
-#' For each on-off vector (rows in `Z`), the (weighted) average prediction is returned.
-#'
-#' @noRd
-#' @keywords internal
-#'
-#' @inheritParams kernelshap
-#' @param X Row to be explained stacked m*n_bg times.
-#' @param bg Background data stacked m times.
-#' @param Z A (m x p) matrix with on-off values.
-#' @param w A vector with case weights (of the same length as the unstacked
-#'   background data).
-#' @returns A (m x K) matrix with vz values.
-get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
-  m <- nrow(Z)
-  not_Z <- !Z
-  n_bg <- nrow(bg) / m   # because bg was replicated m times
-  
-  # Replicate not_Z, so that X, bg, not_Z are all of dimension (m*n_bg x p)
-  g <- rep_each(m, each = n_bg)
-  not_Z <- not_Z[g, , drop = FALSE]
-  
-  if (is.matrix(X)) {
-    # Remember that columns of X and bg are perfectly aligned in this case
-    X[not_Z] <- bg[not_Z]
-  } else {
-    for (v in colnames(Z)) {
-      s <- not_Z[, v]
-      X[[v]][s] <- bg[[v]][s]
-    }
-  }
-  preds <- align_pred(pred_fun(object, X, ...))
-  
-  # Aggregate
-  if (is.null(w)) {
-    return(rowsum(preds, group = g, reorder = FALSE) / n_bg)
-  }
-  # w is recycled over rows and columns
-  rowsum(preds * w, group = g, reorder = FALSE) / sum(w)
-}
-
 # Draw m binary vectors z of length p with sum(z) distributed according 
 # to Kernel SHAP weights -> (m x p) matrix. 
 # The argument S can be used to restrict the range of sum(z).
@@ -234,7 +191,7 @@ input_sampling <- function(p, m, deg, paired, feature_names) {
 #      the SHAP kernel distribution
 # - A: Exact matrix A = Z'wZ
 input_exact <- function(p, feature_names) {
-  Z <- exact_Z(p, feature_names = feature_names)
+  Z <- exact_Z(p, feature_names = feature_names, keep_extremes = FALSE)
   # Each Kernel weight(j) is divided by the number of vectors z having sum(z) = j
   w <- kernel_weights(p) / choose(p, 1:(p - 1L))
   list(Z = Z, w = w[rowSums(Z)], A = exact_A(p, feature_names = feature_names))
@@ -262,22 +219,6 @@ exact_A <- function(p, feature_names) {
   )
   diag(A) <- 0.5
   A
-}
-
-#' All on-off Vectors
-#'
-#' Internal function that creates matrix of all on-off vectors of length `p`.
-#'
-#' @noRd
-#' @keywords internal
-#'
-#' @param p Number of features.
-#' @param feature_names Feature names.
-#' @returns An integer ((2^p - 2) x p) matrix of all on-off vectors of length `p`.
-exact_Z <- function(p, feature_names) {
-  Z <- as.matrix(do.call(expand.grid, replicate(p, 0:1, simplify = FALSE)))
-  colnames(Z) <- feature_names
-  Z[2:(nrow(Z) - 1L), , drop = FALSE]
 }
 
 # List all length p vectors z with sum(z) in {k, p - k}
