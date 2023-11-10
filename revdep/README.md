@@ -10,7 +10,7 @@
 |collate  |German_Switzerland.utf8                                  |
 |ctype    |German_Switzerland.utf8                                  |
 |tz       |Europe/Zurich                                            |
-|date     |2023-09-12                                               |
+|date     |2023-11-10                                               |
 |rstudio  |2023.06.1+524 Mountain Hydrangea (desktop)               |
 |pandoc   |3.1.6 @ C:\Users\Michael\AppData\Local\Pandoc\pandoc.exe |
 
@@ -18,7 +18,7 @@
 
 |package    |old    |new    |Δ  |
 |:----------|:------|:------|:--|
-|kernelshap |0.3.7  |0.3.8  |*  |
+|kernelshap |0.3.8  |0.4.0  |*  |
 |foreach    |1.5.2  |1.5.2  |   |
 |iterators  |1.0.14 |1.0.14 |   |
 

@@ -33,7 +33,7 @@
 #' s
 #'
 #' # MODEL TWO: Multi-response linear regression
-#' fit <- lm(as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris)
+#' fit <- lm(as.matrix(iris[, 1:2]) ~ Petal.Length + Petal.Width + Species, data = iris)
 #' s <- permshap(fit, iris[1:4, 3:5], bg_X = bg_X)
 #' s
 #'
