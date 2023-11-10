@@ -34,6 +34,12 @@
     <loc>/reference/print.kernelshap.html</loc>
   </url>
   <url>
+    <loc>/reference/print.permshap.html</loc>
+  </url>
+  <url>
     <loc>/reference/summary.kernelshap.html</loc>
+  </url>
+  <url>
+    <loc>/reference/summary.permshap.html</loc>
   </url>
 </urlset>
