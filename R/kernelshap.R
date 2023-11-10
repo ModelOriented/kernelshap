@@ -199,14 +199,10 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
     paired_sampling %in% c(TRUE, FALSE),
     "m must be even" = trunc(m / 2) == m / 2
   )
-  p <- length(feature_names)
   n <- nrow(X)
   bg_n <- nrow(bg_X)
   if (!is.null(bg_w)) {
     bg_w <- prep_w(bg_w, bg_n = bg_n)
-  }
-  if (is.matrix(X) && !identical(colnames(X), feature_names)) {
-    stop("If X is a matrix, feature_names must equal colnames(X)")  
   }
   
   # Calculate v1 and v0
@@ -253,9 +249,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
     message(txt)
   }
   if (max(m, m_exact) * bg_n > 2e5) {
-    warning("\nPredictions on large data sets with ", max(m, m_exact), "x", bg_n,
-            " observations are being done.\n",
-            "Consider reducing the computational burden (e.g. use smaller X_bg)")
+    warning_burden(max(m, m_exact), bg_n = bg_n)
   }
   
   # Apply Kernel SHAP to each row of X

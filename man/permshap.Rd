@@ -94,10 +94,16 @@ dimension \eqn{K > 1}, a list of \eqn{K} such matrices.
 \item \code{X}: Same as input argument \code{X}.
 \item \code{baseline}: Vector of length K representing the average prediction on the
 background data.
+\item \code{m_exact}: Integer providing the effective number of exact on-off vectors used.
+\item \code{exact}: Logical flag indicating whether calculations are exact or not
+(currently \code{TRUE}).
+\item \code{txt}: Summary text.
+\item \code{predictions}: \eqn{(n \times K)} matrix with predictions of \code{X}.
 }
 }
 \description{
 Exact permutation SHAP values with respect to a background dataset.
+The function is currently limited to maximum 14 features.
 }
 \section{Methods (by class)}{
 \itemize{

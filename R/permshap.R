@@ -1,6 +1,7 @@
 #' Permutation SHAP
 #'
 #' Exact permutation SHAP values with respect to a background dataset.
+#' The function is currently limited to maximum 14 features.
 #'
 #' @inheritParams kernelshap
 #' @returns
@@ -10,6 +11,11 @@
 #'   - `X`: Same as input argument `X`.
 #'   - `baseline`: Vector of length K representing the average prediction on the
 #'     background data.
+#'   - `m_exact`: Integer providing the effective number of exact on-off vectors used.
+#'   - `exact`: Logical flag indicating whether calculations are exact or not
+#'     (currently `TRUE`).
+#'   - `txt`: Summary text.
+#'   - `predictions`: \eqn{(n \times K)} matrix with predictions of `X`.
 #' @export
 #' @examples
 #' # MODEL ONE: Linear regression
@@ -51,23 +57,21 @@ permshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
                              verbose = TRUE, ...) {
   basic_checks(X = X, bg_X = bg_X, feature_names = feature_names, pred_fun = pred_fun)
   p <- length(feature_names)
-  stopifnot(p <= 14L)
+  stopifnot("Permutation SHAP only supported for up to 14 features" = p <= 14L)
   n <- nrow(X)
   bg_n <- nrow(bg_X)
   if (!is.null(bg_w)) {
     bg_w <- prep_w(bg_w, bg_n = bg_n)
   }
-  if (is.matrix(X) && !identical(colnames(X), feature_names)) {
-    stop("If X is a matrix, feature_names must equal colnames(X)")
-  }
-  
+  txt <- "Exact permutation SHAP"
   if (verbose) {
-    message("Exact permutation SHAP values")
+    message(txt)
   }
   
-  # Baseline
+  # Baseline and predictions on explanation data (latter not required in algo)
   bg_preds <- align_pred(pred_fun(object, bg_X[, colnames(X), drop = FALSE], ...))
   v0 <- wcolMeans(bg_preds, bg_w)            # Average pred of bg data: 1 x K
+  v1 <- align_pred(pred_fun(object, X, ...)) # Predictions on X:        n x K
   
   # Drop unnecessary columns in bg_X. If X is matrix, also column order is relevant
   # Predictions will never be applied directly to bg_X anymore
@@ -85,9 +89,7 @@ permshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
   )
   
   if (m_exact * bg_n > 2e5) {
-    warning("\nPredictions on large data sets with ", m_exact, "x", bg_n,
-            " observations are being done.\n",
-            "Consider reducing the computational burden (e.g. use smaller X_bg)")
+    warning_burden(m_exact, bg_n = bg_n)
   }
   
   # Apply permutation SHAP to each row of X
@@ -120,7 +122,15 @@ permshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
       }
     }
   }
-  out <- list(S = reorganize_list(res), X = X, baseline = as.vector(v0))
+  out <- list(
+    S = reorganize_list(res), 
+    X = X, 
+    baseline = as.vector(v0),
+    m_exact = m_exact,
+    exact = TRUE,
+    txt = txt,
+    predictions = v1
+  )
   class(out) <- "permshap"
   out
 }

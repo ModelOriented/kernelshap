@@ -264,8 +264,26 @@ basic_checks <- function(X, bg_X, feature_names, pred_fun) {
     all(feature_names %in% colnames(X)),
     all(feature_names %in% colnames(bg_X)),  # not necessary, but clearer
     all(colnames(X) %in% colnames(bg_X)),
-    is.function(pred_fun)
+    is.function(pred_fun),
+    "If X is a matrix, feature_names must equal colnames(X)" = 
+      !is.matrix(X) || identical(colnames(X), feature_names)
   )
+  TRUE
+}
+
+#' Warning on Slow Computations
+#' 
+#' @noRd
+#' @keywords internal
+#' 
+#' @param m Number of on-off vectors.
+#' @param bg_n Number of rows in the background data.
+#' 
+#' @returns TRUE.
+warning_burden <- function(m, bg_n) {
+  warning("\nPredictions on large data sets with ", m, "x", bg_n,
+          " observations are being done.\n",
+          "Consider reducing the computational burden (e.g. use smaller X_bg)")
   TRUE
 }
 

@@ -2,9 +2,12 @@
 % Please edit documentation in R/methods.R
 \name{print.kernelshap}
 \alias{print.kernelshap}
+\alias{print.permshap}
 \title{Print Method}
 \usage{
 \method{print}{kernelshap}(x, n = 2L, ...)
+
+\method{print}{permshap}(x, n = 2L, ...)
 }
 \arguments{
 \item{x}{An object of class "kernelshap".}
@@ -19,6 +22,11 @@ Invisibly, the input is returned.
 \description{
 Prints the first two rows of the matrix (or matrices) of SHAP values.
 }
+\section{Functions}{
+\itemize{
+\item \code{print(permshap)}: Print method for "permshap" object
+
+}}
 \examples{
 fit <- stats::lm(Sepal.Length ~ ., data = iris)
 s <- kernelshap(fit, iris[1:3, -1], bg_X = iris[-1])
