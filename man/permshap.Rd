@@ -81,7 +81,7 @@ see README for an example. Parallelization automatically disables the progress b
 
 \item{parallel_args}{Named list of arguments passed to \code{\link[foreach:foreach]{foreach::foreach()}}.
 Ideally, this is \code{NULL} (default). Only relevant if \code{parallel = TRUE}.
-Example on Windows: if \code{object} is a GAM fitted with package {mgcv},
+Example on Windows: if \code{object} is a GAM fitted with package 'mgcv',
 then one might need to set \code{parallel_args = list(.packages = "mgcv")}.}
 
 \item{verbose}{Set to \code{FALSE} to suppress messages and the progress bar.}
@@ -130,7 +130,7 @@ s <- permshap(fit, X_explain, bg_X = bg_X)
 s
 
 # MODEL TWO: Multi-response linear regression
-fit <- lm(as.matrix(iris[1:2]) ~ Petal.Length + Petal.Width + Species, data = iris)
+fit <- lm(as.matrix(iris[, 1:2]) ~ Petal.Length + Petal.Width + Species, data = iris)
 s <- permshap(fit, iris[1:4, 3:5], bg_X = bg_X)
 s
 

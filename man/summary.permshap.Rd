@@ -23,7 +23,7 @@ Summarizes "permshap" Object
 }
 \examples{
 fit <- lm(Sepal.Length ~ ., data = iris)
-s <- permshap(fit, iris[1:3, -1], bg_X = iris[-1])
+s <- permshap(fit, iris[1:3, -1], bg_X = iris[, -1])
 summary(s)
 }
 \seealso{

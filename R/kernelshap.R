@@ -117,7 +117,7 @@
 #'   see README for an example. Parallelization automatically disables the progress bar.
 #' @param parallel_args Named list of arguments passed to [foreach::foreach()]. 
 #'   Ideally, this is `NULL` (default). Only relevant if `parallel = TRUE`. 
-#'   Example on Windows: if `object` is a GAM fitted with package {mgcv}, 
+#'   Example on Windows: if `object` is a GAM fitted with package 'mgcv', 
 #'   then one might need to set `parallel_args = list(.packages = "mgcv")`.
 #' @param verbose Set to `FALSE` to suppress messages and the progress bar.
 #' @param ... Additional arguments passed to `pred_fun(object, X, ...)`.
