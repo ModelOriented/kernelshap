@@ -20,13 +20,13 @@
 <link href="dalexverse-2.css" rel="stylesheet">
 <!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
 <script src="pkgdown.js"></script><meta property="og:title" content="Kernel SHAP">
-<meta property="og:description" content="Efficient implementation of Kernel SHAP, see Lundberg and Lee (2017), 
-    and Covert and Lee (2021) &lt;http://proceedings.mlr.press/v130/covert21a&gt;.
-    For models with up to eight features, the results are exact regarding the
-    selected background data.  Otherwise, an almost exact hybrid algorithm
-    involving iterative sampling is used.  The package plays well together
-    with meta-learning packages like tidymodels, caret or mlr3.
-    Visualizations can be done using the R package shapviz.">
+<meta property="og:description" content="Efficient implementation of Kernel SHAP, see Lundberg and Lee
+    (2017), and Covert and Lee (2021)
+    &lt;http://proceedings.mlr.press/v130/covert21a&gt;.  Furthermore, for up to
+    14 features, exact permutation SHAP values can be calculated.  The
+    package plays well together with meta-learning packages like
+    tidymodels, caret or mlr3.  Visualizations can be done using the
+    R package shapviz.">
 <meta property="og:image" content="/logo.png">
 <meta name="robots" content="noindex">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
@@ -98,25 +98,42 @@
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>This package offers an efficient implementation of Kernel SHAP, see [1] and [2]. For up to <span class="math inline"><em>p</em> = 8</span> features, the resulting Kernel SHAP values are exact regarding the selected background data. For larger <span class="math inline"><em>p</em></span>, an almost exact hybrid algorithm involving iterative sampling is used by default.</p>
-<p>The typical workflow to explain any model <code>object</code>:</p>
+<p>The package contains two workhorses to calculate SHAP values for any model:</p>
+<ul>
+<li>
+<code><a href="reference/kernelshap.html">kernelshap()</a></code>: Kernel SHAP algorithm of [1] and [2]. By default, exact Kernel SHAP is used for up to <span class="math inline"><em>p</em> = 8</span> features, and an almost exact hybrid algorithm otherwise.</li>
+<li>
+<code><a href="reference/permshap.html">permshap()</a></code>: Exact permutation SHAP (currently available for up to <span class="math inline"><em>p</em> = 14</span> features).</li>
+</ul>
+<div class="section level3">
+<h3 id="kernel-shap-or-permutation-shap">Kernel SHAP or permutation SHAP?<a class="anchor" aria-label="anchor" href="#kernel-shap-or-permutation-shap"></a>
+</h3>
+<ul>
+<li>Exact Kernel SHAP and exact permutation SHAP values agree for additive models, and differ for models with interactions.</li>
+<li>If the number of features is sufficiently small, we recommend <code><a href="reference/permshap.html">permshap()</a></code> over <code><a href="reference/kernelshap.html">kernelshap()</a></code>.</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="typical-workflow-to-explain-any-model">Typical workflow to explain any model<a class="anchor" aria-label="anchor" href="#typical-workflow-to-explain-any-model"></a>
+</h3>
 <ol style="list-style-type: decimal">
 <li>
 <strong>Sample rows to explain:</strong> Sample 500 to 2000 rows <code>X</code> to be explained. If the training dataset is small, simply use the full training data for this purpose. <code>X</code> should only contain feature columns.</li>
 <li>
-<strong>Select background data:</strong> Kernel SHAP requires a representative background dataset <code>bg_X</code> to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data. If the training data is small, use the full training data. In cases with a natural “off” value (like MNIST digits), this can also be a single row with all values set to the off value.</li>
+<strong>Select background data:</strong> Both algorithms require a representative background dataset <code>bg_X</code> to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data. If the training data is small, use the full training data. In cases with a natural “off” value (like MNIST digits), this can also be a single row with all values set to the off value.</li>
 <li>
-<strong>Crunch:</strong> Use <code>kernelshap(object, X, bg_X, ...)</code> to calculate SHAP values. Runtime is proportional to <code>nrow(X)</code>, while memory consumption scales linearly in <code>nrow(bg_X)</code>.</li>
+<strong>Crunch:</strong> Use <code>kernelshap(object, X, bg_X, ...)</code> or <code>permshap(object, X, bg_X, ...)</code> to calculate SHAP values. Runtime is proportional to <code>nrow(X)</code>, while memory consumption scales linearly in <code>nrow(bg_X)</code>.</li>
 <li>
-<strong>Analyze:</strong> Use {shapviz} to visualize the result.</li>
+<strong>Analyze:</strong> Use {shapviz} to visualize the results.</li>
 </ol>
 <p><strong>Remarks</strong></p>
 <ul>
 <li>Multivariate predictions are handled at no additional computational cost.</li>
 <li>Factor-valued predictions are automatically turned into one-hot-encoded columns.</li>
-<li>By changing the defaults, the iterative pure sampling approach in [2] can be enforced.</li>
 <li>Case weights are supported via the argument <code>bg_w</code>.</li>
+<li>By changing the defaults in <code><a href="reference/kernelshap.html">kernelshap()</a></code>, the iterative pure sampling approach in [2] can be enforced.</li>
 </ul>
+</div>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -170,7 +187,18 @@
 <span><span class="co"># 4) Analyze</span></span>
 <span><span class="va">sv_lm</span> <span class="op">&lt;-</span> <span class="fu">shapviz</span><span class="op">(</span><span class="va">shap_lm</span><span class="op">)</span></span>
 <span><span class="fu">sv_importance</span><span class="op">(</span><span class="va">sv_lm</span><span class="op">)</span></span>
-<span><span class="fu">sv_dependence</span><span class="op">(</span><span class="va">sv_lm</span>, <span class="st">"log_carat"</span>, color_var <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">sv_dependence</span><span class="op">(</span><span class="va">sv_lm</span>, <span class="st">"log_carat"</span>, color_var <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Since the model is additive, permutation SHAP gives the same results:</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span></span>
+<span>  <span class="va">permshap_lm</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">fit_lm</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">permshap_lm</span></span>
+<span></span>
+<span><span class="co"># SHAP values of first observations:</span></span>
+<span><span class="co">#       log_carat    clarity       color         cut</span></span>
+<span><span class="co"># [1,]  1.2692479  0.1081900 -0.07847065 0.004630899</span></span>
+<span><span class="co"># [2,] -0.4499226 -0.1111329  0.11832292 0.026503850</span></span></code></pre></div>
 <p><img src="reference/figures/README-lm-imp.svg"></p>
 <p><img src="reference/figures/README-lm-dep.svg"></p>
 <p>We can also explain a specific prediction instead of the full model:</p>
@@ -207,7 +235,18 @@
 <span></span>
 <span><span class="va">sv_rf</span> <span class="op">&lt;-</span> <span class="fu">shapviz</span><span class="op">(</span><span class="va">shap_rf</span><span class="op">)</span></span>
 <span><span class="fu">sv_importance</span><span class="op">(</span><span class="va">sv_rf</span>, kind <span class="op">=</span> <span class="st">"bee"</span>, show_numbers <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu">sv_dependence</span><span class="op">(</span><span class="va">sv_rf</span>, <span class="st">"log_carat"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">sv_dependence</span><span class="op">(</span><span class="va">sv_rf</span>, <span class="st">"log_carat"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Permutation SHAP gives very slightly different results here (due to interactions):</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span></span>
+<span>  <span class="va">permshap_rf</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">fit_rf</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">permshap_rf</span></span>
+<span><span class="co"># </span></span>
+<span><span class="co"># SHAP values of first observations:</span></span>
+<span><span class="co">#       log_carat     clarity      color         cut</span></span>
+<span><span class="co"># [1,]  1.1986635  0.09557752 -0.1385312 0.001842753</span></span>
+<span><span class="co"># [2,] -0.4970758 -0.12034448  0.1051721 0.030014490</span></span></code></pre></div>
 <p><img src="reference/figures/README-rf-imp.jpeg"></p>
 <p><img src="reference/figures/README-rf-dep.svg"></p>
 </div>
@@ -282,7 +321,7 @@
 <span><span class="va">fit_gam</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">gam</a></span><span class="op">(</span><span class="va">log_price</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/s.html" class="external-link">s</a></span><span class="op">(</span><span class="va">log_carat</span><span class="op">)</span> <span class="op">+</span> <span class="va">clarity</span> <span class="op">+</span> <span class="va">color</span> <span class="op">+</span> <span class="va">cut</span>, data <span class="op">=</span> <span class="va">diamonds</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span>  <span class="co"># 11 seconds</span></span>
-<span>  <span class="va">shap_gam</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span></span>
+<span>  <span class="va">shap_gam</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span></span>
 <span>    <span class="va">fit_gam</span>, </span>
 <span>    <span class="va">X</span>, </span>
 <span>    bg_X <span class="op">=</span> <span class="va">bg_X</span>,</span>
@@ -302,7 +341,13 @@
 <div class="section level2">
 <h2 id="multi-output-models">Multi-output models<a class="anchor" aria-label="anchor" href="#multi-output-models"></a>
 </h2>
-<p>{kernelshap} supports multivariate predictions, such as: - probabilistic classification, - non-probabilistic classification (factor-valued responses are turned into dummies), - regression with multivariate response, and - predictions found by applying multiple regression models.</p>
+<p>{kernelshap} supports multivariate predictions:</p>
+<ul>
+<li>probabilistic classification,</li>
+<li>non-probabilistic classification (factor-valued responses are turned into dummies),</li>
+<li>regression with multivariate response, and</li>
+<li>predictions found by applying multiple regression models.</li>
+</ul>
 <div class="section level3">
 <h3 id="classification">Classification<a class="anchor" aria-label="anchor" href="#classification"></a>
 </h3>
@@ -314,17 +359,19 @@
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Probabilistic</span></span>
-<span><span class="va">fit_prob</span> <span class="op">&lt;-</span> <span class="fu">ranger</span><span class="op">(</span><span class="va">Species</span> <span class="op">~</span> <span class="va">.</span>, data <span class="op">=</span> <span class="va">iris</span>, num.trees <span class="op">=</span> <span class="fl">20</span>, probability <span class="op">=</span> <span class="cn">TRUE</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">ks_prob</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span><span class="va">fit_prob</span>, X <span class="op">=</span> <span class="va">iris</span>, bg_X <span class="op">=</span> <span class="va">iris</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span><span class="va">fit_prob</span> <span class="op">&lt;-</span> <span class="fu">ranger</span><span class="op">(</span></span>
+<span>  <span class="va">Species</span> <span class="op">~</span> <span class="va">.</span>, data <span class="op">=</span> <span class="va">iris</span>, num.trees <span class="op">=</span> <span class="fl">20</span>, probability <span class="op">=</span> <span class="cn">TRUE</span>, seed <span class="op">=</span> <span class="fl">1</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">ps_prob</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">fit_prob</span>, X <span class="op">=</span> <span class="va">iris</span><span class="op">[</span>, <span class="op">-</span><span class="fl">5</span><span class="op">]</span>, bg_X <span class="op">=</span> <span class="va">iris</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu">shapviz</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="fu">sv_importance</span><span class="op">(</span><span class="va">ks_prob</span><span class="op">)</span> <span class="op">+</span></span>
+<span><span class="fu">sv_importance</span><span class="op">(</span><span class="va">ps_prob</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu">ggtitle</span><span class="op">(</span><span class="st">"Probabilistic"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Non-probabilistic: Predictions are factors</span></span>
 <span><span class="va">fit_class</span> <span class="op">&lt;-</span> <span class="fu">ranger</span><span class="op">(</span><span class="va">Species</span> <span class="op">~</span> <span class="va">.</span>, data <span class="op">=</span> <span class="va">iris</span>, num.trees <span class="op">=</span> <span class="fl">20</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">ks_class</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span><span class="va">fit_class</span>, X <span class="op">=</span> <span class="va">iris</span>, bg_X <span class="op">=</span> <span class="va">iris</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span><span class="va">ps_class</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">fit_class</span>, X <span class="op">=</span> <span class="va">iris</span><span class="op">[</span>, <span class="op">-</span><span class="fl">5</span><span class="op">]</span>, bg_X <span class="op">=</span> <span class="va">iris</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu">shapviz</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="fu">sv_importance</span><span class="op">(</span><span class="va">ks_class</span><span class="op">)</span> <span class="op">+</span></span>
+<span><span class="fu">sv_importance</span><span class="op">(</span><span class="va">ps_class</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu">ggtitle</span><span class="op">(</span><span class="st">"Non-Probabilistic"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-prob-class.svg"></p>
 <p><img src="reference/figures/README-fact-class.svg"></p>
@@ -354,8 +401,13 @@
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="va">iris_wf</span> <span class="op">%&gt;%</span></span>
 <span>  <span class="fu">fit</span><span class="op">(</span><span class="va">iris</span><span class="op">)</span></span>
 <span>  </span>
-<span><span class="va">ks</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">iris</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1</span><span class="op">]</span>, bg_X <span class="op">=</span> <span class="va">iris</span><span class="op">)</span></span>
-<span><span class="va">ks</span></span></code></pre></div>
+<span><span class="va">ks</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">iris</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1</span><span class="op">]</span>, bg_X <span class="op">=</span> <span class="va">iris</span><span class="op">)</span></span>
+<span><span class="va">ks</span></span>
+<span><span class="co"># </span></span>
+<span><span class="co"># SHAP values of first observations:</span></span>
+<span><span class="co">#      Sepal.Width Petal.Length Petal.Width   Species</span></span>
+<span><span class="co"># [1,]  0.21951350    -1.955357   0.3149451 0.5823533</span></span>
+<span><span class="co"># [2,] -0.02843097    -1.955357   0.3149451 0.5823533</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="caret">caret<a class="anchor" aria-label="anchor" href="#caret"></a>
@@ -390,14 +442,14 @@
 <span><span class="va">task_iris</span> <span class="op">&lt;-</span> <span class="va">TaskRegr</span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>id <span class="op">=</span> <span class="st">"reg"</span>, backend <span class="op">=</span> <span class="va">iris</span>, target <span class="op">=</span> <span class="st">"Sepal.Length"</span><span class="op">)</span></span>
 <span><span class="va">fit_lm</span> <span class="op">&lt;-</span> <span class="fu">lrn</span><span class="op">(</span><span class="st">"regr.lm"</span><span class="op">)</span></span>
 <span><span class="va">fit_lm</span><span class="op">$</span><span class="fu">train</span><span class="op">(</span><span class="va">task_iris</span><span class="op">)</span></span>
-<span><span class="va">s</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span><span class="va">fit_lm</span>, <span class="va">iris</span><span class="op">[</span><span class="op">-</span><span class="fl">1</span><span class="op">]</span>, bg_X <span class="op">=</span> <span class="va">iris</span><span class="op">)</span></span>
+<span><span class="va">s</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">fit_lm</span>, <span class="va">iris</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1</span><span class="op">]</span>, bg_X <span class="op">=</span> <span class="va">iris</span><span class="op">)</span></span>
 <span><span class="va">s</span></span>
 <span></span>
 <span><span class="co"># *Probabilistic* classification -&gt; lrn(..., predict_type = "prob")</span></span>
 <span><span class="va">task_iris</span> <span class="op">&lt;-</span> <span class="va">TaskClassif</span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>id <span class="op">=</span> <span class="st">"class"</span>, backend <span class="op">=</span> <span class="va">iris</span>, target <span class="op">=</span> <span class="st">"Species"</span><span class="op">)</span></span>
-<span><span class="va">fit_rf</span> <span class="op">&lt;-</span> <span class="fu">lrn</span><span class="op">(</span><span class="st">"classif.ranger"</span>, predict_type <span class="op">=</span> <span class="st">"prob"</span>, num.trees <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span>
+<span><span class="va">fit_rf</span> <span class="op">&lt;-</span> <span class="fu">lrn</span><span class="op">(</span><span class="st">"classif.ranger"</span>, predict_type <span class="op">=</span> <span class="st">"prob"</span>, num.trees <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span><span class="va">fit_rf</span><span class="op">$</span><span class="fu">train</span><span class="op">(</span><span class="va">task_iris</span><span class="op">)</span></span>
-<span><span class="va">s</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span><span class="va">fit_rf</span>, X <span class="op">=</span> <span class="va">iris</span><span class="op">[</span><span class="op">-</span><span class="fl">5</span><span class="op">]</span>, bg_X <span class="op">=</span> <span class="va">iris</span><span class="op">)</span></span>
+<span><span class="va">s</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">fit_rf</span>, X <span class="op">=</span> <span class="va">iris</span><span class="op">[</span>, <span class="op">-</span><span class="fl">5</span><span class="op">]</span>, bg_X <span class="op">=</span> <span class="va">iris</span><span class="op">)</span></span>
 <span><span class="va">s</span></span></code></pre></div>
 </div>
 </div>

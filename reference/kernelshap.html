@@ -158,7 +158,7 @@ this can also be a single row with all values set to the off value.</p></dd>
 
 <dt>pred_fun</dt>
 <dd><p>Prediction function of the form <code>function(object, X, ...)</code>,
-providing \(K \ge 1\) numeric predictions per row. Its first argument
+providing \(K \ge 1\) predictions per row. Its first argument
 represents the model <code>object</code>, its second argument a data structure like <code>X</code>.
 Additional (named) arguments are passed via <code>...</code>.
 The default, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">stats::predict()</a></code>, will work in most cases.</p></dd>
@@ -230,7 +230,7 @@ and SHAP values are all on the same scale. Ignored if <code>exact = TRUE</code>.
 
 <dt>parallel</dt>
 <dd><p>If <code>TRUE</code>, use parallel <code><a href="https://rdrr.io/pkg/foreach/man/foreach.html" class="external-link">foreach::foreach()</a></code> to loop over rows
-to be explained. Must register backend beforehand, e.g., via doFuture package,
+to be explained. Must register backend beforehand, e.g., via 'doFuture' package,
 see README for an example. Parallelization automatically disables the progress bar.</p></dd>
 
 
