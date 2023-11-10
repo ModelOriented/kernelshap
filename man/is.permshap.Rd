@@ -17,7 +17,7 @@ Is object of class "permshap"?
 }
 \examples{
 fit <- lm(Sepal.Length ~ ., data = iris)
-s <- permshap(fit, iris[1:2, -1], bg_X = iris[-1])
+s <- permshap(fit, iris[1:2, -1], bg_X = iris[, -1])
 is.permshap(s)
 is.permshap("a")
 }

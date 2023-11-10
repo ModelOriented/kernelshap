@@ -1,5 +1,8 @@
 fit <- lm(Sepal.Length ~ ., data = iris)
-s <- kernelshap(fit, iris[1:2, -1L], bg_X = iris[-1L], verbose = FALSE)
+set.seed(1)
+s <- kernelshap(
+  fit, iris[1:2, -1L], bg_X = iris[-1L], verbose = FALSE, exact = FALSE, hybrid_degree = 1
+)
 
 test_that("is.kernelshap() works", {
   expect_true(is.kernelshap(s))
@@ -19,6 +22,7 @@ test_that("is.permshap() works", {
   expect_false(is.permshap(1))
 })
 
-test_that("print() also works for permshap", {
+test_that("print() and summary() also works for permshap", {
   capture_output(expect_no_error(print(s)))
+  capture_output(expect_no_error(summary(s)))
 })
