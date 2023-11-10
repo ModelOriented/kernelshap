@@ -16,11 +16,9 @@ use_description(
   fields = list(
     Title = "Kernel SHAP",
     Version = "0.4.0",
-    Description = "Efficient implementation of Kernel SHAP, 
-    see Lundberg and Lee (2017),
+    Description = "Efficient implementation of Kernel SHAP, see Lundberg and Lee (2017),
     and Covert and Lee (2021) <http://proceedings.mlr.press/v130/covert21a>.
-    For models with up to eight features, the results are exact regarding the selected background data.
-    Otherwise, an almost exact hybrid algorithm involving iterative sampling is used.
+    Furthermore, for up to 14 features, exact permutation SHAP values can be calculated.
     The package plays well together with meta-learning packages like 'tidymodels', 'caret' or 'mlr3'.
     Visualizations can be done using the R package 'shapviz'.",
     `Authors@R` = 
@@ -74,9 +72,6 @@ use_cran_comments()
 
 use_github_links() # use this if this project is on github
 
-# Build website
-# use_pkgdown(config_file = "pkgdown/_pkgdown.yml")
-
 # Github actions
 use_github_action("check-standard")
 use_github_action("test-coverage")
@@ -84,7 +79,6 @@ use_github_action("pkgdown")
 
 # Revdep
 use_revdep()
-
 
 #=============================================================================
 # Finish package building (can use fresh session)

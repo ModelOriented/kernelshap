@@ -2,6 +2,7 @@
 
 ## Major changes
 
+- Added `permshap()` to calculate exact permutation SHAP values. The function currently works for up to 14 features.
 - Factor-valued predictions are now supported. Each level is represented by its dummy variable.
 
 ## Other changes

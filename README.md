@@ -13,22 +13,30 @@
 
 ## Overview
 
-This package offers an efficient implementation of Kernel SHAP, see [1] and [2]. For up to $p=8$ features, the resulting Kernel SHAP values are exact regarding the selected background data. For larger $p$, an almost exact hybrid algorithm involving iterative sampling is used by default.
+The package contains two workhorses to calculate SHAP values for any model:
 
-The typical workflow to explain any model `object`:
+- `kernelshap()`: Kernel SHAP algorithm of [1] and [2]. By default, exact Kernel SHAP is used for up to $p=8$ features, and an almost exact hybrid algorithm otherwise.
+- `permshap()`: Exact permutation SHAP (currently available for up to $p=14$ features).
+
+### Kernel SHAP or permutation SHAP?
+
+- Exact Kernel SHAP and exact permutation SHAP values agree for additive models, and differ for models with interactions. 
+- If the number of features is sufficiently small, we recommend `permshap()` over `kernelshap()`.
+
+### Typical workflow to explain any model
 
 1. **Sample rows to explain:** Sample 500 to 2000 rows `X` to be explained. If the training dataset is small, simply use the full training data for this purpose. `X` should only contain feature columns.
-2. **Select background data:** Kernel SHAP requires a representative background dataset `bg_X` to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data.
+2. **Select background data:** Both algorithms require a representative background dataset `bg_X` to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data.
 If the training data is small, use the full training data. In cases with a natural "off" value (like MNIST digits), this can also be a single row with all values set to the off value.
-3. **Crunch:** Use `kernelshap(object, X, bg_X, ...)` to calculate SHAP values. Runtime is proportional to `nrow(X)`, while memory consumption scales linearly in `nrow(bg_X)`.
-4. **Analyze:** Use {shapviz} to visualize the result.
+3. **Crunch:** Use `kernelshap(object, X, bg_X, ...)` or `permshap(object, X, bg_X, ...)` to calculate SHAP values. Runtime is proportional to `nrow(X)`, while memory consumption scales linearly in `nrow(bg_X)`.
+4. **Analyze:** Use {shapviz} to visualize the results.
 
 **Remarks**
 
 - Multivariate predictions are handled at no additional computational cost.
 - Factor-valued predictions are automatically turned into one-hot-encoded columns.
-- By changing the defaults, the iterative pure sampling approach in [2] can be enforced.
 - Case weights are supported via the argument `bg_w`.
+- By changing the defaults in `kernelshap()`, the iterative pure sampling approach in [2] can be enforced.
 
 ## Installation
 
@@ -82,6 +90,17 @@ shap_lm
 sv_lm <- shapviz(shap_lm)
 sv_importance(sv_lm)
 sv_dependence(sv_lm, "log_carat", color_var = NULL)
+
+# Since the model is additive, permutation SHAP gives the same results:
+system.time(
+  permshap_lm <- permshap(fit_lm, X, bg_X = bg_X)
+)
+permshap_lm
+
+# SHAP values of first observations:
+#       log_carat    clarity       color         cut
+# [1,]  1.2692479  0.1081900 -0.07847065 0.004630899
+# [2,] -0.4499226 -0.1111329  0.11832292 0.026503850
 ```
 
 ![](man/figures/README-lm-imp.svg)
@@ -126,6 +145,17 @@ shap_rf
 sv_rf <- shapviz(shap_rf)
 sv_importance(sv_rf, kind = "bee", show_numbers = TRUE)
 sv_dependence(sv_rf, "log_carat")
+
+# Permutation SHAP gives very slightly different results here (due to interactions):
+system.time(
+  permshap_rf <- permshap(fit_rf, X, bg_X = bg_X)
+)
+permshap_rf
+# 
+# SHAP values of first observations:
+#       log_carat     clarity      color         cut
+# [1,]  1.1986635  0.09557752 -0.1385312 0.001842753
+# [2,] -0.4970758 -0.12034448  0.1051721 0.030014490
 ```
 
 ![](man/figures/README-rf-imp.jpeg)
@@ -205,7 +235,7 @@ library(mgcv)
 fit_gam <- gam(log_price ~ s(log_carat) + clarity + color + cut, data = diamonds)
 
 system.time(  # 11 seconds
-  shap_gam <- kernelshap(
+  shap_gam <- permshap(
     fit_gam, 
     X, 
     bg_X = bg_X,
@@ -224,7 +254,8 @@ shap_gam
 
 ## Multi-output models
 
-{kernelshap} supports multivariate predictions, such as:
+{kernelshap} supports multivariate predictions:
+
 - probabilistic classification,
 - non-probabilistic classification (factor-valued responses are turned into dummies),
 - regression with multivariate response, and
@@ -241,17 +272,19 @@ library(shapviz)
 library(ggplot2)
 
 # Probabilistic
-fit_prob <- ranger(Species ~ ., data = iris, num.trees = 20, probability = TRUE, seed = 1)
-ks_prob <- kernelshap(fit_prob, X = iris, bg_X = iris) |> 
+fit_prob <- ranger(
+  Species ~ ., data = iris, num.trees = 20, probability = TRUE, seed = 1
+)
+ps_prob <- permshap(fit_prob, X = iris[, -5], bg_X = iris) |> 
   shapviz()
-sv_importance(ks_prob) +
+sv_importance(ps_prob) +
   ggtitle("Probabilistic")
 
 # Non-probabilistic: Predictions are factors
 fit_class <- ranger(Species ~ ., data = iris, num.trees = 20, seed = 1)
-ks_class <- kernelshap(fit_class, X = iris, bg_X = iris) |> 
+ps_class <- permshap(fit_class, X = iris[, -5], bg_X = iris) |> 
   shapviz()
-sv_importance(ks_class) +
+sv_importance(ps_class) +
   ggtitle("Non-Probabilistic")
 ```
 
@@ -282,8 +315,13 @@ iris_wf <- workflow() %>%
 fit <- iris_wf %>%
   fit(iris)
   
-ks <- kernelshap(fit, iris[, -1], bg_X = iris)
+ks <- permshap(fit, iris[, -1], bg_X = iris)
 ks
+# 
+# SHAP values of first observations:
+#      Sepal.Width Petal.Length Petal.Width   Species
+# [1,]  0.21951350    -1.955357   0.3149451 0.5823533
+# [2,] -0.02843097    -1.955357   0.3149451 0.5823533
 ```
 
 ### caret
@@ -318,14 +356,14 @@ mlr_tasks$get("iris")
 task_iris <- TaskRegr$new(id = "reg", backend = iris, target = "Sepal.Length")
 fit_lm <- lrn("regr.lm")
 fit_lm$train(task_iris)
-s <- kernelshap(fit_lm, iris[-1], bg_X = iris)
+s <- permshap(fit_lm, iris[, -1], bg_X = iris)
 s
 
 # *Probabilistic* classification -> lrn(..., predict_type = "prob")
 task_iris <- TaskClassif$new(id = "class", backend = iris, target = "Species")
-fit_rf <- lrn("classif.ranger", predict_type = "prob", num.trees = 50)
+fit_rf <- lrn("classif.ranger", predict_type = "prob", num.trees = 20)
 fit_rf$train(task_iris)
-s <- kernelshap(fit_rf, X = iris[-5], bg_X = iris)
+s <- permshap(fit_rf, X = iris[, -5], bg_X = iris)
 s
 ```
 

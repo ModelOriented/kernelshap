@@ -18,6 +18,12 @@ print.kernelshap <- function(x, n = 2L, ...) {
   invisible(x)
 }
 
+#' @describeIn print.kernelshap Print method for "permshap" object
+#' @export
+print.permshap <- function(x, n = 2L, ...) {
+  print.kernelshap(x, n = n, ...)
+}
+
 #' Summary Method
 #'
 #' @param object An object of class "kernelshap".
@@ -76,11 +82,28 @@ summary.kernelshap <- function(object, compact = FALSE, n = 2L, ...) {
 #' @returns `TRUE` if `object` is of class "kernelshap", and `FALSE` otherwise.
 #' @export
 #' @examples
-#' fit <- stats::lm(Sepal.Length ~ ., data = iris)
+#' fit <- lm(Sepal.Length ~ ., data = iris)
 #' s <- kernelshap(fit, iris[1:2, -1], bg_X = iris[-1])
 #' is.kernelshap(s)
 #' is.kernelshap("a")
 #' @seealso [kernelshap()]
 is.kernelshap <- function(object){
   inherits(object, "kernelshap")
+}
+
+#' Check for permshap
+#'
+#' Is object of class "permshap"?
+#'
+#' @param object An R object.
+#' @returns `TRUE` if `object` is of class "permshap", and `FALSE` otherwise.
+#' @export
+#' @examples
+#' fit <- lm(Sepal.Length ~ ., data = iris)
+#' s <- permshap(fit, iris[1:2, -1], bg_X = iris[-1])
+#' is.permshap(s)
+#' is.permshap("a")
+#' @seealso [kernelshap()]
+is.permshap <- function(object){
+  inherits(object, "permshap")
 }

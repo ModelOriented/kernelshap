@@ -15,11 +15,21 @@ test_that("regoranize_list() fails for non-list inputs", {
   expect_error(reorganize_list(alist = 1:10))
 })
 
-test_that("weighted_colMeans() gives the same as colMeans() in unweighted case", {
+test_that("wcolMeans() gives the same as colMeans() in unweighted case", {
   X <- cbind(1:3, 2:4)
-  expect_equal(c(weighted_colMeans(X)), colMeans(X))
-  expect_equal(c(weighted_colMeans(X, w = c(1, 1, 1))), colMeans(X))
-  expect_equal(c(weighted_colMeans(X, w = c(2, 2, 2))), colMeans(X))
+  expect_equal(c(wcolMeans(X)), colMeans(X))
+  expect_equal(c(wcolMeans(X, w = c(1, 1, 1))), colMeans(X))
+  expect_equal(c(wcolMeans(X, w = c(2, 2, 2))), colMeans(X))
+})
+
+test_that("exact_Z() works for both kernel- and permshap", {
+  p <- 5
+  nm <- LETTERS[1:p]
+  r1 <- exact_Z(p, feature_names = nm, keep_extremes = TRUE)
+  r2 <- exact_Z(p, feature_names = nm, keep_extremes = FALSE)
+  expect_equal(r1[2:(nrow(r1) - 1L), ], r2)
+  expect_equal(colnames(r1), nm)
+  expect_equal(dim(r1), c(2^p, p))
 })
 
 # Unit tests copied from {hstats}

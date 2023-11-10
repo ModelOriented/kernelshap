@@ -8,7 +8,7 @@
 #' @param x A matrix-like object.
 #' @param w Optional case weights.
 #' @returns A (1 x ncol(x)) matrix of column means.
-weighted_colMeans <- function(x, w = NULL, ...) {
+wcolMeans <- function(x, w = NULL, ...) {
   if (NCOL(x) == 1L && is.null(w)) {
     return(as.matrix(mean(x)))
   }
@@ -16,6 +16,66 @@ weighted_colMeans <- function(x, w = NULL, ...) {
     x <- as.matrix(x)
   }
   rbind(if (is.null(w)) colMeans(x) else colSums(x * w) / sum(w))
+}
+
+#' All on-off Vectors
+#'
+#' Internal function that creates matrix of all on-off vectors of length `p`.
+#'
+#' @noRd
+#' @keywords internal
+#'
+#' @param p Number of features.
+#' @param feature_names Feature names.
+#' @param keep_extremes Should extremes be kept? Defaults to `FALSE` (for kernelshap).
+#' @returns An integer matrix of all on-off vectors of length `p`.
+exact_Z <- function(p, feature_names, keep_extremes = FALSE) {
+  Z <- as.matrix(do.call(expand.grid, replicate(p, 0:1, simplify = FALSE)))
+  colnames(Z) <- feature_names
+  if (keep_extremes) Z else Z[2:(nrow(Z) - 1L), , drop = FALSE]
+}
+
+#' Masker
+#'
+#' Internal function. 
+#' For each on-off vector (rows in `Z`), the (weighted) average prediction is returned.
+#'
+#' @noRd
+#' @keywords internal
+#'
+#' @inheritParams kernelshap
+#' @param X Row to be explained stacked m*n_bg times.
+#' @param bg Background data stacked m times.
+#' @param Z A (m x p) matrix with on-off values.
+#' @param w A vector with case weights (of the same length as the unstacked
+#'   background data).
+#' @returns A (m x K) matrix with vz values.
+get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
+  m <- nrow(Z)
+  not_Z <- !Z
+  n_bg <- nrow(bg) / m   # because bg was replicated m times
+  
+  # Replicate not_Z, so that X, bg, not_Z are all of dimension (m*n_bg x p)
+  g <- rep_each(m, each = n_bg)
+  not_Z <- not_Z[g, , drop = FALSE]
+  
+  if (is.matrix(X)) {
+    # Remember that columns of X and bg are perfectly aligned in this case
+    X[not_Z] <- bg[not_Z]
+  } else {
+    for (v in colnames(Z)) {
+      s <- not_Z[, v]
+      X[[v]][s] <- bg[[v]][s]
+    }
+  }
+  preds <- align_pred(pred_fun(object, X, ...))
+  
+  # Aggregate
+  if (is.null(w)) {
+    return(rowsum(preds, group = g, reorder = FALSE) / n_bg)
+  }
+  # w is recycled over rows and columns
+  rowsum(preds * w, group = g, reorder = FALSE) / sum(w)
 }
 
 #' Combine Matrices
@@ -181,6 +241,64 @@ fdummy <- function(x) {
   out[cbind(seq_along(x), as.integer(x))] <- 1
   colnames(out) <- lev
   out 
+}
+
+#' Basic Input Checks
+#' 
+#' @noRd
+#' @keywords internal
+#' 
+#' @inheritParams kernelshap
+#' 
+#' @returns TRUE or an error
+basic_checks <- function(X, bg_X, feature_names, pred_fun) {
+  stopifnot(
+    is.matrix(X) || is.data.frame(X),
+    is.matrix(bg_X) || is.data.frame(bg_X),
+    is.matrix(X) == is.matrix(bg_X),
+    dim(X) >= 1L,
+    dim(bg_X) >= 1L,
+    !is.null(colnames(X)),
+    !is.null(colnames(bg_X)),
+    length(feature_names) >= 1L,
+    all(feature_names %in% colnames(X)),
+    all(feature_names %in% colnames(bg_X)),  # not necessary, but clearer
+    all(colnames(X) %in% colnames(bg_X)),
+    is.function(pred_fun),
+    "If X is a matrix, feature_names must equal colnames(X)" = 
+      !is.matrix(X) || identical(colnames(X), feature_names)
+  )
+  TRUE
+}
+
+#' Warning on Slow Computations
+#' 
+#' @noRd
+#' @keywords internal
+#' 
+#' @param m Number of on-off vectors.
+#' @param bg_n Number of rows in the background data.
+#' 
+#' @returns TRUE.
+warning_burden <- function(m, bg_n) {
+  warning("\nPredictions on large data sets with ", m, "x", bg_n,
+          " observations are being done.\n",
+          "Consider reducing the computational burden (e.g. use smaller X_bg)")
+  TRUE
+}
+
+#' Prepare Case Weights
+#' 
+#' @noRd
+#' @keywords internal
+#' 
+#' @param w Vector of case weights.
+#' @param bg_n Number of rows in the background data.
+#' 
+#' @returns TRUE or an error
+prep_w <- function(w, bg_n) {
+  stopifnot(length(w) == bg_n, all(w >= 0), !all(w == 0))
+  if (!is.double(w)) as.double(w) else w
 }
 
 #' mlr3 Helper

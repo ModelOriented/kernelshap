@@ -68,7 +68,7 @@
 #'   In cases with a natural "off" value (like MNIST digits), 
 #'   this can also be a single row with all values set to the off value.
 #' @param pred_fun Prediction function of the form `function(object, X, ...)`,
-#'   providing \eqn{K \ge 1} numeric predictions per row. Its first argument 
+#'   providing \eqn{K \ge 1} predictions per row. Its first argument 
 #'   represents the model `object`, its second argument a data structure like `X`. 
 #'   Additional (named) arguments are passed via `...`. 
 #'   The default, [stats::predict()], will work in most cases. 
@@ -113,7 +113,7 @@
 #' @param max_iter If the stopping criterion (see `tol`) is not reached after 
 #'   `max_iter` iterations, the algorithm stops. Ignored if `exact = TRUE`.
 #' @param parallel If `TRUE`, use parallel [foreach::foreach()] to loop over rows
-#'   to be explained. Must register backend beforehand, e.g., via {doFuture} package, 
+#'   to be explained. Must register backend beforehand, e.g., via 'doFuture' package, 
 #'   see README for an example. Parallelization automatically disables the progress bar.
 #' @param parallel_args Named list of arguments passed to [foreach::foreach()]. 
 #'   Ideally, this is `NULL` (default). Only relevant if `parallel = TRUE`. 
@@ -191,19 +191,9 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
                                m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)), 
                                tol = 0.005, max_iter = 100L, parallel = FALSE, 
                                parallel_args = NULL, verbose = TRUE, ...) {
+  basic_checks(X = X, bg_X = bg_X, feature_names = feature_names, pred_fun = pred_fun)
+  p <- length(feature_names)
   stopifnot(
-    is.matrix(X) || is.data.frame(X),
-    is.matrix(bg_X) || is.data.frame(bg_X),
-    is.matrix(X) == is.matrix(bg_X),
-    dim(X) >= 1L,
-    dim(bg_X) >= 1L,
-    !is.null(colnames(X)),
-    !is.null(colnames(bg_X)),
-    (p <- length(feature_names)) >= 1L,
-    all(feature_names %in% colnames(X)),
-    all(feature_names %in% colnames(bg_X)),  # not necessary, but clearer
-    all(colnames(X) %in% colnames(bg_X)),
-    is.function(pred_fun),
     exact %in% c(TRUE, FALSE),
     p == 1L || exact || hybrid_degree %in% 0:(p / 2),
     paired_sampling %in% c(TRUE, FALSE),
@@ -212,27 +202,20 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
   n <- nrow(X)
   bg_n <- nrow(bg_X)
   if (!is.null(bg_w)) {
-    stopifnot(length(bg_w) == bg_n, all(bg_w >= 0), !all(bg_w == 0))
-    if (!is.double(bg_w)) {
-      bg_w <- as.double(bg_w)
-    }
-  }
-  if (is.matrix(X) && !identical(colnames(X), feature_names)) {
-    stop("If X is a matrix, feature_names must equal colnames(X)")  
+    bg_w <- prep_w(bg_w, bg_n = bg_n)
   }
   
   # Calculate v1 and v0
   v1 <- align_pred(pred_fun(object, X, ...))         # Predictions on X:        n x K
   bg_preds <- align_pred(pred_fun(object, bg_X[, colnames(X), drop = FALSE], ...))
-  v0 <- weighted_colMeans(bg_preds, bg_w)            # Average pred of bg data: 1 x K
+  v0 <- wcolMeans(bg_preds, bg_w)                    # Average pred of bg data: 1 x K
   
   # For p = 1, exact Shapley values are returned
   if (p == 1L) {
-    return(
-      case_p1(
-        n = n, feature_names = feature_names, v0 = v0, v1 = v1, X = X, verbose = verbose
-      )
+    out <- case_p1(
+      n = n, feature_names = feature_names, v0 = v0, v1 = v1, X = X, verbose = verbose
     )
+    return(out)
   }
   
   # Drop unnecessary columns in bg_X. If X is matrix, also column order is relevant
@@ -266,9 +249,7 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
     message(txt)
   }
   if (max(m, m_exact) * bg_n > 2e5) {
-    warning("\nPredictions on large data sets with ", max(m, m_exact), "x", bg_n,
-            " observations are being done.\n",
-            "Consider reducing the computational burden (e.g. use smaller X_bg)")
+    warning_burden(max(m, m_exact), bg_n = bg_n)
   }
   
   # Apply Kernel SHAP to each row of X

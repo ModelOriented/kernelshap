@@ -82,7 +82,7 @@ In cases with a natural "off" value (like MNIST digits),
 this can also be a single row with all values set to the off value.}
 
 \item{pred_fun}{Prediction function of the form \verb{function(object, X, ...)},
-providing \eqn{K \ge 1} numeric predictions per row. Its first argument
+providing \eqn{K \ge 1} predictions per row. Its first argument
 represents the model \code{object}, its second argument a data structure like \code{X}.
 Additional (named) arguments are passed via \code{...}.
 The default, \code{\link[stats:predict]{stats::predict()}}, will work in most cases.}
@@ -138,7 +138,7 @@ and SHAP values are all on the same scale. Ignored if \code{exact = TRUE}.}
 \code{max_iter} iterations, the algorithm stops. Ignored if \code{exact = TRUE}.}
 
 \item{parallel}{If \code{TRUE}, use parallel \code{\link[foreach:foreach]{foreach::foreach()}} to loop over rows
-to be explained. Must register backend beforehand, e.g., via {doFuture} package,
+to be explained. Must register backend beforehand, e.g., via 'doFuture' package,
 see README for an example. Parallelization automatically disables the progress bar.}
 
 \item{parallel_args}{Named list of arguments passed to \code{\link[foreach:foreach]{foreach::foreach()}}.
