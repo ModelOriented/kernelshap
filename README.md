@@ -20,8 +20,7 @@ The package contains two workhorses to calculate SHAP values for any model:
 
 ### Kernel SHAP or permutation SHAP?
 
-- Exact Kernel SHAP and exact permutation SHAP values (usually) agree for additive models. 
-- If the number of features is sufficiently small, we recommend `permshap()` over `kernelshap()`.
+Kernel SHAP was introduced as an approximation of permutation SHAP. For up to $8-10$ features, exact calculations are feasible for both algorithms (and take the same amount of time). Since exact Kernel SHAP is still only an approximation of exact permutation SHAP, permutation SHAP should be preferred in this case. Exact Kernel SHAP and exact permutation SHAP values start to differ for models with interactions of order three or higher.
 
 ### Typical workflow to explain any model
 
