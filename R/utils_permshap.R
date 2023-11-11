@@ -20,21 +20,25 @@ shapley_weights <- function(p, ell) {
 #' @keywords internal
 #'
 #' @inheritParams permshap
+#' @param v1 Prediction of `x`.
+#' @param v0 Average prediction on background data.
 #' @param x A single row to be explained.
 #' @param precalc A list with precalculated values that are identical for all rows.
 #' @return A (p x K) matrix of SHAP values.
-permshap_one <- function(x, object, pred_fun, bg_w, precalc, ...) {
-  vz <- get_vz(                                                          #  (m_ex x K)
-    X = x[rep(1L, times = nrow(precalc[["bg_X_rep"]])), , drop = FALSE], #  (m_ex*n_bg x p)
-    bg = precalc[["bg_X_rep"]],                                          #  (m_ex*n_bg x p)
-    Z = precalc[["Z"]],                                                  #  (m_ex x p)
+permshap_one <- function(x, v1, object, pred_fun, bg_w, v0, precalc, ...) {
+  Z <- precalc[["Z"]]                                                    # ((m_ex+2) x K)
+  vz <- get_vz(                                                          # (m_ex x K)
+    X = x[rep(1L, times = nrow(precalc[["bg_X_rep"]])), , drop = FALSE], # (m_ex*n_bg x p)
+    bg = precalc[["bg_X_rep"]],                                          # (m_ex*n_bg x p)
+    Z = Z[2:(nrow(Z) - 1L), , drop = FALSE],                             # (m_ex x p)
     object = object,
     pred_fun = pred_fun,
     w = bg_w,
     ...
   )
+  vz <- rbind(v0, vz, v1)  # we add the cheaply calculated v0 and v1
   rownames(vz) <- precalc[["Z_code"]]
-  shapley_formula(precalc[["Z"]], vz)
+  shapley_formula(Z, vz = vz)
 }
 
 #' Shapley's formula
