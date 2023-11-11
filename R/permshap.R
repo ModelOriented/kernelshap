@@ -68,7 +68,7 @@ permshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
     message(txt)
   }
   
-  # Baseline and predictions on explanation data (latter not required in algo)
+  # Baseline and predictions on explanation data
   bg_preds <- align_pred(pred_fun(object, bg_X[, colnames(X), drop = FALSE], ...))
   v0 <- wcolMeans(bg_preds, bg_w)            # Average pred of bg data: 1 x K
   v1 <- align_pred(pred_fun(object, X, ...)) # Predictions on X:        n x K
@@ -81,10 +81,10 @@ permshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
   
   # Precalculations that are identical for each row to be explained
   Z <- exact_Z(p, feature_names = feature_names, keep_extremes = TRUE)
-  m_exact <- nrow(Z)
+  m_exact <- nrow(Z) - 2L  # We won't evaluate vz for first and last row
   precalc <- list(
     Z = Z,
-    Z_code = rowpaste(Z),
+    Z_code = rowpaste(Z), 
     bg_X_rep = bg_X[rep(seq_len(bg_n), times = m_exact), , drop = FALSE]
   )
   
@@ -97,9 +97,11 @@ permshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
     parallel_args <- c(list(i = seq_len(n)), parallel_args)
     res <- do.call(foreach::foreach, parallel_args) %dopar% permshap_one(
       x = X[i, , drop = FALSE],
+      v1 = v1[i, , drop = FALSE], 
       object = object,
       pred_fun = pred_fun,
       bg_w = bg_w,
+      v0 = v0,
       precalc = precalc,
       ...
     )
@@ -111,9 +113,11 @@ permshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
     for (i in seq_len(n)) {
       res[[i]] <- permshap_one(
         x = X[i, , drop = FALSE],
+        v1 = v1[i, , drop = FALSE], 
         object = object,
         pred_fun = pred_fun,
         bg_w = bg_w,
+        v0 = v0,
         precalc = precalc,
         ...
       )
