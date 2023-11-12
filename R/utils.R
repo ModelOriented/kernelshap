@@ -71,6 +71,9 @@ get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
   preds <- align_pred(pred_fun(object, X, ...))
   
   # Aggregate
+  if (ncol(preds) == 1L) {
+    return(wrowmean_vector(preds, ngroups = m, w = w))
+  }
   if (is.null(w)) {
     return(rowsum(preds, group = g, reorder = FALSE) / n_bg)
   }
@@ -241,6 +244,30 @@ fdummy <- function(x) {
   out[cbind(seq_along(x), as.integer(x))] <- 1
   colnames(out) <- lev
   out 
+}
+
+#' wrowmean() for Column Vectors (adapted from {hstats})
+#'
+#' Weighted column means over fixed-length groups for matrix with single column.
+#'
+#' @noRd
+#' @keywords internal
+#'
+#' @param x Matrix with one column.
+#' @param ngroups Number of subsequent, equals sized groups.
+#' @param w Optional vector of case weights of length `NROW(x) / ngroups`.
+#' @returns Matrix with one column.
+wrowmean_vector <- function(x, ngroups = 1L, w = NULL) {
+  if (ncol(x) != 1L) {
+    stop("x must have a single column")
+  }
+  nm <- colnames(x)
+  dim(x) <- c(length(x) %/% ngroups, ngroups)
+  out <- as.matrix(if (is.null(w)) colMeans(x) else colSums(x * w) / sum(w))
+  if (!is.null(nm)) {
+    colnames(out) <- nm
+  }
+  out
 }
 
 #' Basic Input Checks

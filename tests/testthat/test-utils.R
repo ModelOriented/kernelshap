@@ -60,3 +60,25 @@ test_that("fdummy() respects factor level order", {
   expect_equal(d1, d2[, colnames(d1)])
   expect_equal(colnames(d1), rev(colnames(d2)))
 })
+
+test_that("wrowmean_vector() works for 1D matrices", {
+  x2 <- cbind(a = 6:1)
+  out2 <- wrowmean_vector(x2, ngroups = 2L)
+  expec <- rowsum(x2, group = rep(1:2, each = 3)) / 3
+  rownames(expec) <- NULL
+  
+  expect_error(wrowmean_vector(matrix(1:4, ncol = 2L)))
+  expect_equal(out2, expec)
+
+  expect_equal(wrowmean_vector(x2, ngroups = 3L), cbind(a = c(5.5, 3.5, 1.5)))
+  
+  # Constant weights have no effect
+  expect_equal(wrowmean_vector(x2, ngroups = 2L, w = c(1, 1, 1)), out2)
+  expect_equal(wrowmean_vector(x2, ngroups = 2L, w = c(4, 4, 4)), out2)
+  
+  # Non-constant weights
+  a <- weighted.mean(6:4, 1:3)
+  b <- weighted.mean(3:1, 1:3)
+  out2 <- wrowmean_vector(x2, ngroups = 2L, w = 1:3)
+  expect_equal(out2, cbind(a = c(a, b)))
+})

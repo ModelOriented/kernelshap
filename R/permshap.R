@@ -57,7 +57,12 @@ permshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
                              verbose = TRUE, ...) {
   basic_checks(X = X, bg_X = bg_X, feature_names = feature_names, pred_fun = pred_fun)
   p <- length(feature_names)
-  stopifnot("Permutation SHAP only supported for up to 14 features" = p <= 14L)
+  if (p <= 1L) {
+    stop("Case p = 1 not implemented. Use kernelshap() instead.")
+  }
+  if (p > 14L) {
+    stop("Permutation SHAP only supported for up to 14 features")
+  }
   n <- nrow(X)
   bg_n <- nrow(bg_X)
   if (!is.null(bg_w)) {

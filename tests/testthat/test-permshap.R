@@ -138,27 +138,6 @@ test_that("Decomposing a single row works with case weights", {
 })
 
 fit <- lm(
-  Sepal.Length ~ poly(Petal.Width, degree = 2L),
-  data = iris,
-  weights = Petal.Length
-)
-x <- "Petal.Width"
-preds <- unname(predict(fit, iris))
-
-test_that("Special case p = 1 works with case weights", {
-  s <- permshap(
-    fit,
-    iris[1:5, x, drop = FALSE],
-    bg_X = iris,
-    bg_w = iris$Petal.Length,
-    verbose = FALSE
-  )
-  
-  expect_equal(s$baseline, weighted.mean(iris$Sepal.Length, iris$Petal.Length))
-  expect_equal(rowSums(s$S) + s$baseline, preds[1:5])
-})
-
-fit <- lm(
   Sepal.Length ~ . , data = iris[c(1L, 3L, 4L)], weights = iris$Sepal.Width
 )
 X <- data.matrix(iris[3:4])
