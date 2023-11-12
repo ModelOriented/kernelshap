@@ -110,7 +110,6 @@ test_that("Matrix input gives error with inconsistent feature_names", {
   )
 })
 
-
 ## Now with case weights
 fit <- lm(
   Sepal.Length ~ poly(Petal.Width, degree = 2L) * Species, data = iris,

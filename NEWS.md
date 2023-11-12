@@ -4,6 +4,7 @@
 
 - Slight speed-up of `permshap()` by saving calculations for the two special permutations of all 0 and all 1.
 - Consequently, the `m_exact` component in the output is reduced by 2.
+- Slight speed-up of `permshap()` by optimizing internal function `shapley_formula()`.
 
 # kernelshap 0.4.0
 

@@ -52,18 +52,17 @@ permshap_one <- function(x, v1, object, pred_fun, bg_w, v0, precalc, ...) {
 #' @param vz Named vector of vz values.
 #' @returns SHAP values organized as (p x K) matrix.
 shapley_formula <- function(Z, vz) {
-  out <- matrix(
-    nrow = ncol(Z), ncol = ncol(vz), dimnames = list(colnames(Z), colnames(vz))
-  )
-  for (v in colnames(Z)) {
-    s1 <- Z[, v] == 1L
+  p <- ncol(Z)
+  out <- matrix(nrow = p, ncol = ncol(vz), dimnames = list(colnames(Z), colnames(vz)))
+  for (j in seq_len(p)) {
+    s1 <- Z[, j] == 1L
     vz1 <- vz[s1, , drop = FALSE]
-    Z0 <- Z[s1, , drop = FALSE]
-    Z0[, v] <- 0L
-    s0 <- rowpaste(Z0)
+    L <- rowSums(Z[s1, -j, drop = FALSE])  # how many players are playing with j?
+    s0 <- rownames(vz1)
+    substring(s0, j, j) <- "0"
     vz0 <- vz[s0, , drop = FALSE]
-    w <- shapley_weights(ncol(Z), rowSums(Z0))
-    out[v, ] <- wcolMeans(vz1 - vz0, w = w)
+    w <- shapley_weights(p, L)
+    out[j, ] <- wcolMeans(vz1 - vz0, w = w)
   }
   out
 }
