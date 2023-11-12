@@ -6,7 +6,7 @@
 ^cran-comments\.md$
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^compare_with_python.R$
+^\backlog$
 ^CRAN-SUBMISSION$
 ^_pkgdown\.yml$
 ^docs$
