@@ -59,7 +59,7 @@ shapley_formula <- function(Z, vz) {
     vz1 <- vz[s1, , drop = FALSE]
     L <- rowSums(Z[s1, -j, drop = FALSE])  # how many players are playing with j?
     s0 <- rownames(vz1)
-    substring(s0, j, j) <- "0"
+    substr(s0, j, j) <- "0"
     vz0 <- vz[s0, , drop = FALSE]
     w <- shapley_weights(p, L)
     out[j, ] <- wcolMeans(vz1 - vz0, w = w)
