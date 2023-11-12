@@ -6,7 +6,7 @@
 ^cran-comments\.md$
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^\backlog$
+^backlog$
 ^CRAN-SUBMISSION$
 ^_pkgdown\.yml$
 ^docs$
