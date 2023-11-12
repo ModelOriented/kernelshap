@@ -246,9 +246,9 @@ fdummy <- function(x) {
   out 
 }
 
-#' wrowmean() for Column Vectors (adapted from {hstats})
+#' Grouped Means for Single-Column Matrices (adapted from {hstats})
 #'
-#' Weighted column means over fixed-length groups for matrix with single column.
+#' Grouped means for matrix with single column over fixed-length groups.
 #'
 #' @noRd
 #' @keywords internal
