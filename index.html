@@ -108,7 +108,7 @@
 <div class="section level3">
 <h3 id="kernel-shap-or-permutation-shap">Kernel SHAP or permutation SHAP?<a class="anchor" aria-label="anchor" href="#kernel-shap-or-permutation-shap"></a>
 </h3>
-<p>Kernel SHAP was introduced as an approximation of permutation SHAP. For up to <span class="math inline">8 − 10</span> features, exact calculations are feasible for both algorithms and take the same amount of time. Since exact Kernel SHAP is still only an approximation of exact permutation SHAP, permutation SHAP should be preferred in this case, even if they agree for most of the models. A situation where the two approaches give different results is this: The model has interactions of order higher than two <em>and</em> a correlated feature has no effect.</p>
+<p>Kernel SHAP was introduced as an approximation of permutation SHAP. For up to <span class="math inline">8 − 10</span> features, exact calculations are feasible for both algorithms and take the same amount of time. Since exact Kernel SHAP is still only an approximation of exact permutation SHAP, permutation SHAP should be preferred in this case, even if they agree for most of the models. A situation where the two approaches give different results: The model has interactions of order three or higher <em>and</em> correlated features.</p>
 </div>
 <div class="section level3">
 <h3 id="typical-workflow-to-explain-any-model">Typical workflow to explain any model<a class="anchor" aria-label="anchor" href="#typical-workflow-to-explain-any-model"></a>
