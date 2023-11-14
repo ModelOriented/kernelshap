@@ -261,7 +261,8 @@ wrowmean_vector <- function(x, ngroups = 1L, w = NULL) {
   }
   nm <- colnames(x)
   dim(x) <- c(length(x) %/% ngroups, ngroups)
-  out <- as.matrix(if (is.null(w)) colMeans(x) else colSums(x * w) / sum(w))
+  out <- if (is.null(w)) colMeans(x) else colSums(x * w) / sum(w)
+  dim(out) <- c(ngroups, 1L)
   if (!is.null(nm)) {
     colnames(out) <- nm
   }
