@@ -9,13 +9,11 @@
 #' @param w Optional case weights.
 #' @returns A (1 x ncol(x)) matrix of column means.
 wcolMeans <- function(x, w = NULL, ...) {
-  if (NCOL(x) == 1L && is.null(w)) {
-    return(as.matrix(mean(x)))
-  }
   if (!is.matrix(x)) {
     x <- as.matrix(x)
   }
-  rbind(if (is.null(w)) colMeans(x) else colSums(x * w) / sum(w))
+  out <- if (is.null(w)) colMeans(x) else colSums(x * w) / sum(w)
+  t.default(out)
 }
 
 #' All on-off Vectors
