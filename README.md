@@ -20,7 +20,7 @@ The package contains two workhorses to calculate SHAP values for any model:
 
 ### Kernel SHAP or permutation SHAP?
 
-Kernel SHAP was introduced as an approximation of permutation SHAP. For up to $8-10$ features, exact calculations are feasible for both algorithms and take the same amount of time. Since exact Kernel SHAP is still only an approximation of exact permutation SHAP, permutation SHAP should be preferred in this case. A situation where the two approaches give different results: The model has interactions of order three or higher *and* correlated features.
+Kernel SHAP has been introduced in [1] as an approximation of permutation SHAP. For up to $8-10$ features, exact calculations are feasible for both algorithms (and take similarly long to compute). Since exact Kernel SHAP is still only an approximation of exact permutation SHAP, the latter should be preferred in this case, even if the results are often very similar. A situation where the two approaches give different results: The model has interactions of order three or higher *and* correlated features.
 
 ### Typical workflow to explain any model
 
