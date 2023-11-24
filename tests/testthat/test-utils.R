@@ -11,7 +11,7 @@ test_that("head_list(x)[[1L]] = head(x[[1L]]) for list of matries x", {
   expect_equal(head_list(x)[[1L]], utils::head(x[[1L]]))
 })
 
-test_that("regoranize_list() fails for non-list inputs", {
+test_that("reorganize_list() fails for non-list inputs", {
   expect_error(reorganize_list(alist = 1:10))
 })
 
@@ -81,4 +81,12 @@ test_that("wrowmean_vector() works for 1D matrices", {
   b <- weighted.mean(3:1, 1:3)
   out2 <- wrowmean_vector(x2, ngroups = 2L, w = 1:3)
   expect_equal(out2, cbind(a = c(a, b)))
+})
+
+test_that("rowmean_factor() works for factor input", {
+  x <- factor(c("C", "A", "C", "C", "A", "A"))
+  out <- rowmean_factor(x, ngroups = 2L)
+  
+  expect_true(is.matrix(out))
+  expect_equal(out, cbind(A = c(1/3, 2/3), C = c(2/3, 1/3)))
 })
