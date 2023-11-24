@@ -1,25 +1,37 @@
 library(kernelshap)
 library(ranger)
 
-# Simulation 1: iris
 differences <- numeric(4)
+
+set.seed(1)
 
 for (depth in 1:4) {
   fit <- ranger(
-    Sepal.Length ~ Petal.Width + Petal.Length + Species, 
+    Sepal.Length ~ ., 
     mtry = 3,
     data = iris, 
-    max.depth = depth,
-    seed = 1
+    max.depth = depth
   )
-  ps <- permshap(fit, iris[3:5], bg_X = iris)
-  ks <- kernelshap(fit, iris[3:5], bg_X = iris)
+  ps <- permshap(fit, iris[2:5], bg_X = iris)
+  ks <- kernelshap(fit, iris[2:5], bg_X = iris)
   differences[depth] <- mean(abs(ks$S - ps$S))
 }
-differences
-ps
-ks
 
+differences  # for tree depth 1, 2, 3, 4
+# 5.053249e-17 9.046443e-17 2.387905e-04 4.403375e-04
+
+# SHAP values of first two rows with tree depth 4
+ps
+#      Sepal.Width Petal.Length Petal.Width      Species
+# [1,]  0.11377616   -0.7130647  -0.1956012 -0.004437022
+# [2,] -0.06852539   -0.7596562  -0.2259017 -0.006575266
+
+ks
+#      Sepal.Width Petal.Length Petal.Width      Species
+# [1,]  0.11463191   -0.7125194  -0.1951810 -0.006258208
+# [2,] -0.06828866   -0.7597391  -0.2259833 -0.006647530
+
+  
 # larger data, more features
 library(xgboost)
 library(shapviz)

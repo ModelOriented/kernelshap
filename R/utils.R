@@ -66,16 +66,21 @@ get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
       X[[v]][s] <- bg[[v]][s]
     }
   }
-  preds <- align_pred(pred_fun(object, X, ...))
+  preds <- align_pred(pred_fun(object, X, ...), ohe = FALSE)
   
-  # Aggregate
+  # Aggregate (distinguishing some faster cases)
+  if (is.factor(preds)) {
+    if (is.null(w)) {
+      return(rowmean_factor(preds, ngroups = m))
+    }
+    preds <- fdummy(preds)
+  }
   if (ncol(preds) == 1L) {
     return(wrowmean_vector(preds, ngroups = m, w = w))
   }
   if (is.null(w)) {
     return(rowsum(preds, group = g, reorder = FALSE) / n_bg)
   }
-  # w is recycled over rows and columns
   rowsum(preds * w, group = g, reorder = FALSE) / sum(w)
 }
 
@@ -120,7 +125,7 @@ reorganize_list <- function(alist) {
   lapply(out, as.matrix)
 }
 
-#' Aligns Predictions
+#' Aligns Predictions (adapted from {hstats})
 #'
 #' Turns predictions into matrix.
 #'
@@ -128,15 +133,16 @@ reorganize_list <- function(alist) {
 #' @keywords internal
 #'
 #' @param x Object representing model predictions.
-#' @returns Like `x`, but converted to matrix.
-align_pred <- function(x) {
+#' @param ohe If `x` is a factor: should it be one-hot encoded? Default is `TRUE`.
+#' @returns Like `x`, but converted to matrix (or a factor).
+align_pred <- function(x, ohe = TRUE) {
   if (is.data.frame(x) && ncol(x) == 1L) {
     x <- x[[1L]]
   }
-  if (is.factor(x)) {
+  if (ohe && is.factor(x)) {
     return(fdummy(x))
   }
-  if (is.matrix(x)) x else as.matrix(x)
+  if (is.matrix(x) || is.factor(x)) x else as.matrix(x)
 }
 
 #' Head of List Elements
@@ -269,6 +275,26 @@ wrowmean_vector <- function(x, ngroups = 1L, w = NULL) {
   out
 }
 
+#' rowmean_vector() for factors (copied from {hstats})
+#'
+#' Grouped `colMeans_factor()` for equal sized groups.
+#'
+#' @noRd
+#' @keywords internal
+#'
+#' @param x Factor-like.
+#' @param ngroups Number of subsequent, equals sized groups.
+#' @returns Matrix with column names.
+rowmean_factor <- function(x, ngroups = 1L) {
+  x <- as.factor(x)
+  lev <- levels(x)
+  n_bg <- length(x) %/% ngroups
+  dim(x) <- c(n_bg, ngroups)
+  out <- t.default(apply(x, 2L, FUN = tabulate, nbins = length(lev)))
+  colnames(out) <- lev
+  out / n_bg
+}
+
 #' Basic Input Checks
 #' 
 #' @noRd
@@ -323,7 +349,11 @@ warning_burden <- function(m, bg_n) {
 #' 
 #' @returns TRUE or an error
 prep_w <- function(w, bg_n) {
-  stopifnot(length(w) == bg_n, all(w >= 0), !all(w == 0))
+  stopifnot(
+    length(w) == bg_n, 
+    all(w >= 0), 
+    !all(w == 0)
+  )
   if (!is.double(w)) as.double(w) else w
 }
 

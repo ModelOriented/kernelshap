@@ -82,4 +82,9 @@ test_that("factor predictions work", {
   expect_equal(colnames(out$S$zero), c("v1", "v2"))
   expect_equal(names(out$S), c("zero", "one"))
   expect_equal(out$predictions, cbind(zero = 1:0, one = 0:1))
+  
+  # with weights
+  w <- rep(2, nrow(X))
+  out2 <- permshap(1, X = X, bg_X = X, bg_w = w, pred_fun = pf, verbose = FALSE)
+  expect_equal(out, out2)
 })
