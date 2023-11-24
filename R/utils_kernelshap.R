@@ -15,7 +15,7 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
     
     # Most expensive part
     vz <- get_vz(                                                 #  (m_ex x K)
-      X = x[rep(1L, times = nrow(bg_X_exact)), , drop = FALSE],   #  (m_ex*n_bg x p)
+      X = x[rep.int(1L, times = nrow(bg_X_exact)), , drop = FALSE],# (m_ex*n_bg x p)
       bg = bg_X_exact,                                            #  (m_ex*n_bg x p)
       Z = Z,                                                      #  (m_ex x p)
       object = object, 
