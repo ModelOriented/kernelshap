@@ -61,8 +61,7 @@
 <h3 id="other-changes-0-4-1">Other changes<a class="anchor" aria-label="anchor" href="#other-changes-0-4-1"></a></h3>
 <ul><li>Slight speed-up of <code><a href="../reference/kernelshap.html">kernelshap()</a></code> and <code><a href="../reference/permshap.html">permshap()</a></code> for single-output predictions.</li>
 <li>Slight speed-up of <code><a href="../reference/kernelshap.html">kernelshap()</a></code> and <code><a href="../reference/permshap.html">permshap()</a></code> for factor-valued predictions.</li>
-<li>Slight speed-up of <code><a href="../reference/permshap.html">permshap()</a></code> by saving calculations for the two special permutations of all 0 and all 1.</li>
-<li>Consequently, the <code>m_exact</code> component in the output is reduced by 2.</li>
+<li>Slight speed-up of <code><a href="../reference/permshap.html">permshap()</a></code> by caching calculations for the two special permutations of all 0 and all 1. Consequently, the <code>m_exact</code> component in the output is reduced by 2.</li>
 </ul></div>
 </div>
     <div class="section level2">
