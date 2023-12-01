@@ -188,7 +188,7 @@
 <span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>[<span class="dv">2</span>,] <span class="sc">-</span><span class="fl">0.4931989</span> <span class="sc">-</span><span class="fl">0.11724773</span>  <span class="fl">0.09868921</span> <span class="fl">0.028563613</span></span>
 <span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a><span class="co"># Kernel SHAP gives almost the same:</span></span>
-<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(  <span class="co"># 28 s</span></span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(  <span class="co"># 49 s</span></span>
 <span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>  ks <span class="ot">&lt;-</span> <span class="fu">kernelshap</span>(fit, X, <span class="at">bg_X =</span> bg_X)</span>
 <span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a>ks</span>
