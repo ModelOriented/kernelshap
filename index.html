@@ -291,7 +291,7 @@
 <div class="section level2">
 <h2 id="parallel-computing">Parallel computing<a class="anchor" aria-label="anchor" href="#parallel-computing"></a>
 </h2>
-<p>Parallel computing is supported via <code>foreach</code>, at the price of losing the progress bar. Note that this does not work with Keras models (and some others).</p>
+<p>Parallel computing is supported via {foreach}, at the price of losing the progress bar. Note that this does not work with Keras models (and some others).</p>
 <div class="section level3">
 <h3 id="example-linear-regression-continued">Example: Linear regression continued<a class="anchor" aria-label="anchor" href="#example-linear-regression-continued"></a>
 </h3>
@@ -311,7 +311,7 @@
 <div class="section level3">
 <h3 id="example-parallel-gam">Example: Parallel GAM<a class="anchor" aria-label="anchor" href="#example-parallel-gam"></a>
 </h3>
-<p>On Windows, sometimes not all packages or global objects are passed to the parallel sessions. In this case, the necessary instructions to <code>foreach</code> can be specified through a named list via <code>parallel_args</code>, see the following example:</p>
+<p>On Windows, sometimes not all packages or global objects are passed to the parallel sessions. In this case, the necessary instructions to {foreach} can be specified through a named list via <code>parallel_args</code>, see the following example:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">mgcv</span><span class="op">)</span></span>
 <span></span>
