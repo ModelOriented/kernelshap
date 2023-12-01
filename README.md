@@ -95,7 +95,7 @@ ps
 [2,] -0.4931989 -0.11724773  0.09868921 0.028563613
 
 # Kernel SHAP gives almost the same:
-system.time(  # 28 s
+system.time(  # 49 s
   ks <- kernelshap(fit, X, bg_X = bg_X)
 )
 ks
