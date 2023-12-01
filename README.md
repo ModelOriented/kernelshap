@@ -15,12 +15,14 @@
 
 The package contains two workhorses to calculate SHAP values for any model:
 
-- `kernelshap()`: Kernel SHAP algorithm of [1] and [2]. By default, exact Kernel SHAP is used for up to $p=8$ features, and an almost exact hybrid algorithm otherwise.
-- `permshap()`: Exact permutation SHAP (currently available for up to $p=14$ features).
+- `permshap()`: Exact permutation SHAP algorithm of [1]. Available for up to $p=14$ features.
+- `kernelshap()`: Kernel SHAP algorithm of [2] and [3]. By default, exact Kernel SHAP is used for up to $p=8$ features, and an almost exact hybrid algorithm otherwise.
 
 ### Kernel SHAP or permutation SHAP?
 
-Kernel SHAP has been introduced in [1] as an approximation of permutation SHAP. For up to $8-10$ features, exact calculations are feasible for both algorithms (and take similarly long to compute). Since exact Kernel SHAP is still only an approximation of exact permutation SHAP, the latter should be preferred in this case, even if the results are often very similar. A situation where the two approaches give different results: The model has interactions of order three or higher *and* correlated features.
+Kernel SHAP has been introduced in [2] as an approximation of permutation SHAP [1]. For up to ten features, exact calculations are realistic for both algorithms. Since exact Kernel SHAP is still only an approximation of exact permutation SHAP, the latter should be preferred in this case, even if the results are often very similar.
+
+A situation where the two approaches give different results: The model has interactions of order three or higher.
 
 ### Typical workflow to explain any model
 
@@ -35,7 +37,7 @@ If the training data is small, use the full training data. In cases with a natur
 - Multivariate predictions are handled at no additional computational cost.
 - Factor-valued predictions are automatically turned into one-hot-encoded columns.
 - Case weights are supported via the argument `bg_w`.
-- By changing the defaults in `kernelshap()`, the iterative pure sampling approach in [2] can be enforced.
+- By changing the defaults in `kernelshap()`, the iterative pure sampling approach in [3] can be enforced.
 
 ## Installation
 
@@ -47,15 +49,14 @@ install.packages("kernelshap")
 devtools::install_github("ModelOriented/kernelshap")
 ```
 
-## Usage
+## Basic Usage
 
-Let's model diamonds prices!
-
-### Linear regression
+Let's model diamond prices with a (not too complex) random forest. As an alternative, you could use the {treeshap} package.
 
 ```r
 library(kernelshap)
 library(ggplot2)
+library(ranger)
 library(shapviz)
 
 diamonds <- transform(
@@ -64,106 +65,67 @@ diamonds <- transform(
   log_carat = log(carat)
 )
 
-fit_lm <- lm(log_price ~ log_carat + clarity + color + cut, data = diamonds)
+xvars <- c("log_carat", "clarity", "color", "cut")
+
+fit <- ranger(
+  log_price ~ log_carat + clarity + color + cut, 
+  data = diamonds, 
+  num.trees = 200,
+  max.depth = 8,
+  seed = 20
+)
 
 # 1) Sample rows to be explained
 set.seed(10)
-xvars <- c("log_carat", "clarity", "color", "cut")
 X <- diamonds[sample(nrow(diamonds), 1000), xvars]
 
 # 2) Select background data
 bg_X <- diamonds[sample(nrow(diamonds), 200), ]
 
-# 3) Crunch SHAP values for all 1000 rows of X (~7 seconds)
+# 3) Crunch SHAP values for all 1000 rows of X (~27 seconds)
+# Note: Since the number of features is small, we use permshap()
 system.time(
-  shap_lm <- kernelshap(fit_lm, X, bg_X = bg_X)
+  ps <- permshap(fit, X, bg_X = bg_X)
 )
-shap_lm
-
-# SHAP values of first 2 observations:
-#       log_carat    clarity       color         cut
-# [1,]  1.2692479  0.1081900 -0.07847065 0.004630899
-# [2,] -0.4499226 -0.1111329  0.11832292 0.026503850
-
-# 4) Analyze
-sv_lm <- shapviz(shap_lm)
-sv_importance(sv_lm)
-sv_dependence(sv_lm, "log_carat", color_var = NULL)
-
-# Since the model is additive, permutation SHAP gives the same results:
-system.time(
-  permshap_lm <- permshap(fit_lm, X, bg_X = bg_X)
-)
-permshap_lm
+ps
 
 # SHAP values of first observations:
-#       log_carat    clarity       color         cut
-# [1,]  1.2692479  0.1081900 -0.07847065 0.004630899
-# [2,] -0.4499226 -0.1111329  0.11832292 0.026503850
-```
+#       log_carat     clarity       color         cut
+# [1,]  1.1203506  0.06502841 -0.14040781 0.003009253
+# [2,] -0.4798394 -0.09477441  0.07874888 0.019542365
 
-![](man/figures/README-lm-imp.svg)
-
-![](man/figures/README-lm-dep.svg)
-
-We can also explain a specific prediction instead of the full model:
-
-```r
-single_row <- diamonds[5000, xvars]
-
-fit_lm |>
-  kernelshap(single_row, bg_X = bg_X) |> 
-  shapviz() |>
-  sv_waterfall()
-```
-
-![](man/figures/README-lm-waterfall.svg)
-
-### Random forest
-
-We can use the same `X` and `bg_X` to inspect other models:
-
-```r
-library(ranger)
-
-fit_rf <- ranger(
-  log_price ~ log_carat + clarity + color + cut, 
-  data = diamonds, 
-  num.trees = 20,
-  seed = 20
+# Kernel SHAP gives almost the same:
+system.time(  # 28 s
+  ks <- kernelshap(fit, X, bg_X = bg_X)
 )
+ks
+#       log_carat     clarity       color        cut
+# [1,]  1.1204982  0.06499042 -0.14074578 0.00323761
+# [2,] -0.4795507 -0.09443787  0.07867385 0.01899212
 
-shap_rf <- kernelshap(fit_rf, X, bg_X = bg_X)
-shap_rf
-
-# SHAP values of first 2 observations:
-#       log_carat     clarity      color         cut
-# [1,]  1.1987785  0.09578879 -0.1397765 0.002761832
-# [2,] -0.4969451 -0.12006207  0.1050928 0.029680717
-
-sv_rf <- shapviz(shap_rf)
-sv_importance(sv_rf, kind = "bee", show_numbers = TRUE)
-sv_dependence(sv_rf, "log_carat")
-
-# Permutation SHAP gives very slightly different results here (due to interactions):
-system.time(
-  permshap_rf <- permshap(fit_rf, X, bg_X = bg_X)
-)
-permshap_rf
-# 
-# SHAP values of first observations:
-#       log_carat     clarity      color         cut
-# [1,]  1.1986635  0.09557752 -0.1385312 0.001842753
-# [2,] -0.4970758 -0.12034448  0.1051721 0.030014490
+# 4) Analyze with our sister package {shapviz}
+ps <- shapviz(ps)
+sv_importance(ps)
+sv_dependence(ps, xvars)
 ```
 
-![](man/figures/README-rf-imp.jpeg)
+![](man/figures/README-rf-imp.svg)
 
 ![](man/figures/README-rf-dep.svg)
 
-### Deep neural net
+## More Examples
 
-Or a deep neural net (results not fully reproducible):
+{kernelshap} can deal with almost any situation. We will show some of the flexibility here. The first two examples require you to run at least up to Step 2 of the "Basic Usage" code.
+
+### Taylored predict()
+
+In this {keras} example, we show how to use a tailored `predict()` function that complies with 
+
+- the Keras API, 
+- uses sufficiently large batches, and 
+- turns off the Keras progress bar.
+
+The results are not fully reproducible though.
 
 ```r
 library(keras)
@@ -175,7 +137,7 @@ nn |>
   layer_dense(units = 1)
 
 nn |>
-  compile(optimizer = optimizer_adam(0.1), loss = "mse")
+  compile(optimizer = optimizer_adam(0.001), loss = "mse")
 
 cb <- list(
   callback_early_stopping(patience = 20),
@@ -192,182 +154,131 @@ nn |>
     callbacks = cb
   )
 
-pred_fun <- function(mod, X) predict(mod, data.matrix(X), batch_size = 10000)
-shap_nn <- kernelshap(nn, X, bg_X = bg_X, pred_fun = pred_fun)
+pred_fun <- function(mod, X) 
+  predict(mod, data.matrix(X), batch_size = 1e4, verbose = FALSE)
 
-sv_nn <- shapviz(shap_nn)
-sv_importance(sv_nn, show_numbers = TRUE)
-sv_dependence(sv_nn, "clarity")
+system.time(  # 60 s
+  ps <- permshap(nn, X, bg_X = bg_X, pred_fun = pred_fun)
+)
+
+ps <- shapviz(ps)
+sv_importance(ps, show_numbers = TRUE)
+sv_dependence(ps, xvars)
 ```
 
 ![](man/figures/README-nn-imp.svg)
 
 ![](man/figures/README-nn-dep.svg)
 
-## Parallel computing
+### Parallel computing
 
-Parallel computing is supported via {foreach}, at the price of losing the progress bar. Note that this does not work with Keras models (and some others).
+Parallel computing is supported via {foreach}. Note that this does not work with all models, and that there is no progress bar.
 
-### Example: Linear regression continued
+On Windows, sometimes not all packages or global objects are passed to the parallel sessions. In this case, the necessary instructions to {foreach} can be specified through a named list via `parallel_args`, see the following example.
 
 ```r
 library(doFuture)
+library(mgcv)
 
-# Set up parallel backend
 registerDoFuture()
 plan(multisession, workers = 4)  # Windows
 # plan(multicore, workers = 4)   # Linux, macOS, Solaris
 
-# ~3 seconds
-system.time(
-  s <- kernelshap(fit_lm, X, bg_X = bg_X, parallel = TRUE)
-)
-```
+fit <- gam(log_price ~ s(log_carat) + clarity + color + cut, data = diamonds)
 
-### Example: Parallel GAM
-
-On Windows, sometimes not all packages or global objects are passed to the parallel sessions. In this case, the necessary instructions to {foreach} can be specified through a named list via `parallel_args`, see the following example:
-
-```r
-library(mgcv)
-
-fit_gam <- gam(log_price ~ s(log_carat) + clarity + color + cut, data = diamonds)
-
-system.time(  # 11 seconds
-  shap_gam <- permshap(
-    fit_gam, 
-    X, 
-    bg_X = bg_X,
-    parallel = TRUE, 
-    parallel_args = list(.packages = "mgcv")
+system.time(  # 9 seconds
+  ps <- permshap(
+    fit, X, bg_X = bg_X, parallel = TRUE, parallel_args = list(.packages = "mgcv")
   )
 )
+ps
 
-shap_gam
+# SHAP values of first observations:
+#       log_carat    clarity       color         cut
+# [1,]  1.2714988  0.1115546 -0.08454955 0.003220451
+# [2,] -0.5153642 -0.1080045  0.11967804 0.031341595
 
-# SHAP values of first 2 observations:
+# Because there are no high-order interactions, Kernel SHAP gives the same:
+kernelshap(fit, X[1:2, ], bg_X = bg_X)
 #       log_carat    clarity       color         cut
 # [1,]  1.2714988  0.1115546 -0.08454955 0.003220451
 # [2,] -0.5153642 -0.1080045  0.11967804 0.031341595
 ```
 
-## Multi-output models
+### Multi-output models
 
-{kernelshap} supports multivariate predictions:
+{kernelshap} supports multivariate predictions like:
 
 - probabilistic classification,
 - non-probabilistic classification (factor-valued responses are turned into dummies),
 - regression with multivariate response, and
 - predictions found by applying multiple regression models.
 
-### Classification
-
-Let's use {ranger} to fit a probabilistic and a non-probabilistic classification model.
+Here, we use the `iris` data (no need to run code from above).
 
 ```r
 library(kernelshap)
 library(ranger)
 library(shapviz)
-library(ggplot2)
 
-# Probabilistic
-fit_prob <- ranger(
-  Species ~ ., data = iris, num.trees = 20, probability = TRUE, seed = 1
-)
+set.seed(1)
+
+# Probabilistic classification
+fit_prob <- ranger(Species ~ ., data = iris, probability = TRUE)
 ps_prob <- permshap(fit_prob, X = iris[, -5], bg_X = iris) |> 
   shapviz()
-sv_importance(ps_prob) +
-  ggtitle("Probabilistic")
+sv_importance(ps_prob)
+sv_dependence(ps_prob, "Petal.Length")
 
-# Non-probabilistic: Predictions are factors
-fit_class <- ranger(Species ~ ., data = iris, num.trees = 20, seed = 1)
-ps_class <- permshap(fit_class, X = iris[, -5], bg_X = iris) |> 
-  shapviz()
-sv_importance(ps_class) +
-  ggtitle("Non-Probabilistic")
+# Non-probabilistic classification (results not shown)
+fit_class <- ranger(Species ~ ., data = iris, num.trees = 20)
+ps_class <- permshap(fit_class, X = iris[, -5], bg_X = iris)
 ```
 
-![](man/figures/README-prob-class.svg)
+![](man/figures/README-prob-imp.svg)
 
-![](man/figures/README-fact-class.svg)
+![](man/figures/README-prob-dep.svg)
 
-## Meta-learning packages
+### Tidymodels
 
-Here, we provide some working examples for "tidymodels", "caret", and "mlr3".
-
-### tidymodels
+Meta-learning packages like {tidymodels}, {caret} or {mlr3} are straight-forward to use. The following example additionally shows that the `...` argument of `permshap()` and `kernelshap()` is passed to `predict()`.
 
 ```r
+library(kernelshap)
 library(tidymodels)
-library(kernelshap)
 
-iris_recipe <- iris %>%
-  recipe(Sepal.Length ~ .)
+set.seed(1)
 
-reg <- linear_reg() %>%
-  set_engine("lm")
+iris_recipe <- iris |> 
+  recipe(Species ~ .)
+
+mod <- rand_forest(trees = 100) |>
+  set_engine("ranger") |> 
+  set_mode("classification")
   
-iris_wf <- workflow() %>%
-  add_recipe(iris_recipe) %>%
-  add_model(reg)
+iris_wf <- workflow() |>
+  add_recipe(iris_recipe) |>
+  add_model(mod)
 
-fit <- iris_wf %>%
+fit <- iris_wf |>
   fit(iris)
-  
-ks <- permshap(fit, iris[, -1], bg_X = iris)
-ks
-# 
-# SHAP values of first observations:
-#      Sepal.Width Petal.Length Petal.Width   Species
-# [1,]  0.21951350    -1.955357   0.3149451 0.5823533
-# [2,] -0.02843097    -1.955357   0.3149451 0.5823533
-```
 
-### caret
-
-```r
-library(caret)
-library(kernelshap)
-library(shapviz)
-
-fit <- train(
-  Sepal.Length ~ ., 
-  data = iris, 
-  method = "lm", 
-  tuneGrid = data.frame(intercept = TRUE),
-  trControl = trainControl(method = "none")
+system.time(  # 6s
+  ps <- permshap(fit, iris[-5], bg_X = iris, type = "prob")
 )
+ps
 
-s <- kernelshap(fit, iris[, -1], predict, bg_X = iris)
-sv <- shapviz(s)
-sv_waterfall(sv, 1)
-```
-
-### mlr3
-
-```r
-library(kernelshap)
-library(mlr3)
-library(mlr3learners)
-
-# Regression
-mlr_tasks$get("iris")
-task_iris <- TaskRegr$new(id = "reg", backend = iris, target = "Sepal.Length")
-fit_lm <- lrn("regr.lm")
-fit_lm$train(task_iris)
-s <- permshap(fit_lm, iris[, -1], bg_X = iris)
-s
-
-# *Probabilistic* classification -> lrn(..., predict_type = "prob")
-task_iris <- TaskClassif$new(id = "class", backend = iris, target = "Species")
-fit_rf <- lrn("classif.ranger", predict_type = "prob", num.trees = 20)
-fit_rf$train(task_iris)
-s <- permshap(fit_rf, X = iris[, -5], bg_X = iris)
-s
+# Some values
+$.pred_setosa
+     Sepal.Length Sepal.Width Petal.Length Petal.Width
+[1,]   0.02186111 0.012137778    0.3658278   0.2667667
+[2,]   0.02628333 0.001315556    0.3683833   0.2706111
 ```
 
 ## References
 
-[1] Scott M. Lundberg and Su-In Lee. A Unified Approach to Interpreting Model Predictions. Advances in Neural Information Processing Systems 30, 2017.
+[1] Erik Štrumbelj and Igor Kononenko. Explaining prediction models and individual predictions with feature contributions. Knowledge and Information Systems 41, 2014.
 
-[2] Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value Estimation Using Linear Regression. Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.
+[2] Scott M. Lundberg and Su-In Lee. A Unified Approach to Interpreting Model Predictions. Advances in Neural Information Processing Systems 30, 2017.
+
+[3] Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value Estimation Using Linear Regression. Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.

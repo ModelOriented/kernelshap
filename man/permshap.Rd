@@ -102,8 +102,8 @@ background data.
 }
 }
 \description{
-Exact permutation SHAP values with respect to a background dataset.
-The function is currently limited to maximum 14 features.
+Exact permutation SHAP algorithm with respect to a background dataset,
+see Strumbelj and Kononenko. The function works for up to 14 features.
 }
 \section{Methods (by class)}{
 \itemize{
@@ -142,4 +142,10 @@ s <- permshap(
   feature_names = c("Petal.Length", "Petal.Width", "Species")
 )
 s
+}
+\references{
+\enumerate{
+\item Erik Strumbelj and Igor Kononenko. Explaining prediction models and individual
+predictions with feature contributions. Knowledge and Information Systems 41, 2014.
+}
 }
