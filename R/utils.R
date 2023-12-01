@@ -1,3 +1,26 @@
+#' Fast Row Subsetting
+#' 
+#' Internal function used to row-subset data.frames.
+#' Brings a massive speed-up for data.frames. All other classes (tibble, data.table,
+#' matrix) are subsetted in the usual way.
+#' 
+#' @noRd
+#' @keywords internal
+#' 
+#' @param x A matrix-like object.
+#' @param i Logical or integer vector of rows to pick.
+#' @returns Subsetted version of `x`.
+rep_rows <- function(x, i) {
+  if (!(all(class(x) == "data.frame"))) {
+    return(x[i, , drop = FALSE])  # matrix, tibble, data.table, ...
+  }
+  # data.frame
+  out <- lapply(x, function(z) if (length(dim(z)) != 2L) z[i] else z[i, , drop = FALSE])
+  attr(out, "row.names") <- .set_row_names(length(i))
+  class(out) <- "data.frame"
+  out
+}
+
 #' Weighted Version of colMeans()
 #' 
 #' Internal function used to calculate column-wise weighted means.

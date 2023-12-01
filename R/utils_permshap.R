@@ -28,7 +28,7 @@ shapley_weights <- function(p, ell) {
 permshap_one <- function(x, v1, object, pred_fun, bg_w, v0, precalc, ...) {
   Z <- precalc[["Z"]]                                                    # ((m_ex+2) x K)
   vz <- get_vz(                                                          # (m_ex x K)
-    X = x[rep.int(1L, times = nrow(precalc[["bg_X_rep"]])), , drop = FALSE], # (m_ex*n_bg x p)
+    X = rep_rows(x, rep.int(1L, times = nrow(precalc[["bg_X_rep"]]))),   # (m_ex*n_bg x p)
     bg = precalc[["bg_X_rep"]],                                          # (m_ex*n_bg x p)
     Z = Z[2:(nrow(Z) - 1L), , drop = FALSE],                             # (m_ex x p)
     object = object,

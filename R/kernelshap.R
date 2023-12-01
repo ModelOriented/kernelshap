@@ -233,14 +233,14 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
     }
     m_exact <- nrow(precalc[["Z"]])
     prop_exact <- sum(precalc[["w"]])
-    precalc[["bg_X_exact"]] <- bg_X[rep(seq_len(bg_n), times = m_exact), , drop = FALSE]
+    precalc[["bg_X_exact"]] <- rep_rows(bg_X, rep.int(seq_len(bg_n), m_exact))
   } else {
     precalc <- list()
     m_exact <- 0L
     prop_exact <- 0
   }
   if (!exact) {
-    precalc[["bg_X_m"]] <- bg_X[rep(seq_len(bg_n), times = m), , drop = FALSE]  
+    precalc[["bg_X_m"]] <- rep_rows(bg_X, rep.int(seq_len(bg_n), m))
   }
   
   # Some infos

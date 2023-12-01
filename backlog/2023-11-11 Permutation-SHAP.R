@@ -3,19 +3,21 @@ library(ranger)
 
 differences <- numeric(4)
 
+system.time({
 set.seed(1)
-
 for (depth in 1:4) {
+  print(depth)
   fit <- ranger(
     Sepal.Length ~ ., 
     mtry = 3,
     data = iris, 
     max.depth = depth
   )
-  ps <- permshap(fit, iris[2:5], bg_X = iris)
-  ks <- kernelshap(fit, iris[2:5], bg_X = iris)
+  ps <- permshap(fit, iris[2:5], bg_X = iris, verbose = FALSE)
+  ks <- kernelshap(fit, iris[2:5], bg_X = iris, verbose = FALSE)
   differences[depth] <- mean(abs(ks$S - ps$S))
 }
+})
 
 differences  # for tree depth 1, 2, 3, 4
 # 5.053249e-17 9.046443e-17 2.387905e-04 4.403375e-04

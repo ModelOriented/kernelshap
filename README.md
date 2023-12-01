@@ -206,7 +206,7 @@ sv_dependence(sv_nn, "clarity")
 
 ## Parallel computing
 
-Parallel computing is supported via `foreach`, at the price of losing the progress bar. Note that this does not work with Keras models (and some others).
+Parallel computing is supported via {foreach}, at the price of losing the progress bar. Note that this does not work with Keras models (and some others).
 
 ### Example: Linear regression continued
 
@@ -226,7 +226,7 @@ system.time(
 
 ### Example: Parallel GAM
 
-On Windows, sometimes not all packages or global objects are passed to the parallel sessions. In this case, the necessary instructions to `foreach` can be specified through a named list via `parallel_args`, see the following example:
+On Windows, sometimes not all packages or global objects are passed to the parallel sessions. In this case, the necessary instructions to {foreach} can be specified through a named list via `parallel_args`, see the following example:
 
 ```r
 library(mgcv)

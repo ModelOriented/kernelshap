@@ -11,11 +11,11 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
     bg_X_exact <- precalc[["bg_X_exact"]]                         #  (m_ex*n_bg x p)
     Z <- precalc[["Z"]]                                           #  (m_ex x p)
     m_exact <- nrow(Z)
-    v0_m_exact <- v0[rep(1L, m_exact), , drop = FALSE]            #  (m_ex x K)
-    
+    v0_m_exact <- v0[rep.int(1L, m_exact), , drop = FALSE]        #  (m_ex x K)
+
     # Most expensive part
     vz <- get_vz(                                                 #  (m_ex x K)
-      X = x[rep.int(1L, times = nrow(bg_X_exact)), , drop = FALSE],# (m_ex*n_bg x p)
+      X = rep_rows(x, rep.int(1L, nrow(bg_X_exact))),             #  (m_ex*n_bg x p)
       bg = bg_X_exact,                                            #  (m_ex*n_bg x p)
       Z = Z,                                                      #  (m_ex x p)
       object = object, 
@@ -35,8 +35,8 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
   
   # Iterative sampling part, always using A_exact and b_exact to fill up the weights
   bg_X_m <- precalc[["bg_X_m"]]                                   #  (m*n_bg x p)
-  X <- x[rep(1L, times = nrow(bg_X_m)), , drop = FALSE]           #  (m*n_bg x p)
-  v0_m <- v0[rep(1L, m), , drop = FALSE]                          #  (m x K)
+  X <- rep_rows(x, rep.int(1L, nrow(bg_X_m)))                     #  (m*n_bg x p)
+  v0_m <- v0[rep.int(1L, m), , drop = FALSE]                      #  (m x K)
   
   est_m = list()
   converged <- FALSE
@@ -91,7 +91,7 @@ solver <- function(A, b, constraint) {
   Ainv <- ginv(A)
   dimnames(Ainv) <- dimnames(A)
   s <- (matrix(colSums(Ainv %*% b), nrow = 1L) - constraint) / sum(Ainv)     #  (1 x K)
-  Ainv %*% (b - s[rep(1L, p), , drop = FALSE])                               #  (p x K)
+  Ainv %*% (b - s[rep.int(1L, p), , drop = FALSE])                           #  (p x K)
 }
 
 ginv <- function (X, tol = sqrt(.Machine$double.eps)) {
@@ -138,7 +138,7 @@ sample_Z <- function(p, m, feature_names, S = 1:(p - 1L)) {
   # t(out)
   
   # Vectorized by Mathias Ambuehl
-  out <- rep(rep(0:1, m), as.vector(rbind(p - N, N)))
+  out <- rep(rep.int(0:1, m), as.vector(rbind(p - N, N)))
   dim(out) <- c(p, m)
   ord <- order(col(out), sample.int(m * p))
   out[] <- out[ord]
@@ -180,7 +180,7 @@ input_sampling <- function(p, m, deg, paired, feature_names) {
   }
   w_total <- if (deg == 0L) 1 else 1 - 2 * sum(kernel_weights(p)[seq_len(deg)])
   w <- w_total / m
-  list(Z = Z, w = rep(w, m), A = crossprod(Z) * w)
+  list(Z = Z, w = rep.int(w, m), A = crossprod(Z) * w)
 }
 
 # Functions required only for handling (partly) exact cases
@@ -262,7 +262,7 @@ input_partly_exact <- function(p, deg, feature_names) {
     Z[[k]] <- partly_exact_Z(p, k = k, feature_names = feature_names)
     n <- nrow(Z[[k]])
     w_tot <- kw[k] * (2 - (p == 2L * k))
-    w[[k]] <- rep(w_tot / n, n)
+    w[[k]] <- rep.int(w_tot / n, n)
   }
   w <- unlist(w, recursive = FALSE, use.names = FALSE)
   Z <- do.call(rbind, Z)
