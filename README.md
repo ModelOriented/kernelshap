@@ -51,7 +51,7 @@ devtools::install_github("ModelOriented/kernelshap")
 
 ## Basic Usage
 
-Let's model diamond prices with a (not too complex) random forest. As an alternative, you could use the {treeshap} package.
+Let's model diamond prices with a (not too complex) random forest. As an alternative, you could use the {treeshap} package in this situation.
 
 ```r
 library(kernelshap)
@@ -70,10 +70,10 @@ xvars <- c("log_carat", "clarity", "color", "cut")
 fit <- ranger(
   log_price ~ log_carat + clarity + color + cut, 
   data = diamonds, 
-  num.trees = 200,
-  max.depth = 8,
+  num.trees = 100,
   seed = 20
 )
+fit  # OOB R-squared 0.989
 
 # 1) Sample rows to be explained
 set.seed(10)
@@ -82,7 +82,7 @@ X <- diamonds[sample(nrow(diamonds), 1000), xvars]
 # 2) Select background data
 bg_X <- diamonds[sample(nrow(diamonds), 200), ]
 
-# 3) Crunch SHAP values for all 1000 rows of X (~27 seconds)
+# 3) Crunch SHAP values for all 1000 rows of X (54 seconds)
 # Note: Since the number of features is small, we use permshap()
 system.time(
   ps <- permshap(fit, X, bg_X = bg_X)
@@ -90,9 +90,9 @@ system.time(
 ps
 
 # SHAP values of first observations:
-#       log_carat     clarity       color         cut
-# [1,]  1.1203506  0.06502841 -0.14040781 0.003009253
-# [2,] -0.4798394 -0.09477441  0.07874888 0.019542365
+      log_carat     clarity       color         cut
+[1,]  1.1913247  0.09005467 -0.13430720 0.000682593
+[2,] -0.4931989 -0.11724773  0.09868921 0.028563613
 
 # Kernel SHAP gives almost the same:
 system.time(  # 28 s
@@ -100,8 +100,8 @@ system.time(  # 28 s
 )
 ks
 #       log_carat     clarity       color        cut
-# [1,]  1.1204982  0.06499042 -0.14074578 0.00323761
-# [2,] -0.4795507 -0.09443787  0.07867385 0.01899212
+# [1,]  1.1911791  0.0900462 -0.13531648 0.001845958
+# [2,] -0.4927482 -0.1168517  0.09815062 0.028255442
 
 # 4) Analyze with our sister package {shapviz}
 ps <- shapviz(ps)
@@ -116,6 +116,51 @@ sv_dependence(ps, xvars)
 ## More Examples
 
 {kernelshap} can deal with almost any situation. We will show some of the flexibility here. The first two examples require you to run at least up to Step 2 of the "Basic Usage" code.
+
+### Parallel computing
+
+Parallel computing is supported via {foreach}. Note that this does not work with all models, and that there is no progress bar. 
+
+On Windows, sometimes not all packages or global objects are passed to the parallel sessions. Often, this can be fixed via `parallel_args`, see the generalized additive model below. 
+
+```r
+library(doFuture)
+library(mgcv)
+
+registerDoFuture()
+plan(multisession, workers = 4)  # Windows
+# plan(multicore, workers = 4)   # Linux, macOS, Solaris
+
+fit <- gam(log_price ~ s(log_carat) + clarity * color + cut, data = diamonds)
+
+system.time(  # 9 seconds in parallel
+  ps <- permshap(
+    fit, X, bg_X = bg_X, parallel = TRUE, parallel_args = list(.packages = "mgcv")
+  )
+)
+ps
+
+# SHAP values of first observations:
+#      log_carat    clarity       color         cut
+# [1,]   1.26801  0.1023518 -0.09223291 0.004512402
+# [2,]  -0.51546 -0.1174766  0.11122775 0.030243973
+
+# Because there are no interactions of order above 2, Kernel SHAP gives the same:
+system.time(  # 27 s non-parallel
+  ks <- kernelshap(fit, X, bg_X = bg_X)
+)
+all.equal(ps$S, ks$S)
+# [1] TRUE
+
+# Now the usual plots:
+sv <- shapviz(ps)
+sv_importance(sv, kind = "bee")
+sv_dependence(sv, xvars)
+```
+
+![](man/figures/README-gam-imp.svg)
+
+![](man/figures/README-gam-dep.svg)
 
 ### Taylored predict()
 
@@ -169,41 +214,6 @@ sv_dependence(ps, xvars)
 ![](man/figures/README-nn-imp.svg)
 
 ![](man/figures/README-nn-dep.svg)
-
-### Parallel computing
-
-Parallel computing is supported via {foreach}. Note that this does not work with all models, and that there is no progress bar.
-
-On Windows, sometimes not all packages or global objects are passed to the parallel sessions. In this case, the necessary instructions to {foreach} can be specified through a named list via `parallel_args`, see the following example.
-
-```r
-library(doFuture)
-library(mgcv)
-
-registerDoFuture()
-plan(multisession, workers = 4)  # Windows
-# plan(multicore, workers = 4)   # Linux, macOS, Solaris
-
-fit <- gam(log_price ~ s(log_carat) + clarity + color + cut, data = diamonds)
-
-system.time(  # 9 seconds
-  ps <- permshap(
-    fit, X, bg_X = bg_X, parallel = TRUE, parallel_args = list(.packages = "mgcv")
-  )
-)
-ps
-
-# SHAP values of first observations:
-#       log_carat    clarity       color         cut
-# [1,]  1.2714988  0.1115546 -0.08454955 0.003220451
-# [2,] -0.5153642 -0.1080045  0.11967804 0.031341595
-
-# Because there are no high-order interactions, Kernel SHAP gives the same:
-kernelshap(fit, X[1:2, ], bg_X = bg_X)
-#       log_carat    clarity       color         cut
-# [1,]  1.2714988  0.1115546 -0.08454955 0.003220451
-# [2,] -0.5153642 -0.1080045  0.11967804 0.031341595
-```
 
 ### Multi-output models
 
