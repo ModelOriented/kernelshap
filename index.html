@@ -101,14 +101,15 @@
 <p>The package contains two workhorses to calculate SHAP values for any model:</p>
 <ul>
 <li>
-<code><a href="reference/kernelshap.html">kernelshap()</a></code>: Kernel SHAP algorithm of [1] and [2]. By default, exact Kernel SHAP is used for up to <span class="math inline"><em>p</em> = 8</span> features, and an almost exact hybrid algorithm otherwise.</li>
+<code><a href="reference/permshap.html">permshap()</a></code>: Exact permutation SHAP algorithm of [1]. Available for up to <span class="math inline"><em>p</em> = 14</span> features.</li>
 <li>
-<code><a href="reference/permshap.html">permshap()</a></code>: Exact permutation SHAP (currently available for up to <span class="math inline"><em>p</em> = 14</span> features).</li>
+<code><a href="reference/kernelshap.html">kernelshap()</a></code>: Kernel SHAP algorithm of [2] and [3]. By default, exact Kernel SHAP is used for up to <span class="math inline"><em>p</em> = 8</span> features, and an almost exact hybrid algorithm otherwise.</li>
 </ul>
 <div class="section level3">
 <h3 id="kernel-shap-or-permutation-shap">Kernel SHAP or permutation SHAP?<a class="anchor" aria-label="anchor" href="#kernel-shap-or-permutation-shap"></a>
 </h3>
-<p>Kernel SHAP has been introduced in [1] as an approximation of permutation SHAP. For up to <span class="math inline">8 − 10</span> features, exact calculations are feasible for both algorithms (and take similarly long to compute). Since exact Kernel SHAP is still only an approximation of exact permutation SHAP, the latter should be preferred in this case, even if the results are often very similar. A situation where the two approaches give different results: The model has interactions of order three or higher <em>and</em> correlated features.</p>
+<p>Kernel SHAP has been introduced in [2] as an approximation of permutation SHAP [1]. For up to ten features, exact calculations are realistic for both algorithms. Since exact Kernel SHAP is still only an approximation of exact permutation SHAP, the latter should be preferred in this case, even if the results are often very similar.</p>
+<p>A situation where the two approaches give different results: The model has interactions of order three or higher.</p>
 </div>
 <div class="section level3">
 <h3 id="typical-workflow-to-explain-any-model">Typical workflow to explain any model<a class="anchor" aria-label="anchor" href="#typical-workflow-to-explain-any-model"></a>
@@ -128,7 +129,7 @@
 <li>Multivariate predictions are handled at no additional computational cost.</li>
 <li>Factor-valued predictions are automatically turned into one-hot-encoded columns.</li>
 <li>Case weights are supported via the argument <code>bg_w</code>.</li>
-<li>By changing the defaults in <code><a href="reference/kernelshap.html">kernelshap()</a></code>, the iterative pure sampling approach in [2] can be enforced.</li>
+<li>By changing the defaults in <code><a href="reference/kernelshap.html">kernelshap()</a></code>, the iterative pure sampling approach in [3] can be enforced.</li>
 </ul>
 </div>
 </div>
@@ -143,15 +144,13 @@
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ModelOriented/kernelshap"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
+<h2 id="basic-usage">Basic Usage<a class="anchor" aria-label="anchor" href="#basic-usage"></a>
 </h2>
-<p>Let’s model diamonds prices!</p>
-<div class="section level3">
-<h3 id="linear-regression">Linear regression<a class="anchor" aria-label="anchor" href="#linear-regression"></a>
-</h3>
+<p>Let’s model diamond prices with a (not too complex) random forest. As an alternative, you could use the {treeshap} package.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ModelOriented/kernelshap" class="external-link">kernelshap</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://imbs-hl.github.io/ranger/" class="external-link">ranger</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ModelOriented/shapviz" class="external-link">shapviz</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">diamonds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/transform.html" class="external-link">transform</a></span><span class="op">(</span></span>
@@ -160,98 +159,66 @@
 <span>  log_carat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">carat</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">fit_lm</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">log_price</span> <span class="op">~</span> <span class="va">log_carat</span> <span class="op">+</span> <span class="va">clarity</span> <span class="op">+</span> <span class="va">color</span> <span class="op">+</span> <span class="va">cut</span>, data <span class="op">=</span> <span class="va">diamonds</span><span class="op">)</span></span>
+<span><span class="va">xvars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"log_carat"</span>, <span class="st">"clarity"</span>, <span class="st">"color"</span>, <span class="st">"cut"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">ranger</span><span class="op">(</span></span>
+<span>  <span class="va">log_price</span> <span class="op">~</span> <span class="va">log_carat</span> <span class="op">+</span> <span class="va">clarity</span> <span class="op">+</span> <span class="va">color</span> <span class="op">+</span> <span class="va">cut</span>, </span>
+<span>  data <span class="op">=</span> <span class="va">diamonds</span>, </span>
+<span>  num.trees <span class="op">=</span> <span class="fl">200</span>,</span>
+<span>  max.depth <span class="op">=</span> <span class="fl">8</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">20</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 1) Sample rows to be explained</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span></span>
-<span><span class="va">xvars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"log_carat"</span>, <span class="st">"clarity"</span>, <span class="st">"color"</span>, <span class="st">"cut"</span><span class="op">)</span></span>
 <span><span class="va">X</span> <span class="op">&lt;-</span> <span class="va">diamonds</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">diamonds</span><span class="op">)</span>, <span class="fl">1000</span><span class="op">)</span>, <span class="va">xvars</span><span class="op">]</span></span>
 <span></span>
 <span><span class="co"># 2) Select background data</span></span>
 <span><span class="va">bg_X</span> <span class="op">&lt;-</span> <span class="va">diamonds</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">diamonds</span><span class="op">)</span>, <span class="fl">200</span><span class="op">)</span>, <span class="op">]</span></span>
 <span></span>
-<span><span class="co"># 3) Crunch SHAP values for all 1000 rows of X (~7 seconds)</span></span>
+<span><span class="co"># 3) Crunch SHAP values for all 1000 rows of X (~27 seconds)</span></span>
+<span><span class="co"># Note: Since the number of features is small, we use permshap()</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span></span>
-<span>  <span class="va">shap_lm</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span><span class="va">fit_lm</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span><span class="op">)</span></span>
+<span>  <span class="va">ps</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">shap_lm</span></span>
-<span></span>
-<span><span class="co"># SHAP values of first 2 observations:</span></span>
-<span><span class="co">#       log_carat    clarity       color         cut</span></span>
-<span><span class="co"># [1,]  1.2692479  0.1081900 -0.07847065 0.004630899</span></span>
-<span><span class="co"># [2,] -0.4499226 -0.1111329  0.11832292 0.026503850</span></span>
-<span></span>
-<span><span class="co"># 4) Analyze</span></span>
-<span><span class="va">sv_lm</span> <span class="op">&lt;-</span> <span class="fu">shapviz</span><span class="op">(</span><span class="va">shap_lm</span><span class="op">)</span></span>
-<span><span class="fu">sv_importance</span><span class="op">(</span><span class="va">sv_lm</span><span class="op">)</span></span>
-<span><span class="fu">sv_dependence</span><span class="op">(</span><span class="va">sv_lm</span>, <span class="st">"log_carat"</span>, color_var <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Since the model is additive, permutation SHAP gives the same results:</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span></span>
-<span>  <span class="va">permshap_lm</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">fit_lm</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">permshap_lm</span></span>
+<span><span class="va">ps</span></span>
 <span></span>
 <span><span class="co"># SHAP values of first observations:</span></span>
-<span><span class="co">#       log_carat    clarity       color         cut</span></span>
-<span><span class="co"># [1,]  1.2692479  0.1081900 -0.07847065 0.004630899</span></span>
-<span><span class="co"># [2,] -0.4499226 -0.1111329  0.11832292 0.026503850</span></span></code></pre></div>
-<p><img src="reference/figures/README-lm-imp.svg"></p>
-<p><img src="reference/figures/README-lm-dep.svg"></p>
-<p>We can also explain a specific prediction instead of the full model:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">single_row</span> <span class="op">&lt;-</span> <span class="va">diamonds</span><span class="op">[</span><span class="fl">5000</span>, <span class="va">xvars</span><span class="op">]</span></span>
+<span><span class="co">#       log_carat     clarity       color         cut</span></span>
+<span><span class="co"># [1,]  1.1203506  0.06502841 -0.14040781 0.003009253</span></span>
+<span><span class="co"># [2,] -0.4798394 -0.09477441  0.07874888 0.019542365</span></span>
 <span></span>
-<span><span class="va">fit_lm</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span><span class="va">single_row</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
-<span>  <span class="fu">shapviz</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">sv_waterfall</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-lm-waterfall.svg"></p>
-</div>
-<div class="section level3">
-<h3 id="random-forest">Random forest<a class="anchor" aria-label="anchor" href="#random-forest"></a>
-</h3>
-<p>We can use the same <code>X</code> and <code>bg_X</code> to inspect other models:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://imbs-hl.github.io/ranger/" class="external-link">ranger</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">fit_rf</span> <span class="op">&lt;-</span> <span class="fu">ranger</span><span class="op">(</span></span>
-<span>  <span class="va">log_price</span> <span class="op">~</span> <span class="va">log_carat</span> <span class="op">+</span> <span class="va">clarity</span> <span class="op">+</span> <span class="va">color</span> <span class="op">+</span> <span class="va">cut</span>, </span>
-<span>  data <span class="op">=</span> <span class="va">diamonds</span>, </span>
-<span>  num.trees <span class="op">=</span> <span class="fl">20</span>,</span>
-<span>  seed <span class="op">=</span> <span class="fl">20</span></span>
+<span><span class="co"># Kernel SHAP gives almost the same:</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span>  <span class="co"># 28 s</span></span>
+<span>  <span class="va">ks</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
+<span><span class="va">ks</span></span>
+<span><span class="co">#       log_carat     clarity       color        cut</span></span>
+<span><span class="co"># [1,]  1.1204982  0.06499042 -0.14074578 0.00323761</span></span>
+<span><span class="co"># [2,] -0.4795507 -0.09443787  0.07867385 0.01899212</span></span>
 <span></span>
-<span><span class="va">shap_rf</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span><span class="va">fit_rf</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span><span class="op">)</span></span>
-<span><span class="va">shap_rf</span></span>
-<span></span>
-<span><span class="co"># SHAP values of first 2 observations:</span></span>
-<span><span class="co">#       log_carat     clarity      color         cut</span></span>
-<span><span class="co"># [1,]  1.1987785  0.09578879 -0.1397765 0.002761832</span></span>
-<span><span class="co"># [2,] -0.4969451 -0.12006207  0.1050928 0.029680717</span></span>
-<span></span>
-<span><span class="va">sv_rf</span> <span class="op">&lt;-</span> <span class="fu">shapviz</span><span class="op">(</span><span class="va">shap_rf</span><span class="op">)</span></span>
-<span><span class="fu">sv_importance</span><span class="op">(</span><span class="va">sv_rf</span>, kind <span class="op">=</span> <span class="st">"bee"</span>, show_numbers <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu">sv_dependence</span><span class="op">(</span><span class="va">sv_rf</span>, <span class="st">"log_carat"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Permutation SHAP gives very slightly different results here (due to interactions):</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span></span>
-<span>  <span class="va">permshap_rf</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">fit_rf</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">permshap_rf</span></span>
-<span><span class="co"># </span></span>
-<span><span class="co"># SHAP values of first observations:</span></span>
-<span><span class="co">#       log_carat     clarity      color         cut</span></span>
-<span><span class="co"># [1,]  1.1986635  0.09557752 -0.1385312 0.001842753</span></span>
-<span><span class="co"># [2,] -0.4970758 -0.12034448  0.1051721 0.030014490</span></span></code></pre></div>
-<p><img src="reference/figures/README-rf-imp.jpeg"></p>
+<span><span class="co"># 4) Analyze with our sister package {shapviz}</span></span>
+<span><span class="va">ps</span> <span class="op">&lt;-</span> <span class="fu">shapviz</span><span class="op">(</span><span class="va">ps</span><span class="op">)</span></span>
+<span><span class="fu">sv_importance</span><span class="op">(</span><span class="va">ps</span><span class="op">)</span></span>
+<span><span class="fu">sv_dependence</span><span class="op">(</span><span class="va">ps</span>, <span class="va">xvars</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-rf-imp.svg"></p>
 <p><img src="reference/figures/README-rf-dep.svg"></p>
 </div>
+<div class="section level2">
+<h2 id="more-examples">More Examples<a class="anchor" aria-label="anchor" href="#more-examples"></a>
+</h2>
+<p>{kernelshap} can deal with almost any situation. We will show some of the flexibility here. The first two examples require you to run at least up to Step 2 of the “Basic Usage” code.</p>
 <div class="section level3">
-<h3 id="deep-neural-net">Deep neural net<a class="anchor" aria-label="anchor" href="#deep-neural-net"></a>
+<h3 id="taylored-predict">Taylored predict()<a class="anchor" aria-label="anchor" href="#taylored-predict"></a>
 </h3>
-<p>Or a deep neural net (results not fully reproducible):</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<p>In this {keras} example, we show how to use a tailored <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> function that complies with</p>
+<ul>
+<li>the Keras API,</li>
+<li>uses sufficiently large batches, and</li>
+<li>turns off the Keras progress bar.</li>
+</ul>
+<p>The results are not fully reproducible though.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tensorflow.rstudio.com/" class="external-link">keras</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">nn</span> <span class="op">&lt;-</span> <span class="fu">keras_model_sequential</span><span class="op">(</span><span class="op">)</span></span>
@@ -261,7 +228,7 @@
 <span>  <span class="fu">layer_dense</span><span class="op">(</span>units <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">nn</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">compile</span><span class="op">(</span>optimizer <span class="op">=</span> <span class="fu">optimizer_adam</span><span class="op">(</span><span class="fl">0.1</span><span class="op">)</span>, loss <span class="op">=</span> <span class="st">"mse"</span><span class="op">)</span></span>
+<span>  <span class="fu">compile</span><span class="op">(</span>optimizer <span class="op">=</span> <span class="fu">optimizer_adam</span><span class="op">(</span><span class="fl">0.001</span><span class="op">)</span>, loss <span class="op">=</span> <span class="st">"mse"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">cb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu">callback_early_stopping</span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span>,</span>
@@ -278,183 +245,124 @@
 <span>    callbacks <span class="op">=</span> <span class="va">cb</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
-<span><span class="va">pred_fun</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">mod</span>, <span class="va">X</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">mod</span>, <span class="fu"><a href="https://rdrr.io/r/base/data.matrix.html" class="external-link">data.matrix</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span>, batch_size <span class="op">=</span> <span class="fl">10000</span><span class="op">)</span></span>
-<span><span class="va">shap_nn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span><span class="va">nn</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span>, pred_fun <span class="op">=</span> <span class="va">pred_fun</span><span class="op">)</span></span>
+<span><span class="va">pred_fun</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">mod</span>, <span class="va">X</span><span class="op">)</span> </span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">mod</span>, <span class="fu"><a href="https://rdrr.io/r/base/data.matrix.html" class="external-link">data.matrix</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span>, batch_size <span class="op">=</span> <span class="fl">1e4</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">sv_nn</span> <span class="op">&lt;-</span> <span class="fu">shapviz</span><span class="op">(</span><span class="va">shap_nn</span><span class="op">)</span></span>
-<span><span class="fu">sv_importance</span><span class="op">(</span><span class="va">sv_nn</span>, show_numbers <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu">sv_dependence</span><span class="op">(</span><span class="va">sv_nn</span>, <span class="st">"clarity"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span>  <span class="co"># 60 s</span></span>
+<span>  <span class="va">ps</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">nn</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span>, pred_fun <span class="op">=</span> <span class="va">pred_fun</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">ps</span> <span class="op">&lt;-</span> <span class="fu">shapviz</span><span class="op">(</span><span class="va">ps</span><span class="op">)</span></span>
+<span><span class="fu">sv_importance</span><span class="op">(</span><span class="va">ps</span>, show_numbers <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu">sv_dependence</span><span class="op">(</span><span class="va">ps</span>, <span class="va">xvars</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-nn-imp.svg"></p>
 <p><img src="reference/figures/README-nn-dep.svg"></p>
 </div>
-</div>
-<div class="section level2">
-<h2 id="parallel-computing">Parallel computing<a class="anchor" aria-label="anchor" href="#parallel-computing"></a>
-</h2>
-<p>Parallel computing is supported via {foreach}, at the price of losing the progress bar. Note that this does not work with Keras models (and some others).</p>
 <div class="section level3">
-<h3 id="example-linear-regression-continued">Example: Linear regression continued<a class="anchor" aria-label="anchor" href="#example-linear-regression-continued"></a>
+<h3 id="parallel-computing">Parallel computing<a class="anchor" aria-label="anchor" href="#parallel-computing"></a>
 </h3>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<p>Parallel computing is supported via {foreach}. Note that this does not work with all models, and that there is no progress bar.</p>
+<p>On Windows, sometimes not all packages or global objects are passed to the parallel sessions. In this case, the necessary instructions to {foreach} can be specified through a named list via <code>parallel_args</code>, see the following example.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://doFuture.futureverse.org" class="external-link">doFuture</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">mgcv</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Set up parallel backend</span></span>
 <span><span class="fu"><a href="https://doFuture.futureverse.org/reference/registerDoFuture.html" class="external-link">registerDoFuture</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">multisession</span>, workers <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>  <span class="co"># Windows</span></span>
 <span><span class="co"># plan(multicore, workers = 4)   # Linux, macOS, Solaris</span></span>
 <span></span>
-<span><span class="co"># ~3 seconds</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span></span>
-<span>  <span class="va">s</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span><span class="va">fit_lm</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span>, parallel <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="example-parallel-gam">Example: Parallel GAM<a class="anchor" aria-label="anchor" href="#example-parallel-gam"></a>
-</h3>
-<p>On Windows, sometimes not all packages or global objects are passed to the parallel sessions. In this case, the necessary instructions to {foreach} can be specified through a named list via <code>parallel_args</code>, see the following example:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">mgcv</span><span class="op">)</span></span>
+<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">gam</a></span><span class="op">(</span><span class="va">log_price</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/s.html" class="external-link">s</a></span><span class="op">(</span><span class="va">log_carat</span><span class="op">)</span> <span class="op">+</span> <span class="va">clarity</span> <span class="op">+</span> <span class="va">color</span> <span class="op">+</span> <span class="va">cut</span>, data <span class="op">=</span> <span class="va">diamonds</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">fit_gam</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">gam</a></span><span class="op">(</span><span class="va">log_price</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/s.html" class="external-link">s</a></span><span class="op">(</span><span class="va">log_carat</span><span class="op">)</span> <span class="op">+</span> <span class="va">clarity</span> <span class="op">+</span> <span class="va">color</span> <span class="op">+</span> <span class="va">cut</span>, data <span class="op">=</span> <span class="va">diamonds</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span>  <span class="co"># 11 seconds</span></span>
-<span>  <span class="va">shap_gam</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span></span>
-<span>    <span class="va">fit_gam</span>, </span>
-<span>    <span class="va">X</span>, </span>
-<span>    bg_X <span class="op">=</span> <span class="va">bg_X</span>,</span>
-<span>    parallel <span class="op">=</span> <span class="cn">TRUE</span>, </span>
-<span>    parallel_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>.packages <span class="op">=</span> <span class="st">"mgcv"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span>  <span class="co"># 9 seconds</span></span>
+<span>  <span class="va">ps</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span></span>
+<span>    <span class="va">fit</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span>, parallel <span class="op">=</span> <span class="cn">TRUE</span>, parallel_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>.packages <span class="op">=</span> <span class="st">"mgcv"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span>
+<span><span class="va">ps</span></span>
 <span></span>
-<span><span class="va">shap_gam</span></span>
+<span><span class="co"># SHAP values of first observations:</span></span>
+<span><span class="co">#       log_carat    clarity       color         cut</span></span>
+<span><span class="co"># [1,]  1.2714988  0.1115546 -0.08454955 0.003220451</span></span>
+<span><span class="co"># [2,] -0.5153642 -0.1080045  0.11967804 0.031341595</span></span>
 <span></span>
-<span><span class="co"># SHAP values of first 2 observations:</span></span>
+<span><span class="co"># Because there are no high-order interactions, Kernel SHAP gives the same:</span></span>
+<span><span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">X</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">2</span>, <span class="op">]</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span><span class="op">)</span></span>
 <span><span class="co">#       log_carat    clarity       color         cut</span></span>
 <span><span class="co"># [1,]  1.2714988  0.1115546 -0.08454955 0.003220451</span></span>
 <span><span class="co"># [2,] -0.5153642 -0.1080045  0.11967804 0.031341595</span></span></code></pre></div>
 </div>
-</div>
-<div class="section level2">
-<h2 id="multi-output-models">Multi-output models<a class="anchor" aria-label="anchor" href="#multi-output-models"></a>
-</h2>
-<p>{kernelshap} supports multivariate predictions:</p>
+<div class="section level3">
+<h3 id="multi-output-models">Multi-output models<a class="anchor" aria-label="anchor" href="#multi-output-models"></a>
+</h3>
+<p>{kernelshap} supports multivariate predictions like:</p>
 <ul>
 <li>probabilistic classification,</li>
 <li>non-probabilistic classification (factor-valued responses are turned into dummies),</li>
 <li>regression with multivariate response, and</li>
 <li>predictions found by applying multiple regression models.</li>
 </ul>
-<div class="section level3">
-<h3 id="classification">Classification<a class="anchor" aria-label="anchor" href="#classification"></a>
-</h3>
-<p>Let’s use {ranger} to fit a probabilistic and a non-probabilistic classification model.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<p>Here, we use the <code>iris</code> data (no need to run code from above).</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ModelOriented/kernelshap" class="external-link">kernelshap</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://imbs-hl.github.io/ranger/" class="external-link">ranger</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ModelOriented/shapviz" class="external-link">shapviz</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Probabilistic</span></span>
-<span><span class="va">fit_prob</span> <span class="op">&lt;-</span> <span class="fu">ranger</span><span class="op">(</span></span>
-<span>  <span class="va">Species</span> <span class="op">~</span> <span class="va">.</span>, data <span class="op">=</span> <span class="va">iris</span>, num.trees <span class="op">=</span> <span class="fl">20</span>, probability <span class="op">=</span> <span class="cn">TRUE</span>, seed <span class="op">=</span> <span class="fl">1</span></span>
-<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Probabilistic classification</span></span>
+<span><span class="va">fit_prob</span> <span class="op">&lt;-</span> <span class="fu">ranger</span><span class="op">(</span><span class="va">Species</span> <span class="op">~</span> <span class="va">.</span>, data <span class="op">=</span> <span class="va">iris</span>, probability <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">ps_prob</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">fit_prob</span>, X <span class="op">=</span> <span class="va">iris</span><span class="op">[</span>, <span class="op">-</span><span class="fl">5</span><span class="op">]</span>, bg_X <span class="op">=</span> <span class="va">iris</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu">shapviz</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="fu">sv_importance</span><span class="op">(</span><span class="va">ps_prob</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">ggtitle</span><span class="op">(</span><span class="st">"Probabilistic"</span><span class="op">)</span></span>
+<span><span class="fu">sv_importance</span><span class="op">(</span><span class="va">ps_prob</span><span class="op">)</span></span>
+<span><span class="fu">sv_dependence</span><span class="op">(</span><span class="va">ps_prob</span>, <span class="st">"Petal.Length"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Non-probabilistic: Predictions are factors</span></span>
-<span><span class="va">fit_class</span> <span class="op">&lt;-</span> <span class="fu">ranger</span><span class="op">(</span><span class="va">Species</span> <span class="op">~</span> <span class="va">.</span>, data <span class="op">=</span> <span class="va">iris</span>, num.trees <span class="op">=</span> <span class="fl">20</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">ps_class</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">fit_class</span>, X <span class="op">=</span> <span class="va">iris</span><span class="op">[</span>, <span class="op">-</span><span class="fl">5</span><span class="op">]</span>, bg_X <span class="op">=</span> <span class="va">iris</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
-<span>  <span class="fu">shapviz</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="fu">sv_importance</span><span class="op">(</span><span class="va">ps_class</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">ggtitle</span><span class="op">(</span><span class="st">"Non-Probabilistic"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-prob-class.svg"></p>
-<p><img src="reference/figures/README-fact-class.svg"></p>
-</div>
-</div>
-<div class="section level2">
-<h2 id="meta-learning-packages">Meta-learning packages<a class="anchor" aria-label="anchor" href="#meta-learning-packages"></a>
-</h2>
-<p>Here, we provide some working examples for “tidymodels”, “caret”, and “mlr3”.</p>
-<div class="section level3">
-<h3 id="tidymodels">tidymodels<a class="anchor" aria-label="anchor" href="#tidymodels"></a>
-</h3>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidymodels.tidymodels.org" class="external-link">tidymodels</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ModelOriented/kernelshap" class="external-link">kernelshap</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">iris_recipe</span> <span class="op">&lt;-</span> <span class="va">iris</span> <span class="op">%&gt;%</span></span>
-<span>  <span class="fu">recipe</span><span class="op">(</span><span class="va">Sepal.Length</span> <span class="op">~</span> <span class="va">.</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">reg</span> <span class="op">&lt;-</span> <span class="fu">linear_reg</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span></span>
-<span>  <span class="fu">set_engine</span><span class="op">(</span><span class="st">"lm"</span><span class="op">)</span></span>
-<span>  </span>
-<span><span class="va">iris_wf</span> <span class="op">&lt;-</span> <span class="fu">workflow</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span></span>
-<span>  <span class="fu">add_recipe</span><span class="op">(</span><span class="va">iris_recipe</span><span class="op">)</span> <span class="op">%&gt;%</span></span>
-<span>  <span class="fu">add_model</span><span class="op">(</span><span class="va">reg</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="va">iris_wf</span> <span class="op">%&gt;%</span></span>
-<span>  <span class="fu">fit</span><span class="op">(</span><span class="va">iris</span><span class="op">)</span></span>
-<span>  </span>
-<span><span class="va">ks</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">iris</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1</span><span class="op">]</span>, bg_X <span class="op">=</span> <span class="va">iris</span><span class="op">)</span></span>
-<span><span class="va">ks</span></span>
-<span><span class="co"># </span></span>
-<span><span class="co"># SHAP values of first observations:</span></span>
-<span><span class="co">#      Sepal.Width Petal.Length Petal.Width   Species</span></span>
-<span><span class="co"># [1,]  0.21951350    -1.955357   0.3149451 0.5823533</span></span>
-<span><span class="co"># [2,] -0.02843097    -1.955357   0.3149451 0.5823533</span></span></code></pre></div>
+<span><span class="co"># Non-probabilistic classification (results not shown)</span></span>
+<span><span class="va">fit_class</span> <span class="op">&lt;-</span> <span class="fu">ranger</span><span class="op">(</span><span class="va">Species</span> <span class="op">~</span> <span class="va">.</span>, data <span class="op">=</span> <span class="va">iris</span>, num.trees <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
+<span><span class="va">ps_class</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">fit_class</span>, X <span class="op">=</span> <span class="va">iris</span><span class="op">[</span>, <span class="op">-</span><span class="fl">5</span><span class="op">]</span>, bg_X <span class="op">=</span> <span class="va">iris</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-prob-imp.svg"></p>
+<p><img src="reference/figures/README-prob-dep.svg"></p>
 </div>
 <div class="section level3">
-<h3 id="caret">caret<a class="anchor" aria-label="anchor" href="#caret"></a>
+<h3 id="tidymodels">Tidymodels<a class="anchor" aria-label="anchor" href="#tidymodels"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/topepo/caret/" class="external-link">caret</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ModelOriented/kernelshap" class="external-link">kernelshap</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ModelOriented/shapviz" class="external-link">shapviz</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">train</span><span class="op">(</span></span>
-<span>  <span class="va">Sepal.Length</span> <span class="op">~</span> <span class="va">.</span>, </span>
-<span>  data <span class="op">=</span> <span class="va">iris</span>, </span>
-<span>  method <span class="op">=</span> <span class="st">"lm"</span>, </span>
-<span>  tuneGrid <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>intercept <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
-<span>  trControl <span class="op">=</span> <span class="fu">trainControl</span><span class="op">(</span>method <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">s</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">iris</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1</span><span class="op">]</span>, <span class="va">predict</span>, bg_X <span class="op">=</span> <span class="va">iris</span><span class="op">)</span></span>
-<span><span class="va">sv</span> <span class="op">&lt;-</span> <span class="fu">shapviz</span><span class="op">(</span><span class="va">s</span><span class="op">)</span></span>
-<span><span class="fu">sv_waterfall</span><span class="op">(</span><span class="va">sv</span>, <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="mlr3">mlr3<a class="anchor" aria-label="anchor" href="#mlr3"></a>
-</h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ModelOriented/kernelshap" class="external-link">kernelshap</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mlr3.mlr-org.com" class="external-link">mlr3</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mlr3learners.mlr-org.com" class="external-link">mlr3learners</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Regression</span></span>
-<span><span class="va">mlr_tasks</span><span class="op">$</span><span class="fu">get</span><span class="op">(</span><span class="st">"iris"</span><span class="op">)</span></span>
-<span><span class="va">task_iris</span> <span class="op">&lt;-</span> <span class="va">TaskRegr</span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>id <span class="op">=</span> <span class="st">"reg"</span>, backend <span class="op">=</span> <span class="va">iris</span>, target <span class="op">=</span> <span class="st">"Sepal.Length"</span><span class="op">)</span></span>
-<span><span class="va">fit_lm</span> <span class="op">&lt;-</span> <span class="fu">lrn</span><span class="op">(</span><span class="st">"regr.lm"</span><span class="op">)</span></span>
-<span><span class="va">fit_lm</span><span class="op">$</span><span class="fu">train</span><span class="op">(</span><span class="va">task_iris</span><span class="op">)</span></span>
-<span><span class="va">s</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">fit_lm</span>, <span class="va">iris</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1</span><span class="op">]</span>, bg_X <span class="op">=</span> <span class="va">iris</span><span class="op">)</span></span>
-<span><span class="va">s</span></span>
-<span></span>
-<span><span class="co"># *Probabilistic* classification -&gt; lrn(..., predict_type = "prob")</span></span>
-<span><span class="va">task_iris</span> <span class="op">&lt;-</span> <span class="va">TaskClassif</span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>id <span class="op">=</span> <span class="st">"class"</span>, backend <span class="op">=</span> <span class="va">iris</span>, target <span class="op">=</span> <span class="st">"Species"</span><span class="op">)</span></span>
-<span><span class="va">fit_rf</span> <span class="op">&lt;-</span> <span class="fu">lrn</span><span class="op">(</span><span class="st">"classif.ranger"</span>, predict_type <span class="op">=</span> <span class="st">"prob"</span>, num.trees <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
-<span><span class="va">fit_rf</span><span class="op">$</span><span class="fu">train</span><span class="op">(</span><span class="va">task_iris</span><span class="op">)</span></span>
-<span><span class="va">s</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">fit_rf</span>, X <span class="op">=</span> <span class="va">iris</span><span class="op">[</span>, <span class="op">-</span><span class="fl">5</span><span class="op">]</span>, bg_X <span class="op">=</span> <span class="va">iris</span><span class="op">)</span></span>
-<span><span class="va">s</span></span></code></pre></div>
+<p>Meta-learning packages like {tidymodels}, {caret} or {mlr3} are straight-forward to use. The following example additionally shows that the <code>...</code> argument of <code><a href="reference/permshap.html">permshap()</a></code> and <code><a href="reference/kernelshap.html">kernelshap()</a></code> is passed to <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(kernelshap)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidymodels)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>iris_recipe <span class="ot">&lt;-</span> iris <span class="sc">|&gt;</span> </span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">recipe</span>(Species <span class="sc">~</span> .)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>mod <span class="ot">&lt;-</span> <span class="fu">rand_forest</span>(<span class="at">trees =</span> <span class="dv">100</span>) <span class="sc">|&gt;</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"ranger"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>iris_wf <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">|&gt;</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(iris_recipe) <span class="sc">|&gt;</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(mod)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> iris_wf <span class="sc">|&gt;</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit</span>(iris)</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(  <span class="co"># 6s</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>  ps <span class="ot">&lt;-</span> <span class="fu">permshap</span>(fit, iris[<span class="sc">-</span><span class="dv">5</span>], <span class="at">bg_X =</span> iris, <span class="at">type =</span> <span class="st">"prob"</span>)</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>ps</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Some values</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a><span class="sc">$</span>.pred_setosa</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>     Sepal.Length Sepal.Width Petal.Length Petal.Width</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>[<span class="dv">1</span>,]   <span class="fl">0.02186111</span> <span class="fl">0.012137778</span>    <span class="fl">0.3658278</span>   <span class="fl">0.2667667</span></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>[<span class="dv">2</span>,]   <span class="fl">0.02628333</span> <span class="fl">0.001315556</span>    <span class="fl">0.3683833</span>   <span class="fl">0.2706111</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
-<p>[1] Scott M. Lundberg and Su-In Lee. A Unified Approach to Interpreting Model Predictions. Advances in Neural Information Processing Systems 30, 2017.</p>
-<p>[2] Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value Estimation Using Linear Regression. Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.</p>
+<p>[1] Erik Štrumbelj and Igor Kononenko. Explaining prediction models and individual predictions with feature contributions. Knowledge and Information Systems 41, 2014.</p>
+<p>[2] Scott M. Lundberg and Su-In Lee. A Unified Approach to Interpreting Model Predictions. Advances in Neural Information Processing Systems 30, 2017.</p>
+<p>[3] Ian Covert and Su-In Lee. Improving KernelSHAP: Practical Shapley Value Estimation Using Linear Regression. Proceedings of The 24th International Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.</p>
 </div>
 </div>
   </div>
