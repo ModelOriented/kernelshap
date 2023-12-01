@@ -1,9 +1,10 @@
 # kernelshap 0.4.1
 
-## Other changes
+## Performance improvements
 
-- Slight speed-up of `kernelshap()` and `permshap()` for single-output predictions.
-- Slight speed-up of `kernelshap()` and `permshap()` for factor-valued predictions.
+- Significant speed-up for data objects with *single class "data.frame"*, i.e., no data.tables or tibbles or grouped data etc. This change makes it almost as fast to work with data.frames as with matrices.
+- Slight speed-up for single-output predictions.
+- Slight speed-up for factor-valued predictions.
 - Slight speed-up of `permshap()` by caching calculations for the two special permutations of all 0 and all 1. Consequently, the `m_exact` component in the output is reduced by 2.
 
 # kernelshap 0.4.0

@@ -90,7 +90,7 @@ permshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
   precalc <- list(
     Z = Z,
     Z_code = rowpaste(Z), 
-    bg_X_rep = bg_X[rep(seq_len(bg_n), times = m_exact), , drop = FALSE]
+    bg_X_rep = rep_rows(bg_X, rep(seq_len(bg_n), times = m_exact))
   )
   
   if (m_exact * bg_n > 2e5) {
