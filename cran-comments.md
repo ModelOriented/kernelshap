@@ -1,10 +1,8 @@
-# kernelshap 0.4.0
+# kernelshap 0.4.1
 
-Dear CRAN-team
+Dear CRAN
 
-I have added exact permutation SHAP values, and the possibility to use factor-valued predictions.
-
-Thanks a lot for running CRAN.
+This is a smallish update with a couple of performance improvements, and much more logical README examples.
 
 Michael
 
@@ -21,11 +19,11 @@ survex 1.2.0
 checking HTML version of manual ... NOTE
   Skipping checking HTML validation: no command 'tidy' found
   
-### `check_win_devel()` NOTE
+### `check_win_devel()`
 
-- R Under development (unstable) (2023-11-09 r85497 ucrt)
+Status: OK
 
-### `check_rhub()` NOTES
+### `check_rhub()`s
 
 * checking HTML version of manual ... NOTE
 Skipping checking HTML validation: no command 'tidy' found
