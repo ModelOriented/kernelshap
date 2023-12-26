@@ -4,7 +4,6 @@
 \alias{kernelshap}
 \alias{kernelshap.default}
 \alias{kernelshap.ranger}
-\alias{kernelshap.Learner}
 \title{Kernel SHAP}
 \usage{
 kernelshap(object, ...)
@@ -33,25 +32,6 @@ kernelshap(object, ...)
   X,
   bg_X,
   pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
-  feature_names = colnames(X),
-  bg_w = NULL,
-  exact = length(feature_names) <= 8L,
-  hybrid_degree = 1L + length(feature_names) \%in\% 4:16,
-  paired_sampling = TRUE,
-  m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)),
-  tol = 0.005,
-  max_iter = 100L,
-  parallel = FALSE,
-  parallel_args = NULL,
-  verbose = TRUE,
-  ...
-)
-
-\method{kernelshap}{Learner}(
-  object,
-  X,
-  bg_X,
-  pred_fun = NULL,
   feature_names = colnames(X),
   bg_w = NULL,
   exact = length(feature_names) <= 8L,
@@ -237,8 +217,6 @@ For similar reasons, degree 2 hybrids should not use \eqn{p} much larger than 40
 \item \code{kernelshap(default)}: Default Kernel SHAP method.
 
 \item \code{kernelshap(ranger)}: Kernel SHAP method for "ranger" models, see Readme for an example.
-
-\item \code{kernelshap(Learner)}: Kernel SHAP method for "mlr3" models, see Readme for an example.
 
 }}
 \examples{
