@@ -29,7 +29,7 @@ hybrid algorithm involving iterative sampling is used, see Details."><meta prope
         <div class="info">
           <span class="partof">part of the <a href="https://github.com/ModelOriented/DrWhy" class="external-link">DrWhy.AI</a>
            developed by the <a href="https://mi2.ai/" class="external-link">MI².AI</a> </span>
-          <span class="version version-default">0.4.1</span>
+          <span class="version version-default">0.4.2</span>
         </div>
       </div>
     </div>
@@ -97,26 +97,6 @@ hybrid algorithm involving iterative sampling is used, see Details.</p>
 <span>  <span class="va">X</span>,</span>
 <span>  <span class="va">bg_X</span>,</span>
 <span>  pred_fun <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">m</span>, <span class="va">X</span>, <span class="va">...</span><span class="op">)</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">X</span>, <span class="va">...</span><span class="op">)</span><span class="op">$</span><span class="va">predictions</span>,</span>
-<span>  feature_names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span>,</span>
-<span>  bg_w <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  exact <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">feature_names</span><span class="op">)</span> <span class="op">&lt;=</span> <span class="fl">8L</span>,</span>
-<span>  hybrid_degree <span class="op">=</span> <span class="fl">1L</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">feature_names</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fl">4</span><span class="op">:</span><span class="fl">16</span>,</span>
-<span>  paired_sampling <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  m <span class="op">=</span> <span class="fl">2L</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">feature_names</span><span class="op">)</span> <span class="op">*</span> <span class="op">(</span><span class="fl">1L</span> <span class="op">+</span> <span class="fl">3L</span> <span class="op">*</span> <span class="op">(</span><span class="va">hybrid_degree</span> <span class="op">==</span> <span class="fl">0L</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  tol <span class="op">=</span> <span class="fl">0.005</span>,</span>
-<span>  max_iter <span class="op">=</span> <span class="fl">100L</span>,</span>
-<span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  parallel_args <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  <span class="va">...</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># S3 method for Learner</span></span>
-<span><span class="fu">kernelshap</span><span class="op">(</span></span>
-<span>  <span class="va">object</span>,</span>
-<span>  <span class="va">X</span>,</span>
-<span>  <span class="va">bg_X</span>,</span>
-<span>  pred_fun <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  feature_names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span>,</span>
 <span>  bg_w <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  exact <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">feature_names</span><span class="op">)</span> <span class="op">&lt;=</span> <span class="fl">8L</span>,</span>
@@ -318,7 +298,6 @@ For similar reasons, degree 2 hybrids should not use \(p\) much larger than 40.<
     
 <ul><li><p><code>kernelshap(default)</code>: Default Kernel SHAP method.</p></li>
 <li><p><code>kernelshap(ranger)</code>: Kernel SHAP method for "ranger" models, see Readme for an example.</p></li>
-<li><p><code>kernelshap(Learner)</code>: Kernel SHAP method for "mlr3" models, see Readme for an example.</p></li>
 </ul></div>
     <div id="references">
     <h2>References</h2>
