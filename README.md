@@ -249,9 +249,11 @@ ps_class <- permshap(fit_class, X = iris[, -5], bg_X = iris)
 
 ![](man/figures/README-prob-dep.svg)
 
-### Tidymodels
+### Meta-learners
 
-Meta-learning packages like {tidymodels}, {caret} or {mlr3} are straight-forward to use. The following example additionally shows that the `...` argument of `permshap()` and `kernelshap()` is passed to `predict()`.
+Meta-learning packages like {tidymodels}, {caret} or {mlr3} are straightforward to use. The following examples additionally shows that the `...` arguments of `permshap()` and `kernelshap()` are passed to `predict()`.
+
+#### Tidymodels
 
 ```r
 library(kernelshap)
@@ -283,6 +285,56 @@ $.pred_setosa
      Sepal.Length Sepal.Width Petal.Length Petal.Width
 [1,]   0.02186111 0.012137778    0.3658278   0.2667667
 [2,]   0.02628333 0.001315556    0.3683833   0.2706111
+```
+
+#### caret
+
+```r
+library(kernelshap)
+library(caret)
+
+fit <- train(
+  Sepal.Length ~ ., 
+  data = iris, 
+  method = "lm", 
+  tuneGrid = data.frame(intercept = TRUE),
+  trControl = trainControl(method = "none")
+)
+
+ps <- permshap(fit, iris[-1], bg_X = iris)
+```
+
+#### mlr3
+
+```r
+library(kernelshap)
+library(mlr3)
+library(mlr3learners)
+
+set.seed(1)
+
+task_classif <- TaskClassif$new(id = "1", backend = iris, target = "Species")
+learner_classif <- lrn("classif.rpart", predict_type = "prob")
+learner_classif$train(task_classif)
+
+predict(learner_classif, head(iris))  # setosa setosa        # Classes
+predict(learner_classif, head(iris), predict_type = "prob")  # Probs per class
+
+x <- learner_classif$selected_features()
+
+# For *probabilistic* classification, pass predict_type = "prob" to mlr3's predict()
+ps <- permshap(
+  learner_classif, X = iris, bg_X = iris, feature_names = x, predict_type = "prob"
+)
+ps
+# $setosa
+#      Petal.Length Petal.Width
+# [1,]    0.6666667           0
+# [2,]    0.6666667           0
+
+# Non-probabilistic classification uses auto-OHE internally
+ps <- permshap(learner_classif, X = iris, bg_X = iris, feature_names = x)
+ps
 ```
 
 ## References

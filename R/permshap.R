@@ -168,26 +168,3 @@ permshap.ranger <- function(object, X, bg_X,
   )
 }
 
-#' @describeIn permshap Permutation SHAP method for "mlr3" models, see Readme for an example.
-#' @export
-permshap.Learner <- function(object, X, bg_X,
-                             pred_fun = NULL,
-                             feature_names = colnames(X),
-                             bg_w = NULL, parallel = FALSE, parallel_args = NULL,
-                             verbose = TRUE, ...) {
-  if (is.null(pred_fun)) {
-    pred_fun <- mlr3_pred_fun(object, X = X)
-  }
-  permshap.default(
-    object = object,
-    X = X,
-    bg_X = bg_X,
-    pred_fun = pred_fun,
-    feature_names = feature_names,
-    bg_w = bg_w,
-    parallel = parallel,
-    parallel_args = parallel_args,
-    verbose = verbose,
-    ...
-  )
-}

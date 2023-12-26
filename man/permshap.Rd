@@ -4,7 +4,6 @@
 \alias{permshap}
 \alias{permshap.default}
 \alias{permshap.ranger}
-\alias{permshap.Learner}
 \title{Permutation SHAP}
 \usage{
 permshap(object, ...)
@@ -27,19 +26,6 @@ permshap(object, ...)
   X,
   bg_X,
   pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
-  feature_names = colnames(X),
-  bg_w = NULL,
-  parallel = FALSE,
-  parallel_args = NULL,
-  verbose = TRUE,
-  ...
-)
-
-\method{permshap}{Learner}(
-  object,
-  X,
-  bg_X,
-  pred_fun = NULL,
   feature_names = colnames(X),
   bg_w = NULL,
   parallel = FALSE,
@@ -110,8 +96,6 @@ see Strumbelj and Kononenko. The function works for up to 14 features.
 \item \code{permshap(default)}: Default permutation SHAP method.
 
 \item \code{permshap(ranger)}: Permutation SHAP method for "ranger" models, see Readme for an example.
-
-\item \code{permshap(Learner)}: Permutation SHAP method for "mlr3" models, see Readme for an example.
 
 }}
 \examples{

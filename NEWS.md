@@ -1,3 +1,14 @@
+# kernelshap 0.4.2
+
+## API
+
+- {mlr3}: Non-probabilistic classification now works. 
+- {mlr3}: For *probabilistic* classification, you now have to pass `predict_type = "prob"`.
+
+## Documentation
+
+- The README has received an {mlr3} and {caret} example.
+
 # kernelshap 0.4.1
 
 ## Performance improvements
