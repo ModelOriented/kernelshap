@@ -4,7 +4,7 @@
 
 [![CRAN status](http://www.r-pkg.org/badges/version/kernelshap)](https://cran.r-project.org/package=kernelshap)
 [![R-CMD-check](https://github.com/ModelOriented/kernelshap/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ModelOriented/kernelshap/actions)
-[![Codecov test coverage](https://codecov.io/gh/ModelOriented/kernelshap/branch/main/graph/badge.svg)](https://app.codecov.io/gh/ModelOriented/kernelshap?branch=main)
+[![Codecov test coverage](https://codecov.io/gh/ModelOriented/kernelshap/graph/badge.svg)](https://app.codecov.io/gh/ModelOriented/kernelshap?branch=main)
 
 [![](https://cranlogs.r-pkg.org/badges/kernelshap)](https://cran.r-project.org/package=kernelshap) 
 [![](https://cranlogs.r-pkg.org/badges/grand-total/kernelshap?color=orange)](https://cran.r-project.org/package=kernelshap)
