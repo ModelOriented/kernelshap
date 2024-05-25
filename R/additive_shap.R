@@ -46,7 +46,7 @@ additive_shap <- function(object, X, verbose = TRUE, ...) {
   stopifnot(
     inherits(object, c("lm", "glm", "gam", "bam", "Gam", "coxph", "survreg"))
   )
-  if (any(attr(terms(object), "order") > 1)) {
+  if (any(attr(stats::terms(object), "order") > 1)) {
     stop("Additive SHAP not appropriate for models with interactions.")
   }
   
