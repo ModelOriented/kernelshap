@@ -19,7 +19,7 @@ The package contains two workhorses to calculate SHAP values for *any* model:
 - `kernelshap()`: Kernel SHAP algorithm of [2] and [3]. By default, exact Kernel SHAP is used for up to $p=8$ features, and an almost exact hybrid algorithm otherwise.
 
 Furthermore, the function `additive_shap()` produces SHAP values for additive models fitted via `lm()`, `glm()`, `mgcv::gam()`, `mgcv::bam()`, `gam::gam()`,
- `survival::coxph()`, or `survival::survreg()`.
+ `survival::coxph()`, or `survival::survreg()`. It is exponentially faster than `permshap()` and `kernelshap()` and provides identical results.
 
 ### Kernel SHAP or permutation SHAP?
 
@@ -41,6 +41,7 @@ If the training data is small, use the full training data. In cases with a natur
 - Factor-valued predictions are automatically turned into one-hot-encoded columns.
 - Case weights are supported via the argument `bg_w`.
 - By changing the defaults in `kernelshap()`, the iterative pure sampling approach in [3] can be enforced.
+- The `additive_shap()` explainer is easier to use: Only the model and `X` are required.
 
 ## Installation
 
@@ -217,6 +218,18 @@ sv_dependence(ps, xvars)
 ![](man/figures/README-nn-imp.svg)
 
 ![](man/figures/README-nn-dep.svg)
+
+### Additive SHAP
+
+The additive explainer extracts the additive contribution of each feature from a model of suitable class.
+
+```r
+fit <- lm(log(price) ~ log(carat) + color + clarity + cut, data = diamonds)
+shap_values <- additive_shap(fit, diamonds) |> 
+  shapviz()
+sv_importance(shap_values)
+sv_dependence(shap_values, v = "carat", color_var = NULL)
+```
 
 ### Multi-output models
 
