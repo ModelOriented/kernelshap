@@ -149,6 +149,7 @@ exact calculations.
 \item \code{exact}: Logical flag indicating whether calculations are exact or not.
 \item \code{txt}: Summary text.
 \item \code{predictions}: \eqn{(n \times K)} matrix with predictions of \code{X}.
+\item \code{algorithm}: "kernelshap".
 }
 }
 \description{

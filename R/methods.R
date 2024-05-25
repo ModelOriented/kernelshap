@@ -16,21 +16,6 @@ print.kernelshap <- function(x, n = 2L, ...) {
   invisible(x)
 }
 
-#' Prints "permshap" Object
-#' 
-#' @param x An object of class "permshap".
-#' @inheritParams print.kernelshap
-#' @inherit print.kernelshap return
-#' @export
-#' @examples
-#' fit <- lm(Sepal.Length ~ ., data = iris)
-#' s <- permshap(fit, iris[1:3, -1], bg_X = iris[, -1])
-#' s
-#' @seealso [permshap()]
-print.permshap <- function(x, n = 2L, ...) {
-  print.kernelshap(x, n = n, ...)
-}
-
 #' Summarizes "kernelshap" Object
 #'
 #' @param object An object of class "kernelshap".
@@ -67,7 +52,10 @@ summary.kernelshap <- function(object, compact = FALSE, n = 2L, ...) {
       "\n  - m/iter:", getElement(object, "m")
     )
   }
-  cat("\n  - m_exact:", getElement(object, "m_exact"))
+  m_exact <- getElement(object, "m_exact")
+  if (!is.null(m_exact)) {
+    cat("\n  - m_exact:", m_exact)
+  }
   if (!compact) {
     cat("\n\nSHAP values of first observations:\n")
     print(head_list(S, n = n))
@@ -77,21 +65,6 @@ summary.kernelshap <- function(object, compact = FALSE, n = 2L, ...) {
     }
   }
   invisible(object)
-}
-
-#' Summarizes "permshap" Object
-#'
-#' @param object An object of class "permshap".
-#' @inheritParams summary.kernelshap
-#' @inherit summary.kernelshap return
-#' @export
-#' @examples
-#' fit <- lm(Sepal.Length ~ ., data = iris)
-#' s <- permshap(fit, iris[1:3, -1], bg_X = iris[, -1])
-#' summary(s)
-#' @seealso [permshap()]
-summary.permshap <- function(object, compact = FALSE, n = 2L, ...) {
-  summary.kernelshap(object, compact = compact, n = n, ...)
 }
 
 #' Check for kernelshap
@@ -109,21 +82,4 @@ summary.permshap <- function(object, compact = FALSE, n = 2L, ...) {
 #' @seealso [kernelshap()]
 is.kernelshap <- function(object){
   inherits(object, "kernelshap")
-}
-
-#' Check for permshap
-#'
-#' Is object of class "permshap"?
-#'
-#' @param object An R object.
-#' @returns `TRUE` if `object` is of class "permshap", and `FALSE` otherwise.
-#' @export
-#' @examples
-#' fit <- lm(Sepal.Length ~ ., data = iris)
-#' s <- permshap(fit, iris[1:2, -1], bg_X = iris[, -1])
-#' is.permshap(s)
-#' is.permshap("a")
-#' @seealso [kernelshap()]
-is.permshap <- function(object){
-  inherits(object, "permshap")
 }

@@ -73,7 +73,7 @@ then one might need to set \code{parallel_args = list(.packages = "mgcv")}.}
 \item{verbose}{Set to \code{FALSE} to suppress messages and the progress bar.}
 }
 \value{
-An object of class "permshap" with the following components:
+An object of class "kernelshap" with the following components:
 \itemize{
 \item \code{S}: \eqn{(n \times p)} matrix with SHAP values or, if the model output has
 dimension \eqn{K > 1}, a list of \eqn{K} such matrices.
@@ -85,6 +85,7 @@ background data.
 (currently \code{TRUE}).
 \item \code{txt}: Summary text.
 \item \code{predictions}: \eqn{(n \times K)} matrix with predictions of \code{X}.
+\item \code{algorithm}: "permshap".
 }
 }
 \description{

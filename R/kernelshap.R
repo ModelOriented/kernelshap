@@ -141,6 +141,7 @@
 #'   - `exact`: Logical flag indicating whether calculations are exact or not.
 #'   - `txt`: Summary text.
 #'   - `predictions`: \eqn{(n \times K)} matrix with predictions of `X`.
+#'   - `algorithm`: "kernelshap".
 #' @references
 #'   1. Scott M. Lundberg and Su-In Lee. A unified approach to interpreting model 
 #'     predictions. Proceedings of the 31st International Conference on Neural 
@@ -318,7 +319,8 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
     prop_exact = prop_exact,
     exact = exact || trunc(p / 2) == hybrid_degree,
     txt = txt,
-    predictions = v1
+    predictions = v1,
+    algorithm = "kernelshap"
   )
   class(out) <- "kernelshap"
   out

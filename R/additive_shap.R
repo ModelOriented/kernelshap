@@ -7,23 +7,27 @@
 #' - [mgcv::gam()],
 #' - [mgcv::bam()],
 #' - [gam::gam()],
-#' - [survival::coxph()],
-#' - [survival::survreg()]
+#' - [survival::coxph()], and
+#' - [survival::survreg()].
+#' 
 #' The SHAP values are extracted via `predict(object, newdata = X, type = "terms")`,
 #' a logic heavily inspired by `fastshap:::explain.lm(..., exact = TRUE)`.
 #' Models with interactions (specified via `:` or `*`), or with terms of
 #' multiple features like `log(x1/x2)` are not supported.
 #'
 #' @inheritParams kernelshap
+#' @param X Dataframe with rows to be explained. Will be used like
+#'   `predict(object, newdata = X, type = "terms")`.
 #' @param ... Currently unused.
 #' @returns
-#'   An object of class "additive_shap" with the following components:
+#'   An object of class "kernelshap" with the following components:
 #'   - `S`: \eqn{(n \times p)} matrix with SHAP values.
 #'   - `X`: Same as input argument `X`.
 #'   - `baseline`: The baseline.
-#'   - `exact`: `TRUE` (the calculations are exact).
+#'   - `exact`: `TRUE`.
 #'   - `txt`: Summary text.
 #'   - `predictions`: Vector with predictions of `X` on the scale of "terms".
+#'   - `algorithm`: "additive_shap".
 #' @export
 #' @examples
 #' # MODEL ONE: Linear regression
@@ -74,10 +78,17 @@ additive_shap <- function(object, X, verbose = TRUE, ...) {
   if (is.null(b)) {
     b <- 0
   }
-  p <- b + rowSums(S)
   
   structure(
-    list(S = S, X = X, baseline = b, exact = TRUE, txt = txt, predictions = p),
-    class = "additive_shap"
+    list(
+      S = S,
+      X = X,
+      baseline = b,
+      exact = TRUE,
+      txt = txt,
+      predictions = b + rowSums(S),
+      algorithm = "additive_shap"
+    ),
+    class = "kernelshap"
   )
 }
