@@ -1,3 +1,20 @@
+# kernelshap 0.5.0
+
+## New features
+
+New additive explainer `additive_shap()` that works for models fitted via
+
+- `lm()`,
+- `glm()`,
+- `mgcv::gam()`,
+- `mgcv::bam()`,
+- `gam::gam()`,
+- `survival::coxph()`,
+- `survival::survreg()`.
+
+The explainer uses `predict(..., type = "terms")`, a beautiful trick
+used in `fastshap::explain.lm()`.
+
 # kernelshap 0.4.2
 
 ## API
