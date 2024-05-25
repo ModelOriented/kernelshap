@@ -13,7 +13,7 @@ New additive explainer `additive_shap()` that works for models fitted via
 - `survival::survreg()`.
 
 The explainer uses `predict(..., type = "terms")`, a beautiful trick
-used in `fastshap::explain.lm()`. The result will be identical to those returned by `kernelshap()` and `permshap()` but exponentially faster. Thanks David Watson for the great idea.
+used in `fastshap::explain.lm()`. The result will be identical to those returned by `kernelshap()` and `permshap()` but exponentially faster. Thanks David Watson for the great idea discussed in [#130](https://github.com/ModelOriented/kernelshap/issues/130).
 
 ## User visible changes
 
