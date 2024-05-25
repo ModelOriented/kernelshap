@@ -19,6 +19,7 @@ used in `fastshap::explain.lm()`. The result will be identical to those returned
 
 - `permshap()` now returns an object of class "kernelshap" to reduce the number of redundant methods.
 - To distinguish which algorithm has generated the "kernelshap" object, the outputs of `kernelshap()`, `permshap()` (and `additive_shap()`) got an element "algorithm".
+- `is.permshap()` has been removed.
 
 # kernelshap 0.4.2
 

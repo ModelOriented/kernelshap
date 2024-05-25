@@ -1,6 +1,7 @@
 # Model with non-linearities and interactions
 fit <- lm(
-  Sepal.Length ~ poly(Petal.Width, degree = 2L) * Species + Petal.Length, data = iris
+  Sepal.Length ~ poly(Petal.Width, degree = 2L) * Species + Petal.Length,
+  data = iris
 )
 x <- c("Petal.Width", "Species", "Petal.Length")
 preds <- unname(predict(fit, iris))
@@ -47,15 +48,15 @@ test_that("Decomposing a single row works", {
 
 test_that("Background data can contain additional columns", {
   ks4 <- permshap(fit, iris[1L, x], bg_X = cbind(d = 1, iris), verbose = FALSE)
-  expect_true(is.permshap(ks4))
+  expect_true(is.kernelshap(ks4))
 })
 
 test_that("Background data can contain only one single row", {
   expect_true(
-    is.permshap(permshap(fit, iris[1L, x], bg_X = iris[150L, ], verbose = FALSE))
+    is.kernelshap(permshap(fit, iris[1L, x], bg_X = iris[150L, ], verbose = FALSE))
   )
   expect_true(
-    is.permshap(permshap(fit, iris[1:10, x], bg_X = iris[150L, ], verbose = FALSE))
+    is.kernelshap(permshap(fit, iris[1:10, x], bg_X = iris[150L, ], verbose = FALSE))
   )
 })
 
@@ -85,7 +86,7 @@ preds <- unname(pred_fun(fit, X))
 s <- permshap(fit, X[1:3, ], pred_fun = pred_fun, bg_X = X, verbose = FALSE)
 
 test_that("Matrix input is fine", {
-  expect_true(is.permshap(s))
+  expect_true(is.kernelshap(s))
   expect_equal(s$baseline, mean(iris$Sepal.Length))
   expect_equal(rowSums(s$S) + s$baseline, preds[1:3])
 })
@@ -94,7 +95,7 @@ test_that("Matrix input works if bg data containts extra columns", {
   ks5 <- permshap(
     fit, X[1:3, ], pred_fun = pred_fun, bg_X = cbind(d = 1, X), verbose = FALSE
   )
-  expect_true(is.permshap(ks5))
+  expect_true(is.kernelshap(ks5))
 })
 
 test_that("Matrix input gives error with inconsistent feature_names", {
@@ -153,7 +154,7 @@ test_that("Matrix input is fine with case weights", {
     verbose = FALSE
   )
   
-  expect_true(is.permshap(s))
+  expect_true(is.kernelshap(s))
   expect_equal(s$baseline, weighted.mean(iris$Sepal.Length, iris$Sepal.Width))
   expect_equal(rowSums(s$S) + s$baseline, preds[1:3])
 })

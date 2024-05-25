@@ -1,3 +1,5 @@
+# Some tests that need contributed packages
+
 library(mgcv)
 library(gam)
 library(survival)
@@ -18,17 +20,19 @@ formulas_bad <- list(
 
 models <- list(mgcv::gam, mgcv::bam, gam::gam)
 
+X <- head(iris)
 for (formula in formulas_ok) {
   for (model in models) {
     fit <- model(formula, data = iris)
-    s <- additive_shap(fit, head(iris), verbose = FALSE)
+    s <- additive_shap(fit, X = X, verbose = FALSE)
+    expect_equal(s$predictions, as.vector(predict(fit, newdata = X)))
   }
 }
 
 for (formula in formulas_bad) {
   for (model in models) {
     fit <- model(formula, data = iris)
-    expect_error(s <- additive_shap(fit, head(iris), verbose = FALSE))
+    expect_error(s <- additive_shap(fit, X = X, verbose = FALSE))
   }
 }
 
@@ -51,13 +55,13 @@ models <- list(survival::coxph, survival::survreg)
 for (formula in formulas_ok) {
   for (model in models) {
     fit <- model(formula, data = iris)
-    s <- additive_shap(fit, head(iris), verbose = FALSE)
+    s <- additive_shap(fit, X = X, verbose = FALSE)
   }
 }
 
 for (formula in formulas_bad) {
   for (model in models) {
     fit <- model(formula, data = iris)
-    expect_error(s <- additive_shap(fit, head(iris), verbose = FALSE))
+    expect_error(s <- additive_shap(fit, X = X, verbose = FALSE))
   }
 }

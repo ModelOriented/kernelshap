@@ -46,7 +46,7 @@ predsY <- unname(pred_fun(fitY, X))
 sY <- permshap(fitY, X[1:3, ], pred_fun = pred_fun, bg_X = X, verbose = FALSE)
 
 test_that("Matrix input is fine", {
-  expect_true(is.permshap(sY))
+  expect_true(is.kernelshap(sY))
   expect_equal(sY$baseline, unname(colMeans(Y)))
   expect_equal(rowSums(sY$S[[2L]]) + sY$baseline[2L], predsY[1:3, 2L])
 })

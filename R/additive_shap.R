@@ -56,6 +56,13 @@ additive_shap <- function(object, X, verbose = TRUE, ...) {
   }
   
   S <- stats::predict(object, newdata = X, type = "terms")
+  rownames(S) <- NULL
+  
+  # Baseline value
+  b <- as.vector(attr(S, "constant"))
+  if (is.null(b)) {
+    b <- 0
+  }
   
   # Which columns of X are used in each column of S?
   s_names <- colnames(S)
@@ -72,12 +79,6 @@ additive_shap <- function(object, X, verbose = TRUE, ...) {
     cbind,
     lapply(mapping, function(z) rowSums(S[, z, drop = FALSE], na.rm = TRUE))
   )
-  
-  # Organize output
-  b <- as.vector(attr(S, "constant"))
-  if (is.null(b)) {
-    b <- 0
-  }
   
   structure(
     list(
