@@ -16,13 +16,13 @@
     <loc>/news/index.html</loc>
   </url>
   <url>
+    <loc>/reference/additive_shap.html</loc>
+  </url>
+  <url>
     <loc>/reference/index.html</loc>
   </url>
   <url>
     <loc>/reference/is.kernelshap.html</loc>
-  </url>
-  <url>
-    <loc>/reference/is.permshap.html</loc>
   </url>
   <url>
     <loc>/reference/kernelshap.html</loc>
@@ -34,12 +34,6 @@
     <loc>/reference/print.kernelshap.html</loc>
   </url>
   <url>
-    <loc>/reference/print.permshap.html</loc>
-  </url>
-  <url>
     <loc>/reference/summary.kernelshap.html</loc>
-  </url>
-  <url>
-    <loc>/reference/summary.permshap.html</loc>
   </url>
 </urlset>

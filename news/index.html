@@ -25,7 +25,7 @@
         <div class="info">
           <span class="partof">part of the <a href="https://github.com/ModelOriented/DrWhy" class="external-link">DrWhy.AI</a>
            developed by the <a href="https://mi2.ai/" class="external-link">MI².AI</a> </span>
-          <span class="version version-default">0.4.2</span>
+          <span class="version version-default">0.5.0</span>
         </div>
       </div>
     </div>
@@ -55,6 +55,36 @@
       <small>Source: <a href="https://github.com/ModelOriented/kernelshap/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="0.5.0" id="kernelshap-050">kernelshap 0.5.0<a class="anchor" aria-label="anchor" href="#kernelshap-050"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-5-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-5-0"></a></h3>
+<p>New additive explainer <code><a href="../reference/additive_shap.html">additive_shap()</a></code> that works for models fitted via</p>
+<ul><li>
+<code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>,</li>
+<li>
+<code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code>,</li>
+<li>
+<code><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">mgcv::gam()</a></code>,</li>
+<li>
+<code><a href="https://rdrr.io/pkg/mgcv/man/bam.html" class="external-link">mgcv::bam()</a></code>,</li>
+<li>
+<code>gam::gam()</code>,</li>
+<li>
+<code><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">survival::coxph()</a></code>,</li>
+<li>
+<code><a href="https://rdrr.io/pkg/survival/man/survreg.html" class="external-link">survival::survreg()</a></code>.</li>
+</ul><p>The explainer uses <code>predict(..., type = "terms")</code>, a beautiful trick used in <code>fastshap::explain.lm()</code>. The result will be identical to those returned by <code><a href="../reference/kernelshap.html">kernelshap()</a></code> and <code><a href="../reference/permshap.html">permshap()</a></code> but exponentially faster. Thanks David Watson for the great idea discussed in <a href="https://github.com/ModelOriented/kernelshap/issues/130" class="external-link">#130</a>.</p>
+</div>
+<div class="section level3">
+<h3 id="user-visible-changes-0-5-0">User visible changes<a class="anchor" aria-label="anchor" href="#user-visible-changes-0-5-0"></a></h3>
+<ul><li>
+<code><a href="../reference/permshap.html">permshap()</a></code> now returns an object of class “kernelshap” to reduce the number of redundant methods.</li>
+<li>To distinguish which algorithm has generated the “kernelshap” object, the outputs of <code><a href="../reference/kernelshap.html">kernelshap()</a></code>, <code><a href="../reference/permshap.html">permshap()</a></code> (and <code><a href="../reference/additive_shap.html">additive_shap()</a></code>) got an element “algorithm”.</li>
+<li>
+<code>is.permshap()</code> has been removed.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.4.2" id="kernelshap-042">kernelshap 0.4.2<a class="anchor" aria-label="anchor" href="#kernelshap-042"></a></h2>
 <div class="section level3">
@@ -293,7 +323,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
 </div>
 
       </footer></div>
