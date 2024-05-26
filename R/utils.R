@@ -226,7 +226,8 @@ case_p1 <- function(n, feature_names, v0, v1, X, verbose) {
     prop_exact = 1,
     exact = TRUE,
     txt = txt,
-    predictions = v1
+    predictions = v1,
+    algorithm = "kernelshap"
   )
   class(out) <- "kernelshap"
   out
