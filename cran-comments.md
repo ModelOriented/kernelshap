@@ -1,8 +1,8 @@
-# kernelshap 0.4.1
+# kernelshap 0.5.0
 
-Dear CRAN
+Hello CRAN team
 
-This is a smallish update with a couple of performance improvements, and much more logical README examples.
+This update brings an efficient explainer for additive models.
 
 Michael
 
@@ -14,18 +14,11 @@ survex 1.2.0
 - OK: 1
 - BROKEN: 0
 
-### Local check with usual NOTE
+### Local check
 
-checking HTML version of manual ... NOTE
-  Skipping checking HTML validation: no command 'tidy' found
+OK
   
 ### `check_win_devel()`
 
 Status: OK
-
-### `check_rhub()`s
-
-* checking HTML version of manual ... NOTE
-Skipping checking HTML validation: no command 'tidy' found
-Skipping checking math rendering: package 'V8' unavailable
 

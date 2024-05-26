@@ -19,7 +19,7 @@ The package contains two workhorses to calculate SHAP values for *any* model:
 - `kernelshap()`: Kernel SHAP algorithm of [2] and [3]. By default, exact Kernel SHAP is used for up to $p=8$ features, and an almost exact hybrid algorithm otherwise.
 
 Furthermore, the function `additive_shap()` produces SHAP values for additive models fitted via `lm()`, `glm()`, `mgcv::gam()`, `mgcv::bam()`, `gam::gam()`,
- `survival::coxph()`, or `survival::survreg()`. It is exponentially faster than `permshap()` and `kernelshap()` and provides identical results.
+ `survival::coxph()`, or `survival::survreg()`. It is exponentially faster than `permshap()` and `kernelshap()`, with identical results.
 
 ### Kernel SHAP or permutation SHAP?
 
