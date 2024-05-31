@@ -1,3 +1,9 @@
+# kernelshap 0.5.1
+
+## Maintenance
+
+- Fix CRAN note regarding unavailable link to `gam::gam()`.
+
 # kernelshap 0.5.0
 
 ## New features

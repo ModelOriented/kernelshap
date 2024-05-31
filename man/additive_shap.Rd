@@ -36,7 +36,7 @@ works for models fitted via
 \item \code{\link[=glm]{glm()}},
 \item \code{\link[mgcv:gam]{mgcv::gam()}},
 \item \code{\link[mgcv:bam]{mgcv::bam()}},
-\item \code{\link[gam:gam]{gam::gam()}},
+\item \code{gam::gam()},
 \item \code{\link[survival:coxph]{survival::coxph()}}, and
 \item \code{\link[survival:survreg]{survival::survreg()}}.
 }
