@@ -6,7 +6,7 @@
 #' - [glm()],
 #' - [mgcv::gam()],
 #' - [mgcv::bam()],
-#' - [gam::gam()],
+#' - `gam::gam()`,
 #' - [survival::coxph()], and
 #' - [survival::survreg()].
 #' 
