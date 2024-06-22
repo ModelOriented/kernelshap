@@ -44,8 +44,14 @@
 #'   Sepal.Length ~ poly(Sepal.Width, 2) + log(Petal.Length) + log(Sepal.Width),
 #'   data = iris
 #' )
-#' s <- additive_shap(fit, head(iris))
-#' s
+#' s_add <- additive_shap(fit, head(iris))
+#' s_add
+#' 
+#' # Equals kernelshap()/permshap() when background data is full training data
+#' s_kernel <- kernelshap(
+#'  fit, head(iris[c("Sepal.Width", "Petal.Length")]), bg_X = iris
+#' )
+#' all.equal(s_add$S, s_kernel$S)
 additive_shap <- function(object, X, verbose = TRUE, ...) {
   stopifnot(
     inherits(object, c("lm", "glm", "gam", "bam", "Gam", "coxph", "survreg"))
