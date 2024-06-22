@@ -14,6 +14,10 @@
 #' a logic heavily inspired by `fastshap:::explain.lm(..., exact = TRUE)`.
 #' Models with interactions (specified via `:` or `*`), or with terms of
 #' multiple features like `log(x1/x2)` are not supported.
+#' 
+#' Note that the SHAP values obtained by [additive_shap()] are expected to
+#' match those of [permshap()] and [kernelshap()] as long as their background
+#' data equals the full training data (which is typically not feasible).
 #'
 #' @inheritParams kernelshap
 #' @param X Dataframe with rows to be explained. Will be used like

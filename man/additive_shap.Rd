@@ -46,6 +46,10 @@ The SHAP values are extracted via \code{predict(object, newdata = X, type = "ter
 a logic heavily inspired by \code{fastshap:::explain.lm(..., exact = TRUE)}.
 Models with interactions (specified via \code{:} or \code{*}), or with terms of
 multiple features like \code{log(x1/x2)} are not supported.
+
+Note that the SHAP values obtained by \code{\link[=additive_shap]{additive_shap()}} are expected to
+match those of \code{\link[=permshap]{permshap()}} and \code{\link[=kernelshap]{kernelshap()}} as long as their background
+data equals the full training data (which is typically not feasible).
 }
 \examples{
 # MODEL ONE: Linear regression
