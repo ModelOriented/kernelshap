@@ -118,6 +118,9 @@ works for models fitted via</p><ul><li><p><code><a href="https://rdrr.io/r/stats
 a logic heavily inspired by <code>fastshap:::explain.lm(..., exact = TRUE)</code>.
 Models with interactions (specified via <code>:</code> or <code>*</code>), or with terms of
 multiple features like <code>log(x1/x2)</code> are not supported.</p>
+<p>Note that the SHAP values obtained by <code>additive_shap()</code> are expected to
+match those of <code><a href="permshap.html">permshap()</a></code> and <code><a href="kernelshap.html">kernelshap()</a></code> as long as their background
+data equals the full training data (which is typically not feasible).</p>
     </div>
 
     <div id="ref-examples">
@@ -137,13 +140,22 @@ multiple features like <code>log(x1/x2)</code> are not supported.</p>
 <span class="r-in"><span>  <span class="va">Sepal.Length</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/stats/poly.html" class="external-link">poly</a></span><span class="op">(</span><span class="va">Sepal.Width</span>, <span class="fl">2</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">Petal.Length</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">Sepal.Width</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  data <span class="op">=</span> <span class="va">iris</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">s</span> <span class="op">&lt;-</span> <span class="fu">additive_shap</span><span class="op">(</span><span class="va">fit</span>, <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">iris</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">s_add</span> <span class="op">&lt;-</span> <span class="fu">additive_shap</span><span class="op">(</span><span class="va">fit</span>, <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">iris</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Exact additive SHAP via predict(..., type = 'terms')</span>
-<span class="r-in"><span><span class="va">s</span></span></span>
+<span class="r-in"><span><span class="va">s_add</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SHAP values of first observations:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      Sepal.Width Petal.Length</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1,]   0.3380346    -1.205754</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [2,]  -0.0577949    -1.205754</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Equals kernelshap()/permshap() when background data is full training data</span></span></span>
+<span class="r-in"><span><span class="va">s_kernel</span> <span class="op">&lt;-</span> <span class="fu"><a href="kernelshap.html">kernelshap</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span> <span class="va">fit</span>, <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">iris</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Sepal.Width"</span>, <span class="st">"Petal.Length"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span>, bg_X <span class="op">=</span> <span class="va">iris</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Exact Kernel SHAP values</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |                                                                              |                                                                      |   0%  |                                                                              |============                                                          |  17%  |                                                                              |=======================                                               |  33%  |                                                                              |===================================                                   |  50%  |                                                                              |===============================================                       |  67%  |                                                                              |==========================================================            |  83%  |                                                                              |======================================================================| 100%</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/all.equal.html" class="external-link">all.equal</a></span><span class="op">(</span><span class="va">s_add</span><span class="op">$</span><span class="va">S</span>, <span class="va">s_kernel</span><span class="op">$</span><span class="va">S</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 </code></pre></div>
     </div>
   </div>
