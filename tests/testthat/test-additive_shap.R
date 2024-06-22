@@ -1,4 +1,4 @@
-test_that("simple additive formula gives same as permshap()", {
+test_that("simple additive formula gives same as permshap() if full training data is used as bg data", {
   form <- Sepal.Length ~ .
   fit_lm <- lm(form, data = iris)
   fit_glm <- glm(form, data = iris, family = quasipoisson)
@@ -17,7 +17,7 @@ test_that("simple additive formula gives same as permshap()", {
   expect_equal(s_add_glm$predictions, unname(predict(fit_glm, newdata = X)))
 })
 
-test_that("formula where feature appears in two terms gives same as permshap()", {
+test_that("formula where feature appears in two terms gives same as permshap() if full training data is used as bg data", {
   form <- Sepal.Length ~ log(Sepal.Width) + poly(Sepal.Width, 2) + Petal.Length
   fit_lm <- lm(form, data = iris)
   fit_glm <- glm(form, data = iris, family = quasipoisson)
@@ -36,7 +36,7 @@ test_that("formula where feature appears in two terms gives same as permshap()",
   expect_equal(s_add_glm$predictions, unname(predict(fit_glm, newdata = X)))
 })
 
-test_that("formula with complicated terms gives same as permshap()", {
+test_that("formula with complicated terms gives same as permshap() if full training data is used as bg data", {
   form <- Sepal.Length ~ 
     log(Sepal.Width) + Species + poly(Petal.Length, 2)
   

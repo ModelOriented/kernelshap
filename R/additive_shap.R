@@ -14,6 +14,10 @@
 #' a logic heavily inspired by `fastshap:::explain.lm(..., exact = TRUE)`.
 #' Models with interactions (specified via `:` or `*`), or with terms of
 #' multiple features like `log(x1/x2)` are not supported.
+#' 
+#' Note that the SHAP values obtained by [additive_shap()] are expected to
+#' match those of [permshap()] and [kernelshap()] as long as their background
+#' data equals the full training data (which is typically not feasible).
 #'
 #' @inheritParams kernelshap
 #' @param X Dataframe with rows to be explained. Will be used like
@@ -40,8 +44,14 @@
 #'   Sepal.Length ~ poly(Sepal.Width, 2) + log(Petal.Length) + log(Sepal.Width),
 #'   data = iris
 #' )
-#' s <- additive_shap(fit, head(iris))
-#' s
+#' s_add <- additive_shap(fit, head(iris))
+#' s_add
+#' 
+#' # Equals kernelshap()/permshap() when background data is full training data
+#' s_kernel <- kernelshap(
+#'  fit, head(iris[c("Sepal.Width", "Petal.Length")]), bg_X = iris
+#' )
+#' all.equal(s_add$S, s_kernel$S)
 additive_shap <- function(object, X, verbose = TRUE, ...) {
   stopifnot(
     inherits(object, c("lm", "glm", "gam", "bam", "Gam", "coxph", "survreg"))
