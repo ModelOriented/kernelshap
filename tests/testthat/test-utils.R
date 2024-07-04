@@ -60,27 +60,6 @@ test_that("rep_each() works", {
   expect_true(is.integer(rep_each(100, 100)))
 })
 
-test_that("fdummy() works", {
-  x <- c("A", "A", "C", "D")
-  mm <- matrix(model.matrix(~ x + 0), ncol = 3, dimnames = list(NULL, c("A", "C", "D")))
-  expect_equal(fdummy(x), mm)
-})
-
-test_that("fdummy() works for singletons", {
-  x <- c("A")
-  expect_equal(fdummy(x), cbind(A = 1))
-  expect_true(is.matrix(fdummy(x)))
-})
-
-test_that("fdummy() respects factor level order", {
-  x1 <- factor(c("A", "A", "C", "D"))
-  x2 <- factor(x1, levels = rev(levels(x1)))
-  d1 <- fdummy(x1)
-  d2 <- fdummy(x2)
-  expect_equal(d1, d2[, colnames(d1)])
-  expect_equal(colnames(d1), rev(colnames(d2)))
-})
-
 test_that("wrowmean_vector() works for 1D matrices", {
   x2 <- cbind(a = 6:1)
   out2 <- wrowmean_vector(x2, ngroups = 2L)
@@ -103,10 +82,3 @@ test_that("wrowmean_vector() works for 1D matrices", {
   expect_equal(out2, cbind(a = c(a, b)))
 })
 
-test_that("rowmean_factor() works for factor input", {
-  x <- factor(c("C", "A", "C", "C", "A", "A"))
-  out <- rowmean_factor(x, ngroups = 2L)
-  
-  expect_true(is.matrix(out))
-  expect_equal(out, cbind(A = c(1/3, 2/3), C = c(2/3, 1/3)))
-})

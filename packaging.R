@@ -32,9 +32,10 @@ use_description(
   roxygen = TRUE
 )
 
+use_package("foreach", "Imports")
+use_package("MASS", "Imports")
 use_package("stats", "Imports")
 use_package("utils", "Imports")
-use_package("foreach", "Imports")
 
 use_package("doFuture", "Suggests")
 
