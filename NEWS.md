@@ -1,8 +1,15 @@
-# kernelshap 0.5.1
+# kernelshap 0.6.0
+
+This release is intended to be the last before stable version 1.0.0.
+
+## Major changes
+
+- Factor-valued predictions are not anymore supported.
 
 ## Maintenance
 
-- Fix CRAN note regarding unavailable link to `gam::gam()`.
+- Fix CRAN note about unavailable link to `gam::gam()`.
+- Added dependency to {MASS} for calculating Moore-Penrose generalized matrix inverse.
 
 # kernelshap 0.5.0
 

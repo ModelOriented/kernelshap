@@ -238,4 +238,3 @@ test_that("kernelshap works for large p (hybrid case)", {
   expect_equal(rowSums(s$S) + s$baseline, unname(predict(fit, X[1L, ])))
 })
 
-

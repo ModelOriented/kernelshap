@@ -15,7 +15,7 @@
 
 The package contains two workhorses to calculate SHAP values for *any* model:
 
-- `permshap()`: Exact permutation SHAP algorithm of [1]. Available for up to $p=14$ features.
+- `permshap()`: Exact permutation SHAP algorithm of [1]. Recommended for up to 8-10 features.
 - `kernelshap()`: Kernel SHAP algorithm of [2] and [3]. By default, exact Kernel SHAP is used for up to $p=8$ features, and an almost exact hybrid algorithm otherwise.
 
 Furthermore, the function `additive_shap()` produces SHAP values for additive models fitted via `lm()`, `glm()`, `mgcv::gam()`, `mgcv::bam()`, `gam::gam()`,
@@ -38,7 +38,6 @@ If the training data is small, use the full training data. In cases with a natur
 **Remarks**
 
 - Multivariate predictions are handled at no additional computational cost.
-- Factor-valued predictions are automatically turned into one-hot-encoded columns.
 - Case weights are supported via the argument `bg_w`.
 - By changing the defaults in `kernelshap()`, the iterative pure sampling approach in [3] can be enforced.
 - The `additive_shap()` explainer is easier to use: Only the model and `X` are required.
@@ -55,7 +54,7 @@ devtools::install_github("ModelOriented/kernelshap")
 
 ## Basic Usage
 
-Let's model diamond prices with a (not too complex) random forest. As an alternative, you could use the {treeshap} package in this situation.
+Let's model diamond prices with a random forest. As an alternative, you could use the {treeshap} package in this situation.
 
 ```r
 library(kernelshap)
@@ -236,7 +235,6 @@ sv_dependence(shap_values, v = "carat", color_var = NULL)
 {kernelshap} supports multivariate predictions like:
 
 - probabilistic classification,
-- non-probabilistic classification (factor-valued responses are turned into dummies),
 - regression with multivariate response, and
 - predictions found by applying multiple regression models.
 
@@ -255,10 +253,6 @@ ps_prob <- permshap(fit_prob, X = iris[, -5], bg_X = iris) |>
   shapviz()
 sv_importance(ps_prob)
 sv_dependence(ps_prob, "Petal.Length")
-
-# Non-probabilistic classification (results not shown)
-fit_class <- ranger(Species ~ ., data = iris, num.trees = 20)
-ps_class <- permshap(fit_class, X = iris[, -5], bg_X = iris)
 ```
 
 ![](man/figures/README-prob-imp.svg)
@@ -291,7 +285,7 @@ iris_wf <- workflow() |>
 fit <- iris_wf |>
   fit(iris)
 
-system.time(  # 6s
+system.time(  # 4s
   ps <- permshap(fit, iris[-5], bg_X = iris, type = "prob")
 )
 ps
@@ -333,12 +327,9 @@ task_classif <- TaskClassif$new(id = "1", backend = iris, target = "Species")
 learner_classif <- lrn("classif.rpart", predict_type = "prob")
 learner_classif$train(task_classif)
 
-predict(learner_classif, head(iris))  # setosa setosa        # Classes
-predict(learner_classif, head(iris), predict_type = "prob")  # Probs per class
-
 x <- learner_classif$selected_features()
 
-# For *probabilistic* classification, pass predict_type = "prob" to mlr3's predict()
+# Don't forget to pass predict_type = "prob" to mlr3's predict()
 ps <- permshap(
   learner_classif, X = iris, bg_X = iris, feature_names = x, predict_type = "prob"
 )
@@ -347,10 +338,6 @@ ps
 #      Petal.Length Petal.Width
 # [1,]    0.6666667           0
 # [2,]    0.6666667           0
-
-# Non-probabilistic classification uses auto-OHE internally
-ps <- permshap(learner_classif, X = iris, bg_X = iris, feature_names = x)
-ps
 ```
 
 ## References
