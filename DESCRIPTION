@@ -1,9 +1,11 @@
 Package: kernelshap
 Title: Kernel SHAP
-Version: 0.5.1
+Version: 0.6.0
 Authors@R: c(
-    person("Michael", "Mayer", , "mayermichael79@gmail.com", role = c("aut", "cre")),
-    person("David", "Watson", , "david.s.watson11@gmail.com", role = "aut"),
+    person("Michael", "Mayer", , "mayermichael79@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-6148-5756")),
+    person("David", "Watson", , "david.s.watson11@gmail.com", role = "aut",
+           comment = c(ORCID = "0000-0001-9632-2159")),
     person("Przemyslaw", "Biecek", , "przemyslaw.biecek@gmail.com", role = "ctb",
            comment = c(ORCID = "0000-0001-8423-1823"))
   )

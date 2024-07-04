@@ -15,15 +15,15 @@ library(usethis)
 use_description(
   fields = list(
     Title = "Kernel SHAP",
-    Version = "0.5.1",
+    Version = "0.6.0",
     Description = "Efficient implementation of Kernel SHAP, see Lundberg and Lee (2017),
     and Covert and Lee (2021) <http://proceedings.mlr.press/v130/covert21a>.
     Furthermore, for up to 14 features, exact permutation SHAP values can be calculated.
     The package plays well together with meta-learning packages like 'tidymodels', 'caret' or 'mlr3'.
     Visualizations can be done using the R package 'shapviz'.",
     `Authors@R` = 
-    "c(person('Michael', family='Mayer', role=c('aut', 'cre'), email='mayermichael79@gmail.com'),
-       person('David', family='Watson', role='aut', email='david.s.watson11@gmail.com'),
+    "c(person('Michael', family='Mayer', role=c('aut', 'cre'), email='mayermichael79@gmail.com', comment=c(ORCID='0000-0002-6148-5756')),
+       person('David', family='Watson', role='aut', email='david.s.watson11@gmail.com', comment=c(ORCID='0000-0001-9632-2159')),
        person('Przemyslaw', family='Biecek', email='przemyslaw.biecek@gmail.com', role='ctb', comment=c(ORCID='0000-0001-8423-1823'))
       )",
     Depends = "R (>= 3.2.0)",
