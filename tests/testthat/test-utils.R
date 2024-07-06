@@ -82,3 +82,8 @@ test_that("wrowmean_vector() works for 1D matrices", {
   expect_equal(out2, cbind(a = c(a, b)))
 })
 
+test_that("align_pred() works", {
+  expect_error(align_pred(c("A", "B")))
+  expect_error(align_pred(factor(c("A", "B"))))
+  expect_equal(align_pred(1:4), as.matrix(1:4))
+})
