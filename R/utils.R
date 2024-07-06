@@ -153,7 +153,13 @@ align_pred <- function(x) {
   if (is.data.frame(x) && ncol(x) == 1L) {
     x <- x[[1L]]
   }
-  as.matrix(x)
+  if (!is.matrix(x)) {
+    x <- as.matrix(x)
+  }
+  if (!is.numeric(x) && !is.logical(x)) {
+    stop("Predictions must be numeric!")
+  }
+  return(x)
 }
 
 #' Head of List Elements

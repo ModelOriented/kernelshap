@@ -4,12 +4,13 @@ This release is intended to be the last before stable version 1.0.0.
 
 ## Major changes
 
-- Factor-valued predictions are not anymore supported.
+- Factor-valued predictions are not supported anymore.
 
 ## Maintenance
 
 - Fix CRAN note about unavailable link to `gam::gam()`.
 - Added dependency to {MASS} for calculating Moore-Penrose generalized matrix inverse.
+- Slight code improvements.
 
 # kernelshap 0.5.0
 
