@@ -43,20 +43,20 @@ hybrid algorithm involving iterative sampling is used, see Details."><meta prope
         <li>
   <a href="https://github.com/ModelOriented/kernelshap/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
-     
+
   </a>
 </li>
       </ul></div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
 
-      
+
 
       </header><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Kernel SHAP</h1>
-    <small class="dont-index">Source: <a href="https://github.com/ModelOriented/kernelshap/blob/HEAD/R/kernelshap.R" class="external-link"><code>R/kernelshap.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/ModelOriented/kernelshap/blob/main/R/kernelshap.R" class="external-link"><code>R/kernelshap.R</code></a></small>
     <div class="hidden name"><code>kernelshap.Rd</code></div>
     </div>
 
@@ -71,7 +71,7 @@ hybrid algorithm involving iterative sampling is used, see Details.</p>
     <div id="ref-usage">
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">kernelshap</span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># S3 method for default</span></span>
+<span><span class="co"># Default S3 method</span></span>
 <span><span class="fu">kernelshap</span><span class="op">(</span></span>
 <span>  <span class="va">object</span>,</span>
 <span>  <span class="va">X</span>,</span>
@@ -91,7 +91,7 @@ hybrid algorithm involving iterative sampling is used, see Details.</p>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># S3 method for ranger</span></span>
+<span><span class="co"># S3 method for class 'ranger'</span></span>
 <span><span class="fu">kernelshap</span><span class="op">(</span></span>
 <span>  <span class="va">object</span>,</span>
 <span>  <span class="va">X</span>,</span>
@@ -114,21 +114,23 @@ hybrid algorithm involving iterative sampling is used, see Details.</p>
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <dl><dt>object</dt>
+
+
+<dl><dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
 <dd><p>Fitted model object.</p></dd>
 
 
-<dt>...</dt>
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments passed to <code>pred_fun(object, X, ...)</code>.</p></dd>
 
 
-<dt>X</dt>
+<dt id="arg-x">X<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>\((n \times p)\) matrix or <code>data.frame</code> with rows to be explained.
 The columns should only represent model features, not the response
 (but see <code>feature_names</code> on how to overrule this).</p></dd>
 
 
-<dt>bg_X</dt>
+<dt id="arg-bg-x">bg_X<a class="anchor" aria-label="anchor" href="#arg-bg-x"></a></dt>
 <dd><p>Background data used to integrate out "switched off" features,
 often a subset of the training data (typically 50 to 500 rows)
 It should contain the same columns as <code>X</code>.
@@ -136,7 +138,7 @@ In cases with a natural "off" value (like MNIST digits),
 this can also be a single row with all values set to the off value.</p></dd>
 
 
-<dt>pred_fun</dt>
+<dt id="arg-pred-fun">pred_fun<a class="anchor" aria-label="anchor" href="#arg-pred-fun"></a></dt>
 <dd><p>Prediction function of the form <code>function(object, X, ...)</code>,
 providing \(K \ge 1\) predictions per row. Its first argument
 represents the model <code>object</code>, its second argument a data structure like <code>X</code>.
@@ -144,24 +146,24 @@ Additional (named) arguments are passed via <code>...</code>.
 The default, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">stats::predict()</a></code>, will work in most cases.</p></dd>
 
 
-<dt>feature_names</dt>
+<dt id="arg-feature-names">feature_names<a class="anchor" aria-label="anchor" href="#arg-feature-names"></a></dt>
 <dd><p>Optional vector of column names in <code>X</code> used to calculate
 SHAP values. By default, this equals <code>colnames(X)</code>. Not supported if <code>X</code>
 is a matrix.</p></dd>
 
 
-<dt>bg_w</dt>
+<dt id="arg-bg-w">bg_w<a class="anchor" aria-label="anchor" href="#arg-bg-w"></a></dt>
 <dd><p>Optional vector of case weights for each row of <code>bg_X</code>.</p></dd>
 
 
-<dt>exact</dt>
+<dt id="arg-exact">exact<a class="anchor" aria-label="anchor" href="#arg-exact"></a></dt>
 <dd><p>If <code>TRUE</code>, the algorithm will produce exact Kernel SHAP values
 with respect to the background data. In this case, the arguments <code>hybrid_degree</code>,
 <code>m</code>, <code>paired_sampling</code>, <code>tol</code>, and <code>max_iter</code> are ignored.
 The default is <code>TRUE</code> up to eight features, and <code>FALSE</code> otherwise.</p></dd>
 
 
-<dt>hybrid_degree</dt>
+<dt id="arg-hybrid-degree">hybrid_degree<a class="anchor" aria-label="anchor" href="#arg-hybrid-degree"></a></dt>
 <dd><p>Integer controlling the exactness of the hybrid strategy. For
 \(4 \le p \le 16\), the default is 2, otherwise it is 1.
 Ignored if <code>exact = TRUE</code>.</p><ul><li><p><code>0</code>: Pure sampling strategy not involving any exact part. It is strictly
@@ -179,7 +181,7 @@ Convergence usually happens in the minimal possible number of iterations of two.
 </ul></dd>
 
 
-<dt>paired_sampling</dt>
+<dt id="arg-paired-sampling">paired_sampling<a class="anchor" aria-label="anchor" href="#arg-paired-sampling"></a></dt>
 <dd><p>Logical flag indicating whether to do the sampling in a paired
 manner. This means that with every on-off vector \(z\), also \(1-z\) is
 considered. CL21 shows its superiority compared to standard sampling, therefore the
@@ -187,13 +189,13 @@ default (<code>TRUE</code>) should usually not be changed except for studying pr
 of Kernel SHAP algorithms. Ignored if <code>exact = TRUE</code>.</p></dd>
 
 
-<dt>m</dt>
+<dt id="arg-m">m<a class="anchor" aria-label="anchor" href="#arg-m"></a></dt>
 <dd><p>Even number of on-off vectors sampled during one iteration.
 The default is \(2p\), except when <code>hybrid_degree == 0</code>.
 Then it is set to \(8p\). Ignored if <code>exact = TRUE</code>.</p></dd>
 
 
-<dt>tol</dt>
+<dt id="arg-tol">tol<a class="anchor" aria-label="anchor" href="#arg-tol"></a></dt>
 <dd><p>Tolerance determining when to stop. Following CL21, the algorithm keeps
 iterating until \(\textrm{max}(\sigma_n)/(\textrm{max}(\beta_n) - \textrm{min}(\beta_n)) &lt; \textrm{tol}\),
 where the \(\beta_n\) are the SHAP values of a given observation,
@@ -203,33 +205,31 @@ dimension separately. The stopping criterion uses the fact that standard errors
 and SHAP values are all on the same scale. Ignored if <code>exact = TRUE</code>.</p></dd>
 
 
-<dt>max_iter</dt>
+<dt id="arg-max-iter">max_iter<a class="anchor" aria-label="anchor" href="#arg-max-iter"></a></dt>
 <dd><p>If the stopping criterion (see <code>tol</code>) is not reached after
 <code>max_iter</code> iterations, the algorithm stops. Ignored if <code>exact = TRUE</code>.</p></dd>
 
 
-<dt>parallel</dt>
+<dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>
 <dd><p>If <code>TRUE</code>, use parallel <code><a href="https://rdrr.io/pkg/foreach/man/foreach.html" class="external-link">foreach::foreach()</a></code> to loop over rows
 to be explained. Must register backend beforehand, e.g., via 'doFuture' package,
 see README for an example. Parallelization automatically disables the progress bar.</p></dd>
 
 
-<dt>parallel_args</dt>
+<dt id="arg-parallel-args">parallel_args<a class="anchor" aria-label="anchor" href="#arg-parallel-args"></a></dt>
 <dd><p>Named list of arguments passed to <code><a href="https://rdrr.io/pkg/foreach/man/foreach.html" class="external-link">foreach::foreach()</a></code>.
 Ideally, this is <code>NULL</code> (default). Only relevant if <code>parallel = TRUE</code>.
 Example on Windows: if <code>object</code> is a GAM fitted with package 'mgcv',
 then one might need to set <code>parallel_args = list(.packages = "mgcv")</code>.</p></dd>
 
 
-<dt>verbose</dt>
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>Set to <code>FALSE</code> to suppress messages and the progress bar.</p></dd>
 
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    
-
-<p>An object of class "kernelshap" with the following components:</p><ul><li><p><code>S</code>: \((n \times p)\) matrix with SHAP values or, if the model output has
+    <p>An object of class "kernelshap" with the following components:</p><ul><li><p><code>S</code>: \((n \times p)\) matrix with SHAP values or, if the model output has
 dimension \(K &gt; 1\), a list of \(K\) such matrices.</p></li>
 <li><p><code>X</code>: Same as input argument <code>X</code>.</p></li>
 <li><p><code>baseline</code>: Vector of length K representing the average prediction on the
@@ -296,13 +296,13 @@ For similar reasons, degree 2 hybrids should not use \(p\) much larger than 40.<
     </div>
     <div id="methods-by-class-">
     <h2>Methods (by class)</h2>
-    
+
 <ul><li><p><code>kernelshap(default)</code>: Default Kernel SHAP method.</p></li>
 <li><p><code>kernelshap(ranger)</code>: Kernel SHAP method for "ranger" models, see Readme for an example.</p></li>
 </ul></div>
     <div id="references">
     <h2>References</h2>
-    
+
 <ol><li><p>Scott M. Lundberg and Su-In Lee. A unified approach to interpreting model
 predictions. Proceedings of the 31st International Conference on Neural
 Information Processing Systems, 2017.</p></li>
@@ -391,12 +391,12 @@ Conference on Artificial Intelligence and Statistics, PMLR 130:3457-3465, 2021.<
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
 </div>
 
       </footer></div>
 
-  
+
 
 
   </body></html>

@@ -40,20 +40,20 @@ see Strumbelj and Kononenko. The function works for up to 14 features."><meta pr
         <li>
   <a href="https://github.com/ModelOriented/kernelshap/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
-     
+
   </a>
 </li>
       </ul></div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
 
-      
+
 
       </header><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Permutation SHAP</h1>
-    <small class="dont-index">Source: <a href="https://github.com/ModelOriented/kernelshap/blob/HEAD/R/permshap.R" class="external-link"><code>R/permshap.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/ModelOriented/kernelshap/blob/main/R/permshap.R" class="external-link"><code>R/permshap.R</code></a></small>
     <div class="hidden name"><code>permshap.Rd</code></div>
     </div>
 
@@ -65,7 +65,7 @@ see Strumbelj and Kononenko. The function works for up to 14 features.</p>
     <div id="ref-usage">
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">permshap</span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># S3 method for default</span></span>
+<span><span class="co"># Default S3 method</span></span>
 <span><span class="fu">permshap</span><span class="op">(</span></span>
 <span>  <span class="va">object</span>,</span>
 <span>  <span class="va">X</span>,</span>
@@ -79,7 +79,7 @@ see Strumbelj and Kononenko. The function works for up to 14 features.</p>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># S3 method for ranger</span></span>
+<span><span class="co"># S3 method for class 'ranger'</span></span>
 <span><span class="fu">permshap</span><span class="op">(</span></span>
 <span>  <span class="va">object</span>,</span>
 <span>  <span class="va">X</span>,</span>
@@ -96,21 +96,23 @@ see Strumbelj and Kononenko. The function works for up to 14 features.</p>
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <dl><dt>object</dt>
+
+
+<dl><dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
 <dd><p>Fitted model object.</p></dd>
 
 
-<dt>...</dt>
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments passed to <code>pred_fun(object, X, ...)</code>.</p></dd>
 
 
-<dt>X</dt>
+<dt id="arg-x">X<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>\((n \times p)\) matrix or <code>data.frame</code> with rows to be explained.
 The columns should only represent model features, not the response
 (but see <code>feature_names</code> on how to overrule this).</p></dd>
 
 
-<dt>bg_X</dt>
+<dt id="arg-bg-x">bg_X<a class="anchor" aria-label="anchor" href="#arg-bg-x"></a></dt>
 <dd><p>Background data used to integrate out "switched off" features,
 often a subset of the training data (typically 50 to 500 rows)
 It should contain the same columns as <code>X</code>.
@@ -118,7 +120,7 @@ In cases with a natural "off" value (like MNIST digits),
 this can also be a single row with all values set to the off value.</p></dd>
 
 
-<dt>pred_fun</dt>
+<dt id="arg-pred-fun">pred_fun<a class="anchor" aria-label="anchor" href="#arg-pred-fun"></a></dt>
 <dd><p>Prediction function of the form <code>function(object, X, ...)</code>,
 providing \(K \ge 1\) predictions per row. Its first argument
 represents the model <code>object</code>, its second argument a data structure like <code>X</code>.
@@ -126,38 +128,36 @@ Additional (named) arguments are passed via <code>...</code>.
 The default, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">stats::predict()</a></code>, will work in most cases.</p></dd>
 
 
-<dt>feature_names</dt>
+<dt id="arg-feature-names">feature_names<a class="anchor" aria-label="anchor" href="#arg-feature-names"></a></dt>
 <dd><p>Optional vector of column names in <code>X</code> used to calculate
 SHAP values. By default, this equals <code>colnames(X)</code>. Not supported if <code>X</code>
 is a matrix.</p></dd>
 
 
-<dt>bg_w</dt>
+<dt id="arg-bg-w">bg_w<a class="anchor" aria-label="anchor" href="#arg-bg-w"></a></dt>
 <dd><p>Optional vector of case weights for each row of <code>bg_X</code>.</p></dd>
 
 
-<dt>parallel</dt>
+<dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>
 <dd><p>If <code>TRUE</code>, use parallel <code><a href="https://rdrr.io/pkg/foreach/man/foreach.html" class="external-link">foreach::foreach()</a></code> to loop over rows
 to be explained. Must register backend beforehand, e.g., via 'doFuture' package,
 see README for an example. Parallelization automatically disables the progress bar.</p></dd>
 
 
-<dt>parallel_args</dt>
+<dt id="arg-parallel-args">parallel_args<a class="anchor" aria-label="anchor" href="#arg-parallel-args"></a></dt>
 <dd><p>Named list of arguments passed to <code><a href="https://rdrr.io/pkg/foreach/man/foreach.html" class="external-link">foreach::foreach()</a></code>.
 Ideally, this is <code>NULL</code> (default). Only relevant if <code>parallel = TRUE</code>.
 Example on Windows: if <code>object</code> is a GAM fitted with package 'mgcv',
 then one might need to set <code>parallel_args = list(.packages = "mgcv")</code>.</p></dd>
 
 
-<dt>verbose</dt>
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>Set to <code>FALSE</code> to suppress messages and the progress bar.</p></dd>
 
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    
-
-<p>An object of class "kernelshap" with the following components:</p><ul><li><p><code>S</code>: \((n \times p)\) matrix with SHAP values or, if the model output has
+    <p>An object of class "kernelshap" with the following components:</p><ul><li><p><code>S</code>: \((n \times p)\) matrix with SHAP values or, if the model output has
 dimension \(K &gt; 1\), a list of \(K\) such matrices.</p></li>
 <li><p><code>X</code>: Same as input argument <code>X</code>.</p></li>
 <li><p><code>baseline</code>: Vector of length K representing the average prediction on the
@@ -171,13 +171,13 @@ background data.</p></li>
 </ul></div>
     <div id="methods-by-class-">
     <h2>Methods (by class)</h2>
-    
+
 <ul><li><p><code>permshap(default)</code>: Default permutation SHAP method.</p></li>
 <li><p><code>permshap(ranger)</code>: Permutation SHAP method for "ranger" models, see Readme for an example.</p></li>
 </ul></div>
     <div id="references">
     <h2>References</h2>
-    
+
 <ol><li><p>Erik Strumbelj and Igor Kononenko. Explaining prediction models and individual
 predictions with feature contributions. Knowledge and Information Systems 41, 2014.</p></li>
 </ol></div>
@@ -257,12 +257,12 @@ predictions with feature contributions. Knowledge and Information Systems 41, 20
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
 </div>
 
       </footer></div>
 
-  
+
 
 
   </body></html>
