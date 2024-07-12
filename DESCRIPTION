@@ -3,7 +3,7 @@ Title: Kernel SHAP
 Version: 0.6.0
 Authors@R: c(
     person("Michael", "Mayer", , "mayermichael79@gmail.com", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0002-6148-5756")),
+           comment = c(ORCID = "0009-0007-2540-9629")),
     person("David", "Watson", , "david.s.watson11@gmail.com", role = "aut",
            comment = c(ORCID = "0000-0001-9632-2159")),
     person("Przemyslaw", "Biecek", , "przemyslaw.biecek@gmail.com", role = "ctb",

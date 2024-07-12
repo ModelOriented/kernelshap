@@ -22,7 +22,7 @@ use_description(
     The package plays well together with meta-learning packages like 'tidymodels', 'caret' or 'mlr3'.
     Visualizations can be done using the R package 'shapviz'.",
     `Authors@R` = 
-    "c(person('Michael', family='Mayer', role=c('aut', 'cre'), email='mayermichael79@gmail.com', comment=c(ORCID='0000-0002-6148-5756')),
+    "c(person('Michael', family='Mayer', role=c('aut', 'cre'), email='mayermichael79@gmail.com', comment=c(ORCID='0009-0007-2540-9629')),
        person('David', family='Watson', role='aut', email='david.s.watson11@gmail.com', comment=c(ORCID='0000-0001-9632-2159')),
        person('Przemyslaw', family='Biecek', email='przemyslaw.biecek@gmail.com', role='ctb', comment=c(ORCID='0000-0001-8423-1823'))
       )",
