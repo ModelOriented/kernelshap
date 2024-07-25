@@ -1,3 +1,7 @@
+# kernelshap 0.6.1
+
+- `ranger()` survival models now also work out-of-the-box without passing a tailored prediction function. Use the new argument `survival = "chf"` in `kernelshap()` and `permshap()` to distinguish cumulative hazards (default) and survival probabilities per time point.
+
 # kernelshap 0.6.0
 
 This release is intended to be the last before stable version 1.0.0.

@@ -15,7 +15,7 @@ library(usethis)
 use_description(
   fields = list(
     Title = "Kernel SHAP",
-    Version = "0.6.0",
+    Version = "0.6.1",
     Description = "Efficient implementation of Kernel SHAP, see Lundberg and Lee (2017),
     and Covert and Lee (2021) <http://proceedings.mlr.press/v130/covert21a>.
     Furthermore, for up to 14 features, exact permutation SHAP values can be calculated.
