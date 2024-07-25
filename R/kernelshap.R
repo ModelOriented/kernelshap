@@ -120,6 +120,8 @@
 #'   Example on Windows: if `object` is a GAM fitted with package 'mgcv', 
 #'   then one might need to set `parallel_args = list(.packages = "mgcv")`.
 #' @param verbose Set to `FALSE` to suppress messages and the progress bar.
+#' @param survival Should cumulative hazards ("chf", default) or survival
+#'   probabilities ("prob") per time be predicted? Only in `ranger()` survival models.
 #' @param ... Additional arguments passed to `pred_fun(object, X, ...)`.
 #' @returns 
 #'   An object of class "kernelshap" with the following components:
@@ -184,14 +186,24 @@ kernelshap <- function(object, ...){
 
 #' @describeIn kernelshap Default Kernel SHAP method.
 #' @export
-kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict, 
-                               feature_names = colnames(X), bg_w = NULL, 
-                               exact = length(feature_names) <= 8L, 
-                               hybrid_degree = 1L + length(feature_names) %in% 4:16, 
-                               paired_sampling = TRUE, 
-                               m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)), 
-                               tol = 0.005, max_iter = 100L, parallel = FALSE, 
-                               parallel_args = NULL, verbose = TRUE, ...) {
+kernelshap.default <- function(
+    object,
+    X,
+    bg_X,
+    pred_fun = stats::predict,
+    feature_names = colnames(X),
+    bg_w = NULL,
+    exact = length(feature_names) <= 8L,
+    hybrid_degree = 1L + length(feature_names) %in% 4:16,
+    paired_sampling = TRUE,
+    m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)),
+    tol = 0.005,
+    max_iter = 100L,
+    parallel = FALSE,
+    parallel_args = NULL,
+    verbose = TRUE,
+    ...
+  ) {
   basic_checks(X = X, bg_X = bg_X, feature_names = feature_names, pred_fun = pred_fun)
   p <- length(feature_names)
   stopifnot(
@@ -328,15 +340,31 @@ kernelshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
 
 #' @describeIn kernelshap Kernel SHAP method for "ranger" models, see Readme for an example.
 #' @export
-kernelshap.ranger <- function(object, X, bg_X,
-                              pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
-                              feature_names = colnames(X), 
-                              bg_w = NULL, exact = length(feature_names) <= 8L, 
-                              hybrid_degree = 1L + length(feature_names) %in% 4:16, 
-                              paired_sampling = TRUE, 
-                              m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)), 
-                              tol = 0.005, max_iter = 100L, parallel = FALSE, 
-                              parallel_args = NULL, verbose = TRUE, ...) {
+kernelshap.ranger <- function(
+    object,
+    X,
+    bg_X,
+    pred_fun = NULL,
+    feature_names = colnames(X),
+    bg_w = NULL,
+    exact = length(feature_names) <= 8L,
+    hybrid_degree = 1L + length(feature_names) %in% 4:16,
+    paired_sampling = TRUE,
+    m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)),
+    tol = 0.005,
+    max_iter = 100L,
+    parallel = FALSE,
+    parallel_args = NULL,
+    verbose = TRUE,
+    survival = c("chf", "prob"),
+    ...
+  ) {
+  survival <- match.arg(survival)
+  
+  if (is.null(pred_fun)) {
+    pred_fun <- pred_ranger
+  }
+  
   kernelshap.default(
     object = object, 
     X = X,
@@ -353,6 +381,7 @@ kernelshap.ranger <- function(object, X, bg_X,
     parallel = parallel,
     parallel_args = parallel_args,
     verbose = verbose,
+    survival = survival,
     ...
   )
 }

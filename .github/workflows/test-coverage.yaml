@@ -34,7 +34,8 @@ jobs:
             install_path = file.path(Sys.getenv("RUNNER_TEMP"), "package"),
             function_exclusions = c(
               "kernelshap\\.ranger",
-              "permshap\\.ranger"
+              "permshap\\.ranger",
+              "pred_ranger"
             )
           )
         shell: Rscript {0}

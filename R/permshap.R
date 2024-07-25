@@ -55,10 +55,18 @@ permshap <- function(object, ...) {
 
 #' @describeIn permshap Default permutation SHAP method.
 #' @export
-permshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
-                             feature_names = colnames(X), bg_w = NULL,
-                             parallel = FALSE, parallel_args = NULL,
-                             verbose = TRUE, ...) {
+permshap.default <- function(
+    object,
+    X,
+    bg_X,
+    pred_fun = stats::predict,
+    feature_names = colnames(X),
+    bg_w = NULL,
+    parallel = FALSE,
+    parallel_args = NULL,
+    verbose = TRUE,
+    ...
+  ) {
   basic_checks(X = X, bg_X = bg_X, feature_names = feature_names, pred_fun = pred_fun)
   p <- length(feature_names)
   if (p <= 1L) {
@@ -151,11 +159,25 @@ permshap.default <- function(object, X, bg_X, pred_fun = stats::predict,
 
 #' @describeIn permshap Permutation SHAP method for "ranger" models, see Readme for an example.
 #' @export
-permshap.ranger <- function(object, X, bg_X,
-                            pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
-                            feature_names = colnames(X),
-                            bg_w = NULL, parallel = FALSE, parallel_args = NULL,
-                            verbose = TRUE, ...) {
+permshap.ranger <- function(
+    object,
+    X,
+    bg_X,
+    pred_fun = NULL,
+    feature_names = colnames(X),
+    bg_w = NULL,
+    parallel = FALSE,
+    parallel_args = NULL,
+    verbose = TRUE,
+    survival = c("chf", "prob"),
+    ...
+  ) {
+  survival <- match.arg(survival)
+  
+  if (is.null(pred_fun)) {
+    pred_fun <- pred_ranger
+  }
+  
   permshap.default(
     object = object,
     X = X,
@@ -166,6 +188,7 @@ permshap.ranger <- function(object, X, bg_X,
     parallel = parallel,
     parallel_args = parallel_args,
     verbose = verbose,
+    survival = survival,
     ...
   )
 }

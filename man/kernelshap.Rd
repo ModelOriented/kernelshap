@@ -31,7 +31,7 @@ kernelshap(object, ...)
   object,
   X,
   bg_X,
-  pred_fun = function(m, X, ...) stats::predict(m, X, ...)$predictions,
+  pred_fun = NULL,
   feature_names = colnames(X),
   bg_w = NULL,
   exact = length(feature_names) <= 8L,
@@ -43,6 +43,7 @@ kernelshap(object, ...)
   parallel = FALSE,
   parallel_args = NULL,
   verbose = TRUE,
+  survival = c("chf", "prob"),
   ...
 )
 }
@@ -127,6 +128,9 @@ Example on Windows: if \code{object} is a GAM fitted with package 'mgcv',
 then one might need to set \code{parallel_args = list(.packages = "mgcv")}.}
 
 \item{verbose}{Set to \code{FALSE} to suppress messages and the progress bar.}
+
+\item{survival}{Should cumulative hazards ("chf", default) or survival
+probabilities ("prob") per time be predicted? Only in \code{ranger()} survival models.}
 }
 \value{
 An object of class "kernelshap" with the following components:
