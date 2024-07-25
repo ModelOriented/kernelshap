@@ -169,10 +169,10 @@ permshap.ranger <- function(
     parallel = FALSE,
     parallel_args = NULL,
     verbose = TRUE,
-    survival_type = c("chf", "prob"),
+    survival = c("chf", "prob"),
     ...
   ) {
-  survival_type <- match.arg(survival_type)
+  survival <- match.arg(survival)
   
   if (is.null(pred_fun)) {
     pred_fun <- pred_ranger
@@ -188,6 +188,7 @@ permshap.ranger <- function(
     parallel = parallel,
     parallel_args = parallel_args,
     verbose = verbose,
+    survival = survival,
     ...
   )
 }

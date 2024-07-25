@@ -43,7 +43,7 @@ kernelshap(object, ...)
   parallel = FALSE,
   parallel_args = NULL,
   verbose = TRUE,
-  survival_type = c("chf", "prob"),
+  survival = c("chf", "prob"),
   ...
 )
 }
@@ -129,7 +129,7 @@ then one might need to set \code{parallel_args = list(.packages = "mgcv")}.}
 
 \item{verbose}{Set to \code{FALSE} to suppress messages and the progress bar.}
 
-\item{survival_type}{Should cumulative hazards ("chf", default) or survival
+\item{survival}{Should cumulative hazards ("chf", default) or survival
 probabilities ("prob") per time be predicted? Only in \code{ranger()} survival models.}
 }
 \value{
