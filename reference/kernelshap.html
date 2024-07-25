@@ -29,7 +29,7 @@ hybrid algorithm involving iterative sampling is used, see Details."><meta prope
         <div class="info">
           <span class="partof">part of the <a href="https://github.com/ModelOriented/DrWhy" class="external-link">DrWhy.AI</a>
            developed by the <a href="https://mi2.ai/" class="external-link">MI².AI</a> </span>
-          <span class="version version-default">0.6.0</span>
+          <span class="version version-default">0.6.1</span>
         </div>
       </div>
     </div>
@@ -96,7 +96,7 @@ hybrid algorithm involving iterative sampling is used, see Details.</p>
 <span>  <span class="va">object</span>,</span>
 <span>  <span class="va">X</span>,</span>
 <span>  <span class="va">bg_X</span>,</span>
-<span>  pred_fun <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">m</span>, <span class="va">X</span>, <span class="va">...</span><span class="op">)</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">X</span>, <span class="va">...</span><span class="op">)</span><span class="op">$</span><span class="va">predictions</span>,</span>
+<span>  pred_fun <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  feature_names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span>,</span>
 <span>  bg_w <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  exact <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">feature_names</span><span class="op">)</span> <span class="op">&lt;=</span> <span class="fl">8L</span>,</span>
@@ -108,6 +108,7 @@ hybrid algorithm involving iterative sampling is used, see Details.</p>
 <span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  parallel_args <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  survival <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"chf"</span>, <span class="st">"prob"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -225,6 +226,11 @@ then one might need to set <code>parallel_args = list(.packages = "mgcv")</code>
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>Set to <code>FALSE</code> to suppress messages and the progress bar.</p></dd>
+
+
+<dt id="arg-survival">survival<a class="anchor" aria-label="anchor" href="#arg-survival"></a></dt>
+<dd><p>Should cumulative hazards ("chf", default) or survival
+probabilities ("prob") per time be predicted? Only in <code>ranger()</code> survival models.</p></dd>
 
 </dl></div>
     <div id="value">
