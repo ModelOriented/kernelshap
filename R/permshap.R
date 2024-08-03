@@ -172,12 +172,11 @@ permshap.ranger <- function(
     survival = c("chf", "prob"),
     ...
   ) {
-  survival <- match.arg(survival)
-  
+
   if (is.null(pred_fun)) {
-    pred_fun <- pred_ranger
+    pred_fun <- create_ranger_pred_fun(object$treetype, survival = match.arg(survival))
   }
-  
+
   permshap.default(
     object = object,
     X = X,
@@ -188,7 +187,6 @@ permshap.ranger <- function(
     parallel = parallel,
     parallel_args = parallel_args,
     verbose = verbose,
-    survival = survival,
     ...
   )
 }
