@@ -25,7 +25,7 @@
         <div class="info">
           <span class="partof">part of the <a href="https://github.com/ModelOriented/DrWhy" class="external-link">DrWhy.AI</a>
            developed by the <a href="https://mi2.ai/" class="external-link">MI².AI</a> </span>
-          <span class="version version-default">0.6.1</span>
+          <span class="version version-default">0.7.0</span>
         </div>
       </div>
     </div>
@@ -56,13 +56,22 @@
     </div>
 
     <div class="section level2">
-<h2 class="page-header" data-toc-text="0.6.1" id="kernelshap-061">kernelshap 0.6.1<a class="anchor" aria-label="anchor" href="#kernelshap-061"></a></h2>
+<h2 class="page-header" data-toc-text="0.7.0" id="kernelshap-070">kernelshap 0.7.0<a class="anchor" aria-label="anchor" href="#kernelshap-070"></a></h2>
+<p>This release is intended to be the last before stable version 1.0.0.</p>
+<div class="section level3">
+<h3 id="major-change-0-7-0">Major change<a class="anchor" aria-label="anchor" href="#major-change-0-7-0"></a></h3>
+<p>Passing a background dataset <code>bg_X</code> is now optional.</p>
+<p>If the explanation data <code>X</code> is sufficiently large (&gt;= 50 rows), <code>bg_X</code> is derived as a random sample of <code>bg_n = 200</code> rows from <code>X</code>. If <code>X</code> has less than <code>bg_n</code> rows, then simply <code>bg_X = X</code>. If <code>X</code> has too few rows (&lt; 50), you will have to pass an explicit <code>bg_X</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="minor-changes-0-7-0">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-0-7-0"></a></h3>
 <ul><li>
 <code>ranger()</code> survival models now also work out-of-the-box without passing a tailored prediction function. Use the new argument <code>survival = "chf"</code> in <code><a href="../reference/kernelshap.html">kernelshap()</a></code> and <code><a href="../reference/permshap.html">permshap()</a></code> to distinguish cumulative hazards (default) and survival probabilities per time point.</li>
+<li>The resulting object of <code><a href="../reference/kernelshap.html">kernelshap()</a></code> and <code><a href="../reference/permshap.html">permshap()</a></code> now contain <code>bg_X</code> and <code>bg_w</code> used to calculate the SHAP values.</li>
 </ul></div>
+</div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.6.0" id="kernelshap-060">kernelshap 0.6.0<small>2024-07-12</small><a class="anchor" aria-label="anchor" href="#kernelshap-060"></a></h2>
-<p>This release is intended to be the last before stable version 1.0.0.</p>
 <div class="section level3">
 <h3 id="major-changes-0-6-0">Major changes<a class="anchor" aria-label="anchor" href="#major-changes-0-6-0"></a></h3>
 <ul><li>Factor-valued predictions are not supported anymore.</li>
