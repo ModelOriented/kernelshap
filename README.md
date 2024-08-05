@@ -30,9 +30,9 @@ A situation where the two approaches give different results: The model has inter
 ### Typical workflow to explain any model
 
 1. **Sample rows to explain:** Sample 500 to 2000 rows `X` to be explained. If the training dataset is small, simply use the full training data for this purpose. `X` should only contain feature columns.
-2. **Select background data:** Both algorithms require a representative background dataset `bg_X` to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data.
+2. **Select background data (optional):** Both algorithms require a representative background dataset `bg_X` to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data. If not specified, maximum `bg_n = 200` rows are randomly sampled from `X`.
 If the training data is small, use the full training data. In cases with a natural "off" value (like MNIST digits), this can also be a single row with all values set to the off value.
-3. **Crunch:** Use `kernelshap(object, X, bg_X, ...)` or `permshap(object, X, bg_X, ...)` to calculate SHAP values. Runtime is proportional to `nrow(X)`, while memory consumption scales linearly in `nrow(bg_X)`.
+3. **Crunch:** Use `kernelshap(object, X, bg_X = NULL, ...)` or `permshap(object, X, bg_X = NULL, ...)` to calculate SHAP values. Runtime is proportional to `nrow(X)`, while memory consumption scales linearly in `nrow(bg_X)`.
 4. **Analyze:** Use {shapviz} to visualize the results.
 
 **Remarks**

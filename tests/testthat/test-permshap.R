@@ -15,6 +15,25 @@ test_that("SHAP + baseline = prediction", {
   expect_equal(rowSums(s$S) + s$baseline, preds[c(1L, 51L, 101L)])
 })
 
+test_that("background data is automatically selected", {
+  # Here, the background data equals the full X
+  s2 <- permshap(fit, iris[, x], verbose = FALSE)
+  expect_equal(s$S, s2$S[c(1L, 51L, 101L), ])
+})
+
+test_that("missing bg_X gives error if X is very small", {
+  expect_error(permshap(fit, iris[1:10, x], verbose = FALSE))
+})
+
+test_that("missing bg_X gives error if X is very small", {
+  expect_warning(permshap(fit, iris[1:30, x], verbose = FALSE))
+})
+
+test_that("selection of bg_X can be controlled via bg_n", {
+  s2 <- permshap(fit, iris[1:30, x], verbose = FALSE, bg_n = 20L)
+  expect_equal(nrow(s2$bg_X), 20L)
+})
+
 test_that("verbose is chatty", {
   capture_output(
     expect_message(
@@ -128,6 +147,14 @@ test_that("Baseline equals weighted average prediction on background data", {
 
 test_that("SHAP + baseline = prediction works with case weights", {
   expect_equal(rowSums(s$S) + s$baseline, preds[1:5])
+})
+
+test_that("selection of bg_X and bg_w can be controlled via bg_n", {
+  s2 <- permshap(
+    fit, iris[1:30, x], verbose = FALSE, bg_w = iris$Petal.Length[1:30], bg_n = 20L
+  )
+  expect_equal(nrow(s2$bg_X), 20L)
+  expect_equal(length(s2$bg_w), 20L)
 })
 
 test_that("Decomposing a single row works with case weights", {
