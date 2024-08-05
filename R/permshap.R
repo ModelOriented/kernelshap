@@ -2,6 +2,7 @@
 #'
 #' Exact permutation SHAP algorithm with respect to a background dataset,
 #' see Strumbelj and Kononenko. The function works for up to 14 features.
+#' For eight or more features, we recomment to switch to [kernelshap()].
 #'
 #' @inheritParams kernelshap
 #' @returns
@@ -11,6 +12,8 @@
 #'   - `X`: Same as input argument `X`.
 #'   - `baseline`: Vector of length K representing the average prediction on the
 #'     background data.
+#'   - `bg_X`: The background data.
+#'   - `bg_w`: The background case weights.
 #'   - `m_exact`: Integer providing the effective number of exact on-off vectors used.
 #'   - `exact`: Logical flag indicating whether calculations are exact or not
 #'     (currently `TRUE`).
@@ -26,26 +29,23 @@
 #' fit <- lm(Sepal.Length ~ ., data = iris)
 #'
 #' # Select rows to explain (only feature columns)
-#' X_explain <- iris[1:2, -1]
-#'
-#' # Select small background dataset (could use all rows here because iris is small)
-#' set.seed(1)
-#' bg_X <- iris[sample(nrow(iris), 100), ]
+#' X_explain <- iris[-1]
 #'
 #' # Calculate SHAP values
-#' s <- permshap(fit, X_explain, bg_X = bg_X)
+#' s <- permshap(fit, X_explain)
 #' s
 #'
 #' # MODEL TWO: Multi-response linear regression
 #' fit <- lm(as.matrix(iris[, 1:2]) ~ Petal.Length + Petal.Width + Species, data = iris)
-#' s <- permshap(fit, iris[1:4, 3:5], bg_X = bg_X)
+#' s <- permshap(fit, iris[3:5])
 #' s
 #'
-#' # Non-feature columns can be dropped via 'feature_names'
+#' # Note 1: Feature columns can also be selected 'feature_names'
+#' # Note 2: Especially when X is small, pass a sufficiently large background data bg_X
 #' s <- permshap(
 #'   fit,
 #'   iris[1:4, ],
-#'   bg_X = bg_X,
+#'   bg_X = iris,
 #'   feature_names = c("Petal.Length", "Petal.Width", "Species")
 #' )
 #' s
@@ -58,16 +58,16 @@ permshap <- function(object, ...) {
 permshap.default <- function(
     object,
     X,
-    bg_X,
+    bg_X = NULL,
     pred_fun = stats::predict,
     feature_names = colnames(X),
     bg_w = NULL,
+    bg_n = 200L,
     parallel = FALSE,
     parallel_args = NULL,
     verbose = TRUE,
     ...
   ) {
-  basic_checks(X = X, bg_X = bg_X, feature_names = feature_names, pred_fun = pred_fun)
   p <- length(feature_names)
   if (p <= 1L) {
     stop("Case p = 1 not implemented. Use kernelshap() instead.")
@@ -75,20 +75,23 @@ permshap.default <- function(
   if (p > 14L) {
     stop("Permutation SHAP only supported for up to 14 features")
   }
-  n <- nrow(X)
-  bg_n <- nrow(bg_X)
-  if (!is.null(bg_w)) {
-    bg_w <- prep_w(bg_w, bg_n = bg_n)
-  }
+
   txt <- "Exact permutation SHAP"
   if (verbose) {
     message(txt)
   }
   
+  basic_checks(X = X, feature_names = feature_names, pred_fun = pred_fun)
+  prep_bg <- prepare_bg(X = X, bg_X = bg_X, bg_n = bg_n, bg_w = bg_w, verbose = verbose)
+  bg_X <- prep_bg$bg_X
+  bg_w <- prep_bg$bg_w
+  bg_n <- nrow(bg_X)
+  n <- nrow(X)
+
   # Baseline and predictions on explanation data
-  bg_preds <- align_pred(pred_fun(object, bg_X[, colnames(X), drop = FALSE], ...))
-  v0 <- wcolMeans(bg_preds, bg_w)            # Average pred of bg data: 1 x K
-  v1 <- align_pred(pred_fun(object, X, ...)) # Predictions on X:        n x K
+  bg_preds <- align_pred(pred_fun(object, bg_X, ...))
+  v0 <- wcolMeans(bg_preds, w = bg_w)         # Average pred of bg data: 1 x K
+  v1 <- align_pred(pred_fun(object, X, ...))  # Predictions on X:        n x K
   
   # Drop unnecessary columns in bg_X. If X is matrix, also column order is relevant
   # Predictions will never be applied directly to bg_X anymore
@@ -143,10 +146,15 @@ permshap.default <- function(
       }
     }
   }
+  if (verbose) {
+    cat("\n")
+  }
   out <- list(
-    S = reorganize_list(res), 
-    X = X, 
+    S = reorganize_list(res),
+    X = X,
     baseline = as.vector(v0),
+    bg_X = bg_X,
+    bg_w = bg_w,
     m_exact = m_exact,
     exact = TRUE,
     txt = txt,
@@ -162,10 +170,11 @@ permshap.default <- function(
 permshap.ranger <- function(
     object,
     X,
-    bg_X,
+    bg_X = NULL,
     pred_fun = NULL,
     feature_names = colnames(X),
     bg_w = NULL,
+    bg_n = 200L,
     parallel = FALSE,
     parallel_args = NULL,
     verbose = TRUE,
@@ -184,6 +193,7 @@ permshap.ranger <- function(
     pred_fun = pred_fun,
     feature_names = feature_names,
     bg_w = bg_w,
+    bg_n = bg_n,
     parallel = parallel,
     parallel_args = parallel_args,
     verbose = verbose,

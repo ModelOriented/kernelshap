@@ -1,10 +1,20 @@
-# kernelshap 0.6.1
-
-- `ranger()` survival models now also work out-of-the-box without passing a tailored prediction function. Use the new argument `survival = "chf"` in `kernelshap()` and `permshap()` to distinguish cumulative hazards (default) and survival probabilities per time point.
-
-# kernelshap 0.6.0
+# kernelshap 0.7.0
 
 This release is intended to be the last before stable version 1.0.0.
+
+## Major change
+
+Passing a background dataset `bg_X` is now optional.
+
+If the explanation data `X` is sufficiently large (>= 50 rows), `bg_X` is derived as a random sample of `bg_n = 200` rows from `X`. If `X` has less than `bg_n` rows, then simply 
+`bg_X = X`. If `X` has too few rows (< 50), you will have to pass an explicit `bg_X`.
+
+## Minor changes
+
+- `ranger()` survival models now also work out-of-the-box without passing a tailored prediction function. Use the new argument `survival = "chf"` in `kernelshap()` and `permshap()` to distinguish cumulative hazards (default) and survival probabilities per time point.
+- The resulting object of `kernelshap()` and `permshap()` now contain `bg_X` and `bg_w` used to calculate the SHAP values.
+
+# kernelshap 0.6.0
 
 ## Major changes
 

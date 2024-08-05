@@ -206,14 +206,16 @@ case_p1 <- function(n, feature_names, v0, v1, X, verbose) {
         as.matrix(M, dimnames = list(NULL, feature_names))
     )
   } else {
-    colnames(S) <- feature_names      
+    colnames(S) <- feature_names
   }
   out <- list(
-    S = S, 
-    X = X, 
-    baseline = as.vector(v0), 
-    SE = SE, 
-    n_iter = integer(n), 
+    S = S,
+    X = X,
+    baseline = as.vector(v0),
+    bg_X = NULL,
+    bg_w = NULL,
+    SE = SE,
+    n_iter = integer(n),
     converged = rep(TRUE, n),
     m = 0L,
     m_exact = 0L,
@@ -279,24 +281,64 @@ wrowmean_vector <- function(x, ngroups = 1L, w = NULL) {
 #' @inheritParams kernelshap
 #' 
 #' @returns TRUE or an error
-basic_checks <- function(X, bg_X, feature_names, pred_fun) {
+basic_checks <- function(X, feature_names, pred_fun) {
   stopifnot(
     is.matrix(X) || is.data.frame(X),
-    is.matrix(bg_X) || is.data.frame(bg_X),
-    is.matrix(X) == is.matrix(bg_X),
     dim(X) >= 1L,
-    dim(bg_X) >= 1L,
-    !is.null(colnames(X)),
-    !is.null(colnames(bg_X)),
     length(feature_names) >= 1L,
     all(feature_names %in% colnames(X)),
-    all(feature_names %in% colnames(bg_X)),  # not necessary, but clearer
-    all(colnames(X) %in% colnames(bg_X)),
-    is.function(pred_fun),
     "If X is a matrix, feature_names must equal colnames(X)" = 
-      !is.matrix(X) || identical(colnames(X), feature_names)
+      !is.matrix(X) || identical(colnames(X), feature_names),
+    is.function(pred_fun)
   )
   TRUE
+}
+
+#' Prepare Background Data
+#' 
+#' @noRd
+#' @keywords internal
+#' 
+#' @inheritParams kernelshap
+#' 
+#' @returns List with bg_X and bg_w.
+prepare_bg <- function(X, bg_X, bg_n, bg_w, verbose) {
+  n <- nrow(X)
+  if (is.null(bg_X)) {
+    if (n <= bg_n) {  # No subsampling required
+      if (n < min(20L, bg_n)) {
+        stop("X is too small to act as background data. Please specify 'bg_X'.")
+      }
+      if (n < min(50L, bg_n)) {
+        warning("X is quite small to act as background data. Consider specifying a larger 'bg_X'.")
+      }
+      bg_X <- X
+    } else {          # Subsampling
+      if (verbose) {
+        message("Sampling ", bg_n, " rows from X as background data.")
+      }
+      ix <- sample(n, bg_n)
+      bg_X <- X[ix, , drop = FALSE]
+      if (!is.null(bg_w)) {
+        stopifnot(length(bg_w) == n)
+        bg_w <- bg_w[ix]
+      }
+    }
+  } else {
+    stopifnot(
+      is.matrix(bg_X) || is.data.frame(bg_X),
+      is.matrix(X) == is.matrix(bg_X),
+      nrow(bg_X) >= 1L,
+      all(colnames(X) %in% colnames(bg_X))
+    )
+    bg_X <- bg_X[, colnames(X), drop = FALSE]
+  }
+
+  if (!is.null(bg_w)) {
+    bg_w <- prep_w(bg_w, bg_n = nrow(bg_X))
+  }
+
+  return(list(bg_X = bg_X, bg_w = bg_w))
 }
 
 #' Warning on Slow Computations
@@ -323,7 +365,7 @@ warning_burden <- function(m, bg_n) {
 #' @param w Vector of case weights.
 #' @param bg_n Number of rows in the background data.
 #' 
-#' @returns TRUE or an error
+#' @returns TRUE or an error.
 prep_w <- function(w, bg_n) {
   stopifnot(
     length(w) == bg_n, 
