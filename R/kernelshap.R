@@ -5,6 +5,7 @@
 #' For up to \eqn{p=8} features, the resulting Kernel SHAP values are exact regarding 
 #' the selected background data. For larger \eqn{p}, an almost exact 
 #' hybrid algorithm involving iterative sampling is used, see Details.
+#' For up to eight features, however, we recomment to use [permshap()].
 #'
 #' Pure iterative Kernel SHAP sampling as in Covert and Lee (2021) works like this:
 #' 
@@ -63,10 +64,11 @@
 #'   The columns should only represent model features, not the response 
 #'   (but see `feature_names` on how to overrule this).
 #' @param bg_X Background data used to integrate out "switched off" features, 
-#'   often a subset of the training data (typically 50 to 500 rows)
-#'   It should contain the same columns as `X`.
+#'   often a subset of the training data (typically 50 to 500 rows).
 #'   In cases with a natural "off" value (like MNIST digits), 
 #'   this can also be a single row with all values set to the off value.
+#'   If no `bg_X` is passed (the default) and if `X` is sufficiently large, 
+#'   a random sample of `bg_n` rows from `X` serves as background data.
 #' @param pred_fun Prediction function of the form `function(object, X, ...)`,
 #'   providing \eqn{K \ge 1} predictions per row. Its first argument 
 #'   represents the model `object`, its second argument a data structure like `X`. 
@@ -76,6 +78,8 @@
 #'   SHAP values. By default, this equals `colnames(X)`. Not supported if `X`
 #'   is a matrix.
 #' @param bg_w Optional vector of case weights for each row of `bg_X`.
+#'   If `bg_X = NULL`, must be of same length as `X`. Set to `NULL` for no weights.
+#' @param bg_n If `bg_X = NULL`: Size of background data to be sampled from `X`.
 #' @param exact If `TRUE`, the algorithm will produce exact Kernel SHAP values
 #'   with respect to the background data. In this case, the arguments `hybrid_degree`, 
 #'   `m`, `paired_sampling`, `tol`, and `max_iter` are ignored.
@@ -130,6 +134,8 @@
 #'   - `X`: Same as input argument `X`.
 #'   - `baseline`: Vector of length K representing the average prediction on the 
 #'     background data.
+#'   - `bg_X`: The background data.
+#'   - `bg_w`: The background case weights.
 #'   - `SE`: Standard errors corresponding to `S` (and organized like `S`).
 #'   - `n_iter`: Integer vector of length n providing the number of iterations 
 #'     per row of `X`.
@@ -155,28 +161,25 @@
 #' @examples
 #' # MODEL ONE: Linear regression
 #' fit <- lm(Sepal.Length ~ ., data = iris)
-#' 
+#'
 #' # Select rows to explain (only feature columns)
-#' X_explain <- iris[1:2, -1]
-#' 
-#' # Select small background dataset (could use all rows here because iris is small) 
-#' set.seed(1)
-#' bg_X <- iris[sample(nrow(iris), 100), ]
-#' 
+#' X_explain <- iris[-1]
+#'
 #' # Calculate SHAP values
-#' s <- kernelshap(fit, X_explain, bg_X = bg_X)
+#' s <- kernelshap(fit, X_explain)
 #' s
-#' 
+#'
 #' # MODEL TWO: Multi-response linear regression
 #' fit <- lm(as.matrix(iris[, 1:2]) ~ Petal.Length + Petal.Width + Species, data = iris)
-#' s <- kernelshap(fit, iris[1:4, 3:5], bg_X = bg_X)
-#' summary(s)
-#' 
-#' # Non-feature columns can be dropped via 'feature_names'
+#' s <- kernelshap(fit, iris[3:5])
+#' s
+#'
+#' # Note 1: Feature columns can also be selected 'feature_names'
+#' # Note 2: Especially when X is small, pass a sufficiently large background data bg_X
 #' s <- kernelshap(
-#'   fit, 
+#'   fit,
 #'   iris[1:4, ],
-#'   bg_X = bg_X, 
+#'   bg_X = iris,
 #'   feature_names = c("Petal.Length", "Petal.Width", "Species")
 #' )
 #' s
@@ -189,10 +192,11 @@ kernelshap <- function(object, ...){
 kernelshap.default <- function(
     object,
     X,
-    bg_X,
+    bg_X = NULL,
     pred_fun = stats::predict,
     feature_names = colnames(X),
     bg_w = NULL,
+    bg_n = 200L,
     exact = length(feature_names) <= 8L,
     hybrid_degree = 1L + length(feature_names) %in% 4:16,
     paired_sampling = TRUE,
@@ -204,24 +208,24 @@ kernelshap.default <- function(
     verbose = TRUE,
     ...
   ) {
-  basic_checks(X = X, bg_X = bg_X, feature_names = feature_names, pred_fun = pred_fun)
   p <- length(feature_names)
+  basic_checks(X = X, feature_names = feature_names, pred_fun = pred_fun)
   stopifnot(
     exact %in% c(TRUE, FALSE),
     p == 1L || exact || hybrid_degree %in% 0:(p / 2),
     paired_sampling %in% c(TRUE, FALSE),
     "m must be even" = trunc(m / 2) == m / 2
   )
-  n <- nrow(X)
+  prep_bg <- prepare_bg(X = X, bg_X = bg_X, bg_n = bg_n, bg_w = bg_w, verbose = verbose)
+  bg_X <- prep_bg$bg_X
+  bg_w <- prep_bg$bg_w
   bg_n <- nrow(bg_X)
-  if (!is.null(bg_w)) {
-    bg_w <- prep_w(bg_w, bg_n = bg_n)
-  }
+  n <- nrow(X)
   
   # Calculate v1 and v0
-  v1 <- align_pred(pred_fun(object, X, ...))         # Predictions on X:        n x K
-  bg_preds <- align_pred(pred_fun(object, bg_X[, colnames(X), drop = FALSE], ...))
+  bg_preds <- align_pred(pred_fun(object, bg_X, ...))
   v0 <- wcolMeans(bg_preds, bg_w)                    # Average pred of bg data: 1 x K
+  v1 <- align_pred(pred_fun(object, X, ...))         # Predictions on X:        n x K
   
   # For p = 1, exact Shapley values are returned
   if (p == 1L) {
@@ -231,18 +235,25 @@ kernelshap.default <- function(
     return(out)
   }
   
+  txt <- summarize_strategy(p, exact = exact, deg = hybrid_degree)
+  if (verbose) {
+    message(txt)
+  }
+  
   # Drop unnecessary columns in bg_X. If X is matrix, also column order is relevant
   # In what follows, predictions will never be applied directly to bg_X anymore
   if (!identical(colnames(bg_X), feature_names)) {
     bg_X <- bg_X[, feature_names, drop = FALSE]
   }
   
-  # Precalculations for the real Kernel SHAP
+  # Precalculations that are identical for each row to be explained
   if (exact || hybrid_degree >= 1L) {
     if (exact) {
       precalc <- input_exact(p, feature_names = feature_names)
     } else {
-      precalc <- input_partly_exact(p, deg = hybrid_degree, feature_names = feature_names)
+      precalc <- input_partly_exact(
+        p, deg = hybrid_degree, feature_names = feature_names
+      )
     }
     m_exact <- nrow(precalc[["Z"]])
     prop_exact <- sum(precalc[["w"]])
@@ -256,11 +267,6 @@ kernelshap.default <- function(
     precalc[["bg_X_m"]] <- rep_rows(bg_X, rep.int(seq_len(bg_n), m))
   }
   
-  # Some infos
-  txt <- summarize_strategy(p, exact = exact, deg = hybrid_degree)
-  if (verbose) {
-    message(txt)
-  }
   if (max(m, m_exact) * bg_n > 2e5) {
     warning_burden(max(m, m_exact), bg_n = bg_n)
   }
@@ -319,11 +325,18 @@ kernelshap.default <- function(
   if (verbose && !all(converged)) {
     warning("\nNon-convergence for ", sum(!converged), " rows.")
   }
+
+  if (verbose) {
+    cat("\n")
+  }
+
   out <- list(
-    S = reorganize_list(lapply(res, `[[`, "beta")), 
-    X = X, 
-    baseline = as.vector(v0), 
-    SE = reorganize_list(lapply(res, `[[`, "sigma")), 
+    S = reorganize_list(lapply(res, `[[`, "beta")),
+    X = X,
+    baseline = as.vector(v0),
+    bg_X = bg_X,
+    bg_w = bg_w,
+    SE = reorganize_list(lapply(res, `[[`, "sigma")),
     n_iter = vapply(res, `[[`, "n_iter", FUN.VALUE = integer(1L)),
     converged = converged,
     m = m,
@@ -343,10 +356,11 @@ kernelshap.default <- function(
 kernelshap.ranger <- function(
     object,
     X,
-    bg_X,
+    bg_X = NULL,
     pred_fun = NULL,
     feature_names = colnames(X),
     bg_w = NULL,
+    bg_n = 200L,
     exact = length(feature_names) <= 8L,
     hybrid_degree = 1L + length(feature_names) %in% 4:16,
     paired_sampling = TRUE,
@@ -371,6 +385,7 @@ kernelshap.ranger <- function(
     pred_fun = pred_fun,
     feature_names = feature_names,
     bg_w = bg_w,
+    bg_n = bg_n,
     exact = exact,
     hybrid_degree = hybrid_degree,
     paired_sampling = paired_sampling,

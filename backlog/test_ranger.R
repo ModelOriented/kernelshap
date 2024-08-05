@@ -12,17 +12,14 @@ fit4 <- ranger(status ~ . - time, data = veteran, probability = TRUE, num.trees 
 xvars <- setdiff(colnames(veteran), c("time", "status"))
 
 kernelshap(fit, head(veteran), feature_names = xvars, bg_X = veteran)
-permshap(fit, head(veteran), feature_names = xvars, bg_X = veteran)
-
 kernelshap(fit, head(veteran), feature_names = xvars, bg_X = veteran, survival = "prob")
-permshap(fit, head(veteran), feature_names = xvars, bg_X = veteran, survival = "prob")
-
 kernelshap(fit2, head(veteran), feature_names = xvars, bg_X = veteran)
-permshap(fit2, head(veteran), feature_names = xvars, bg_X = veteran)
-
 kernelshap(fit3, head(veteran), feature_names = xvars, bg_X = veteran, type = "quantiles")
-permshap(fit3, head(veteran), feature_names = xvars, bg_X = veteran, type = "quantiles")
-
 kernelshap(fit4, head(veteran), feature_names = xvars, bg_X = veteran)
+
+permshap(fit, head(veteran), feature_names = xvars, bg_X = veteran)
+permshap(fit, head(veteran), feature_names = xvars, bg_X = veteran, survival = "prob")
+permshap(fit2, head(veteran), feature_names = xvars, bg_X = veteran)
+permshap(fit3, head(veteran), feature_names = xvars, bg_X = veteran, type = "quantiles")
 permshap(fit4, head(veteran), feature_names = xvars, bg_X = veteran)
 

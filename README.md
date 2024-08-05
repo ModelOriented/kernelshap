@@ -30,9 +30,9 @@ A situation where the two approaches give different results: The model has inter
 ### Typical workflow to explain any model
 
 1. **Sample rows to explain:** Sample 500 to 2000 rows `X` to be explained. If the training dataset is small, simply use the full training data for this purpose. `X` should only contain feature columns.
-2. **Select background data:** Both algorithms require a representative background dataset `bg_X` to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data.
+2. **Select background data (optional):** Both algorithms require a representative background dataset `bg_X` to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data. If not specified, maximum `bg_n = 200` rows are randomly sampled from `X`.
 If the training data is small, use the full training data. In cases with a natural "off" value (like MNIST digits), this can also be a single row with all values set to the off value.
-3. **Crunch:** Use `kernelshap(object, X, bg_X, ...)` or `permshap(object, X, bg_X, ...)` to calculate SHAP values. Runtime is proportional to `nrow(X)`, while memory consumption scales linearly in `nrow(bg_X)`.
+3. **Crunch:** Use `kernelshap(object, X, bg_X = NULL, ...)` or `permshap(object, X, bg_X = NULL, ...)` to calculate SHAP values. Runtime is proportional to `nrow(X)`, while memory consumption scales linearly in `nrow(bg_X)`.
 4. **Analyze:** Use {shapviz} to visualize the results.
 
 **Remarks**
@@ -82,7 +82,8 @@ fit  # OOB R-squared 0.989
 set.seed(10)
 X <- diamonds[sample(nrow(diamonds), 1000), xvars]
 
-# 2) Select background data
+# 2) Optional: Select background data. If not specified, a random sample of 200 rows
+#    from X is used
 bg_X <- diamonds[sample(nrow(diamonds), 200), ]
 
 # 3) Crunch SHAP values for all 1000 rows of X (54 seconds)
@@ -137,9 +138,7 @@ plan(multisession, workers = 4)  # Windows
 fit <- gam(log_price ~ s(log_carat) + clarity * color + cut, data = diamonds)
 
 system.time(  # 9 seconds in parallel
-  ps <- permshap(
-    fit, X, bg_X = bg_X, parallel = TRUE, parallel_args = list(.packages = "mgcv")
-  )
+  ps <- permshap(fit, X, parallel = TRUE, parallel_args = list(.packages = "mgcv"))
 )
 ps
 
@@ -249,7 +248,7 @@ set.seed(1)
 
 # Probabilistic classification
 fit_prob <- ranger(Species ~ ., data = iris, probability = TRUE)
-ps_prob <- permshap(fit_prob, X = iris[, -5], bg_X = iris) |> 
+ps_prob <- permshap(fit_prob, X = iris[-5]) |> 
   shapviz()
 sv_importance(ps_prob)
 sv_dependence(ps_prob, "Petal.Length")
@@ -286,7 +285,7 @@ fit <- iris_wf |>
   fit(iris)
 
 system.time(  # 4s
-  ps <- permshap(fit, iris[-5], bg_X = iris, type = "prob")
+  ps <- permshap(fit, iris[-5], type = "prob")
 )
 ps
 
@@ -311,7 +310,7 @@ fit <- train(
   trControl = trainControl(method = "none")
 )
 
-ps <- permshap(fit, iris[-1], bg_X = iris)
+ps <- permshap(fit, iris[-1])
 ```
 
 #### mlr3
@@ -331,7 +330,7 @@ x <- learner_classif$selected_features()
 
 # Don't forget to pass predict_type = "prob" to mlr3's predict()
 ps <- permshap(
-  learner_classif, X = iris, bg_X = iris, feature_names = x, predict_type = "prob"
+  learner_classif, X = iris, feature_names = x, predict_type = "prob"
 )
 ps
 # $setosa
