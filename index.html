@@ -113,7 +113,7 @@
 <li>
 <strong>Sample rows to explain:</strong> Sample 500 to 2000 rows <code>X</code> to be explained. If the training dataset is small, simply use the full training data for this purpose. <code>X</code> should only contain feature columns.</li>
 <li>
-<strong>Select background data (optional):</strong> Both algorithms require a representative background dataset <code>bg_X</code> to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data. If not specified, maximum <code>bg_n = 200</code> rows are randomly sampled from <code>X</code>. If the training data is small, use the full training data. In cases with a natural “off” value (like MNIST digits), this can also be a single row with all values set to the off value.</li>
+<strong>Select background data (optional):</strong> Both algorithms require a representative background dataset <code>bg_X</code> to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data. If the training data is small, use the full training data. In cases with a natural “off” value (like MNIST digits), this can also be a single row with all values set to the off value. If not specified, maximum <code>bg_n = 200</code> rows are randomly sampled from <code>X</code>.</li>
 <li>
 <strong>Crunch:</strong> Use <code>kernelshap(object, X, bg_X = NULL, ...)</code> or <code>permshap(object, X, bg_X = NULL, ...)</code> to calculate SHAP values. Runtime is proportional to <code>nrow(X)</code>, while memory consumption scales linearly in <code>nrow(bg_X)</code>.</li>
 <li>
