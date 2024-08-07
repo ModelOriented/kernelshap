@@ -1,60 +1,34 @@
-test_that("simple additive formula gives same as permshap() if full training data is used as bg data", {
-  form <- Sepal.Length ~ .
-  fit_lm <- lm(form, data = iris)
-  fit_glm <- glm(form, data = iris, family = quasipoisson)
-  
-  s_add_lm <- additive_shap(fit_lm, head(iris), verbose = FALSE)
-  s_add_glm <- additive_shap(fit_glm, head(iris), verbose = FALSE)
-  
-  X <- head(iris[-1L])
-  s_perm_lm <- permshap(fit_lm, X = X, bg_X = iris, verbose = FALSE)
-  s_perm_glm <- permshap(
-    fit_glm, X = X, bg_X = iris, verbose = FALSE
+test_that("Additive formulas give same as agnostic SHAP with full training data as bg data", {
+  formulas <- list(
+    Sepal.Length ~ .,
+    Sepal.Length ~ log(Sepal.Width) + poly(Sepal.Width, 2) + Petal.Length,
+    form <- Sepal.Length ~ log(Sepal.Width) + Species + poly(Petal.Length, 2)
   )
-  expect_equal(s_add_lm$S, s_perm_lm$S)
-  expect_equal(s_add_glm$S, s_perm_glm$S)
-  expect_equal(s_add_lm$predictions, unname(predict(fit_lm, newdata = X)))
-  expect_equal(s_add_glm$predictions, unname(predict(fit_glm, newdata = X)))
-})
-
-test_that("formula where feature appears in two terms gives same as permshap() if full training data is used as bg data", {
-  form <- Sepal.Length ~ log(Sepal.Width) + poly(Sepal.Width, 2) + Petal.Length
-  fit_lm <- lm(form, data = iris)
-  fit_glm <- glm(form, data = iris, family = quasipoisson)
-  
-  s_add_lm <- additive_shap(fit_lm, head(iris), verbose = FALSE)
-  s_add_glm <- additive_shap(fit_glm, head(iris), verbose = FALSE)
-  
-  X <- head(iris[2:3])
-  s_perm_lm <- permshap(fit_lm, X = X, bg_X = iris, verbose = FALSE)
-  s_perm_glm <- permshap(
-    fit_glm, X = X, bg_X = iris, verbose = FALSE
+  xvars <- list(
+    setdiff(colnames(iris), "Sepal.Length"),
+    c("Sepal.Width", "Petal.Length"),
+    xvars <- c("Sepal.Width", "Petal.Length", "Species")
   )
-  expect_equal(s_add_lm$S, s_perm_lm$S)
-  expect_equal(s_add_glm$S, s_perm_glm$S)
-  expect_equal(s_add_lm$predictions, unname(predict(fit_lm, newdata = X)))
-  expect_equal(s_add_glm$predictions, unname(predict(fit_glm, newdata = X)))
-})
-
-test_that("formula with complicated terms gives same as permshap() if full training data is used as bg data", {
-  form <- Sepal.Length ~ 
-    log(Sepal.Width) + Species + poly(Petal.Length, 2)
   
-  fit_lm <- lm(form, data = iris)
-  fit_glm <- glm(form, data = iris, family = quasipoisson)
-  
-  s_add_lm <- additive_shap(fit_lm, head(iris), verbose = FALSE)
-  s_add_glm <- additive_shap(fit_glm, head(iris), verbose = FALSE)
-  
-  X <- head(iris[c(2, 3, 5)])
-  s_perm_lm <- permshap(fit_lm, X = X, bg_X = iris, verbose = FALSE)
-  s_perm_glm <- permshap(
-    fit_glm, X = X, bg_X = iris, verbose = FALSE
-  )
-  expect_equal(s_add_lm$S, s_perm_lm$S)
-  expect_equal(s_add_glm$S, s_perm_glm$S)
-  expect_equal(s_add_lm$predictions, unname(predict(fit_lm, newdata = X)))
-  expect_equal(s_add_glm$predictions, unname(predict(fit_glm, newdata = X)))
+  for (j in seq_along(formulas)) {
+    fit <- list(
+      lm = lm(formulas[[j]], data = iris),
+      glm = glm(formulas[[j]], data = iris, family = quasipoisson)
+    )
+    
+    shap1 <- lapply(fit, additive_shap, head(iris), verbose = FALSE)
+    shap2 <- lapply(
+      fit, permshap, head(iris), bg_X = iris, verbose = FALSE, feature_names = xvars[[j]]
+    )
+    shap3 <- lapply(
+      fit, kernelshap, head(iris), bg_X = iris, verbose = FALSE, feature_names = xvars[[j]]
+    )
+    
+    for (i in seq_along(fit)) {
+      expect_equal(shap1[[i]]$S, shap2[[i]]$S)
+      expect_equal(shap1[[i]]$S, shap3[[i]]$S)
+    }
+  }
 })
 
 test_that("formulas with more than one covariate per term fail", {
@@ -65,10 +39,12 @@ test_that("formulas with more than one covariate per term fail", {
   )
   
   for (formula in formulas_bad) {
-    fit <- lm(formula, data = iris)
-    expect_error(s <- additive_shap(fit, head(iris), verbose = FALSE))
-    
-    fit <- glm(formula, data = iris, family = quasipoisson)
-    expect_error(s <- additive_shap(fit, head(iris), verbose = FALSE))
+    fit <- list(
+      lm = lm(formula, data = iris),
+      glm = glm(formula, data = iris, family = quasipoisson)
+    )
+    for (f in fit)
+      expect_error(additive_shap(f, head(iris), verbose = FALSE))
   }  
 })
+

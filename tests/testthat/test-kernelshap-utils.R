@@ -1,4 +1,4 @@
-test_that("Sum of kernel weights is 1", {
+test_that("sum of kernel weights is 1", {
   for (p in 2:10) {
     expect_equal(sum(kernel_weights(p)), 1.0)
   }
@@ -121,3 +121,4 @@ test_that("input_partly_exact(p, deg) fails for bad p or deg", {
   expect_error(input_partly_exact(2L, deg = 0L, feature_names = LETTERS[1:p]))
   expect_error(input_partly_exact(5L, deg = 3L, feature_names = LETTERS[1:p]))
 })
+
