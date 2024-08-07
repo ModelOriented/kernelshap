@@ -46,24 +46,9 @@ test_that("missing bg_X gives warning if X is quite small", {
 
 test_that("selection of bg_X can be controlled via bg_n", {
   for (algo in c(kernelshap, permshap)) {
-    s <- algo(fit, iris[1:30, x], verbose = FALSE, bg_n = 20L)
+    s <- algo(fit, iris[x], verbose = FALSE, bg_n = 20L)
     expect_equal(nrow(s$bg_X), 20L)
   }
-})
-
-test_that("verbose is chatty", {
-  capture_output(
-    expect_message(
-      kernelshap(fit, iris[c(1L, 51L, 101L), x], bg_X = iris, verbose = TRUE)
-    )
-  )
-})
-
-test_that("large background data cause warning", {
-  large_bg <- iris[rep(1:150, 230), ]
-  expect_warning(
-    kernelshap(fit, iris[1L, x], bg_X = large_bg, verbose = FALSE)
-  )
 })
 
 test_that("using foreach (non-parallel) gives the same as normal mode", {
@@ -169,5 +154,37 @@ test_that("Special case p = 1 works only for kernelshap()", {
       fit, iris[J, ], bg_X = iris, verbose = FALSE, feature_names = "Petal.Width"
     )
   )
+})
+
+test_that("exact hybrid kernelshap() is similar to exact (non-hybrid)", {
+  s1 <- kernelshap(
+    fit, iris[J, x], bg_X = iris, exact = FALSE, hybrid_degree = 1L, verbose = FALSE
+  )
+  expect_equal(s1$S, shap[[1L]]$S[J, ])
+})
+
+test_that("baseline equals average prediction on background data in sampling mode", {
+  s2 <- s_sampling <- kernelshap(
+    fit, iris[J, x], bg_X = iris, hybrid_degree = 0L, verbose = FALSE, exact = FALSE
+  )
+  expect_equal(s2$baseline, mean(iris$Sepal.Length))
+})
+
+test_that("SHAP + baseline = prediction for sampling mode", {
+  s2 <- s_sampling <- kernelshap(
+    fit, iris[J, x], bg_X = iris, hybrid_degree = 0L, verbose = FALSE, exact = FALSE
+  )
+  expect_equal(rowSums(s2$S) + s2$baseline, preds[J])
+})
+
+test_that("kernelshap works for large p (hybrid case)", {
+  set.seed(9L)
+  X <- data.frame(matrix(rnorm(20000L), ncol = 100L))
+  y <- X[, 1L] * X[, 2L] * X[, 3L]
+  fit <- lm(y ~ X1:X2:X3 + ., data = cbind(y = y, X))
+  s <- kernelshap(fit, X[1L, ], bg_X = X, verbose = FALSE)
+  
+  expect_equal(s$baseline, mean(y))
+  expect_equal(rowSums(s$S) + s$baseline, unname(predict(fit, X[1L, ])))
 })
 

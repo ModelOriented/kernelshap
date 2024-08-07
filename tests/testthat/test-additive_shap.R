@@ -1,4 +1,4 @@
-test_that("Additive formulas give same as permshap() with full training data as bg data", {
+test_that("Additive formulas give same as agnostic SHAP with full training data as bg data", {
   formulas <- list(
     Sepal.Length ~ .,
     Sepal.Length ~ log(Sepal.Width) + poly(Sepal.Width, 2) + Petal.Length,
@@ -20,9 +20,13 @@ test_that("Additive formulas give same as permshap() with full training data as 
     shap2 <- lapply(
       fit, permshap, head(iris), bg_X = iris, verbose = FALSE, feature_names = xvars[[j]]
     )
+    shap3 <- lapply(
+      fit, kernelshap, head(iris), bg_X = iris, verbose = FALSE, feature_names = xvars[[j]]
+    )
     
     for (i in seq_along(fit)) {
       expect_equal(shap1[[i]]$S, shap2[[i]]$S)
+      expect_equal(shap1[[i]]$S, shap3[[i]]$S)
     }
   }
 })
@@ -43,3 +47,4 @@ test_that("formulas with more than one covariate per term fail", {
       expect_error(additive_shap(f, head(iris), verbose = FALSE))
   }  
 })
+
