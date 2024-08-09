@@ -100,7 +100,7 @@ if (FALSE) {
   check_rhub()
   
   # Takes long
-  revdepcheck::revdep_check(num_workers = 4L)
+  revdepcheck::revdep_check(num_workers = 4L, bioc = FALSE)
 
   # Wait until above checks are passed without relevant notes/warnings
   # then submit to CRAN
