@@ -1,16 +1,14 @@
-# kernelshap 0.6.0
+# kernelshap 0.7.0
 
-This update deals with a CRAN note.
+Hello CRAN team
 
-It further removes the possibility of using factor predictions and therefore a relatively big source of error.
+This update comes with a major convenience improvement: Background data is automatically sampled from the explanation data, given that is sufficiently large.
 
 ## Checks
 
 ### Local check
 
-- 0 errors
-- 0 warnings
-- 0 notes 
+0 errors | 0 warnings | 0 notes
   
 ### `check_win_devel()`
 
