@@ -51,7 +51,7 @@
         <div class="info">
           <span class="partof">part of the <a href="https://github.com/ModelOriented/DrWhy" class="external-link">DrWhy.AI</a>
            developed by the <a href="https://mi2.ai/" class="external-link">MI².AI</a> </span>
-          <span class="version version-default">0.7.0</span>
+          <span class="version version-default">0.7.1</span>
         </div>
       </div>
     </div>
@@ -171,7 +171,7 @@
 <span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a><span class="co">#    from X is used</span></span>
 <span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a>bg_X <span class="ot">&lt;-</span> diamonds[<span class="fu">sample</span>(<span class="fu">nrow</span>(diamonds), <span class="dv">200</span>), ]</span>
 <span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a></span>
-<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a><span class="co"># 3) Crunch SHAP values for all 1000 rows of X (54 seconds)</span></span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a><span class="co"># 3) Crunch SHAP values for all 1000 rows of X (22 seconds)</span></span>
 <span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a><span class="co"># Note: Since the number of features is small, we use permshap()</span></span>
 <span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a><span class="fu">system.time</span>(</span>
 <span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a>  ps <span class="ot">&lt;-</span> <span class="fu">permshap</span>(fit, X, <span class="at">bg_X =</span> bg_X)</span>
@@ -218,8 +218,10 @@
 <span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">gam</a></span><span class="op">(</span><span class="va">log_price</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/s.html" class="external-link">s</a></span><span class="op">(</span><span class="va">log_carat</span><span class="op">)</span> <span class="op">+</span> <span class="va">clarity</span> <span class="op">*</span> <span class="va">color</span> <span class="op">+</span> <span class="va">cut</span>, data <span class="op">=</span> <span class="va">diamonds</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span>  <span class="co"># 9 seconds in parallel</span></span>
-<span>  <span class="va">ps</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">X</span>, parallel <span class="op">=</span> <span class="cn">TRUE</span>, parallel_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>.packages <span class="op">=</span> <span class="st">"mgcv"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span>  <span class="co"># 4 seconds in parallel</span></span>
+<span>  <span class="va">ps</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span></span>
+<span>    <span class="va">fit</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span>, parallel <span class="op">=</span> <span class="cn">TRUE</span>, parallel_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>.packages <span class="op">=</span> <span class="st">"mgcv"</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">ps</span></span>
 <span></span>
@@ -229,7 +231,7 @@
 <span><span class="co"># [2,]  -0.51546 -0.1174766  0.11122775 0.030243973</span></span>
 <span></span>
 <span><span class="co"># Because there are no interactions of order above 2, Kernel SHAP gives the same:</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span>  <span class="co"># 27 s non-parallel</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span>  <span class="co"># 13 s non-parallel</span></span>
 <span>  <span class="va">ks</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/all.equal.html" class="external-link">all.equal</a></span><span class="op">(</span><span class="va">ps</span><span class="op">$</span><span class="va">S</span>, <span class="va">ks</span><span class="op">$</span><span class="va">S</span><span class="op">)</span></span>
@@ -280,9 +282,9 @@
 <span>  <span class="op">)</span></span>
 <span></span>
 <span><span class="va">pred_fun</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">mod</span>, <span class="va">X</span><span class="op">)</span> </span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">mod</span>, <span class="fu"><a href="https://rdrr.io/r/base/data.matrix.html" class="external-link">data.matrix</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span>, batch_size <span class="op">=</span> <span class="fl">1e4</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">mod</span>, <span class="fu"><a href="https://rdrr.io/r/base/data.matrix.html" class="external-link">data.matrix</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span>, batch_size <span class="op">=</span> <span class="fl">1e4</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, workers <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span>  <span class="co"># 60 s</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span>  <span class="co"># 50 s</span></span>
 <span>  <span class="va">ps</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">nn</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span>, pred_fun <span class="op">=</span> <span class="va">pred_fun</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -355,7 +357,7 @@
 <span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a>fit <span class="ot">&lt;-</span> iris_wf <span class="sc">|&gt;</span></span>
 <span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>  <span class="fu">fit</span>(iris)</span>
 <span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a></span>
-<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="fu">system.time</span>(  <span class="co"># 4s</span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="fu">system.time</span>(  <span class="co"># 3s</span></span>
 <span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a>  ps <span class="ot">&lt;-</span> <span class="fu">permshap</span>(fit, iris[<span class="sc">-</span><span class="dv">5</span>], <span class="at">type =</span> <span class="st">"prob"</span>)</span>
 <span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a>)</span>
 <span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a>ps</span>
