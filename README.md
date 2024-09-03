@@ -86,7 +86,7 @@ X <- diamonds[sample(nrow(diamonds), 1000), xvars]
 #    from X is used
 bg_X <- diamonds[sample(nrow(diamonds), 200), ]
 
-# 3) Crunch SHAP values for all 1000 rows of X (54 seconds)
+# 3) Crunch SHAP values for all 1000 rows of X (22 seconds)
 # Note: Since the number of features is small, we use permshap()
 system.time(
   ps <- permshap(fit, X, bg_X = bg_X)
@@ -137,8 +137,10 @@ plan(multisession, workers = 4)  # Windows
 
 fit <- gam(log_price ~ s(log_carat) + clarity * color + cut, data = diamonds)
 
-system.time(  # 9 seconds in parallel
-  ps <- permshap(fit, X, parallel = TRUE, parallel_args = list(.packages = "mgcv"))
+system.time(  # 4 seconds in parallel
+  ps <- permshap(
+    fit, X, bg_X = bg_X, parallel = TRUE, parallel_args = list(.packages = "mgcv")
+  )
 )
 ps
 
@@ -148,7 +150,7 @@ ps
 # [2,]  -0.51546 -0.1174766  0.11122775 0.030243973
 
 # Because there are no interactions of order above 2, Kernel SHAP gives the same:
-system.time(  # 27 s non-parallel
+system.time(  # 13 s non-parallel
   ks <- kernelshap(fit, X, bg_X = bg_X)
 )
 all.equal(ps$S, ks$S)
@@ -202,9 +204,9 @@ nn |>
   )
 
 pred_fun <- function(mod, X) 
-  predict(mod, data.matrix(X), batch_size = 1e4, verbose = FALSE)
+  predict(mod, data.matrix(X), batch_size = 1e4, verbose = FALSE, workers = 4)
 
-system.time(  # 60 s
+system.time(  # 50 s
   ps <- permshap(nn, X, bg_X = bg_X, pred_fun = pred_fun)
 )
 
@@ -284,7 +286,7 @@ iris_wf <- workflow() |>
 fit <- iris_wf |>
   fit(iris)
 
-system.time(  # 4s
+system.time(  # 3s
   ps <- permshap(fit, iris[-5], type = "prob")
 )
 ps

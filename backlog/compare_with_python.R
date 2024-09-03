@@ -14,9 +14,9 @@ bg_X <- diamonds[seq(1, nrow(diamonds), 450), ]
 # Subset of 1018 diamonds to explain
 X_small <- diamonds[seq(1, nrow(diamonds), 53), c("carat", ord)]
 
-# Exact KernelSHAP (5s)
+# Exact KernelSHAP (2s)
 system.time(
-  ks <- kernelshap(fit, X_small, bg_X = bg_X)  
+  ks <- kernelshap(fit, X_small, bg_X = bg_X)
 )
 ks
 
@@ -25,9 +25,9 @@ ks
 # [1,] -2.050074 -0.28048747 0.1281222 0.01587382
 # [2,] -2.085838  0.04050415 0.1283010 0.03731644
 
-# Pure sampling version takes a bit longer (12 seconds)
+# Pure sampling version takes a bit longer (7 seconds)
 system.time(
-  ks2 <- kernelshap(fit, X_small, bg_X = bg_X, exact = FALSE, hybrid_degree = 0)  
+  ks2 <- kernelshap(fit, X_small, bg_X = bg_X, exact = FALSE, hybrid_degree = 0)
 )
 ks2
 
@@ -36,18 +36,6 @@ ks2
 # [1,] -2.050074 -0.28048747 0.1281222 0.01587382
 # [2,] -2.085838  0.04050415 0.1283010 0.03731644
 
-# Using parallel backend
-library("doFuture")
-
-registerDoFuture()
-plan(multisession, workers = 2)  # Windows
-# plan(multicore, workers = 2)   # Linux, macOS, Solaris
-
-# 3 seconds
-system.time(
-  ks3 <- kernelshap(fit, X_small, bg_X = bg_X, parallel = TRUE)  
-)
-ks3
 
 library(shapviz)
 
@@ -58,18 +46,17 @@ sv_dependence(sv, "carat")
 # More features (but non-sensical model)
 # Fit model
 fit <- lm(
-  log(price) ~ log(carat) * (clarity + color + cut) + x + y + z + table + depth, 
+  log(price) ~ log(carat) * (clarity + color + cut) + x + y + z + table + depth,
   data = diamonds
 )
 
 # Subset of 1018 diamonds to explain
 X_small <- diamonds[seq(1, nrow(diamonds), 53), setdiff(names(diamonds), "price")]
 
-# Exact KernelSHAP on X_small, using X_small as background data 
-# (58/67(?) seconds for exact, 25/18 for hybrid deg 2, 16/9 for hybrid deg 1, 
-# 26/17 for pure sampling; second number with 2 parallel sessions on Windows)
+# Exact KernelSHAP on X_small, using X_small as background data
+# (39s for exact, 15s for hybrid deg 2, 8s for hybrid deg 1, 16s for sampling)
 system.time(
-  ks <- kernelshap(fit, X_small, bg_X = bg_X)  
+  ks <- kernelshap(fit, X_small, bg_X = bg_X)
 )
 ks
 
@@ -98,7 +85,7 @@ X = diamonds[x].to_numpy()
 
 # Fit model with interactions and dummy variables
 fit = ols(
-  "np.log(price) ~ np.log(carat) * (C(clarity) + C(cut) + C(color))", # + x + y + z + table + depth", 
+  "np.log(price) ~ np.log(carat) * (C(clarity) + C(cut) + C(color))", # + x + y + z + table + depth",
   data=diamonds
 ).fit()
 
@@ -110,7 +97,7 @@ X_small = X[0:len(X):53]
 
 # Calculate KernelSHAP values
 ks = KernelExplainer(
-  model=lambda X: fit.predict(pd.DataFrame(X, columns=x)), 
+  model=lambda X: fit.predict(pd.DataFrame(X, columns=x)),
   data = bg_X
 )
 sv = ks.shap_values(X_small)  # 11 minutes

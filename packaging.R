@@ -15,13 +15,13 @@ library(usethis)
 use_description(
   fields = list(
     Title = "Kernel SHAP",
-    Version = "0.7.0",
+    Version = "0.7.1",
     Description = "Efficient implementation of Kernel SHAP, see Lundberg and Lee (2017),
     and Covert and Lee (2021) <http://proceedings.mlr.press/v130/covert21a>.
     Furthermore, for up to 14 features, exact permutation SHAP values can be calculated.
     The package plays well together with meta-learning packages like 'tidymodels', 'caret' or 'mlr3'.
     Visualizations can be done using the R package 'shapviz'.",
-    `Authors@R` = 
+    `Authors@R` =
     "c(person('Michael', family='Mayer', role=c('aut', 'cre'), email='mayermichael79@gmail.com', comment=c(ORCID='0009-0007-2540-9629')),
        person('David', family='Watson', role='aut', email='david.s.watson11@gmail.com', comment=c(ORCID='0000-0001-9632-2159')),
        person('Przemyslaw', family='Biecek', email='przemyslaw.biecek@gmail.com', role='ctb', comment=c(ORCID='0000-0001-8423-1823'))
@@ -98,7 +98,7 @@ install(upgrade = FALSE)
 if (FALSE) {
   check_win_devel()
   check_rhub()
-  
+
   # Takes long
   revdepcheck::revdep_check(num_workers = 4L, bioc = FALSE)
 
