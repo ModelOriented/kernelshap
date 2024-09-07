@@ -1,3 +1,9 @@
+# kernelshap 0.7.1
+
+## Documentation
+
+- More compact README.
+
 # kernelshap 0.7.0
 
 This release is intended to be the last before stable version 1.0.0.
