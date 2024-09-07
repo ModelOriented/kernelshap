@@ -92,41 +92,27 @@
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>The package contains two workhorses to calculate SHAP values for <em>any</em> model:</p>
+<p>The package contains three functions to crunch SHAP values:</p>
 <ul>
 <li>
-<code><a href="reference/permshap.html">permshap()</a></code>: Exact permutation SHAP algorithm of [1]. Recommended for up to 8-10 features.</li>
+<code><a href="reference/permshap.html">permshap()</a></code>: Exact permutation SHAP algorithm of [1]. Recommended for models with up to 8 features.</li>
 <li>
-<code><a href="reference/kernelshap.html">kernelshap()</a></code>: Kernel SHAP algorithm of [2] and [3]. By default, exact Kernel SHAP is used for up to <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><mn>8</mn></mrow><annotation encoding="application/x-tex">p=8</annotation></semantics></math> features, and an almost exact hybrid algorithm otherwise.</li>
+<code><a href="reference/kernelshap.html">kernelshap()</a></code>: Kernel SHAP algorithm of [2] and [3]. Recommended for models with more than 8 features.</li>
+<li>
+<code><a href="reference/additive_shap.html">additive_shap()</a></code>: For <em>additive models</em> fitted via <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>, <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code>, <code><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">mgcv::gam()</a></code>, <code><a href="https://rdrr.io/pkg/mgcv/man/bam.html" class="external-link">mgcv::bam()</a></code>, <code>gam::gam()</code>, <code><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">survival::coxph()</a></code>, or <code><a href="https://rdrr.io/pkg/survival/man/survreg.html" class="external-link">survival::survreg()</a></code>. Exponentially faster than the model-agnostic options above, and recommended if possible.</li>
 </ul>
-<p>Furthermore, the function <code><a href="reference/additive_shap.html">additive_shap()</a></code> produces SHAP values for additive models fitted via <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>, <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code>, <code><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">mgcv::gam()</a></code>, <code><a href="https://rdrr.io/pkg/mgcv/man/bam.html" class="external-link">mgcv::bam()</a></code>, <code>gam::gam()</code>, <code><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">survival::coxph()</a></code>, or <code><a href="https://rdrr.io/pkg/survival/man/survreg.html" class="external-link">survival::survreg()</a></code>. It is exponentially faster than <code><a href="reference/permshap.html">permshap()</a></code> and <code><a href="reference/kernelshap.html">kernelshap()</a></code>, with identical results when the background dataset of the latter equals the full training data.</p>
-<div class="section level3">
-<h3 id="kernel-shap-or-permutation-shap">Kernel SHAP or permutation SHAP?<a class="anchor" aria-label="anchor" href="#kernel-shap-or-permutation-shap"></a>
-</h3>
-<p>Kernel SHAP has been introduced in [2] as an approximation of permutation SHAP [1]. For up to ten features, exact calculations are realistic for both algorithms. Since exact Kernel SHAP is still only an approximation of exact permutation SHAP, the latter should be preferred in this case, even if the results are often very similar.</p>
-<p>A situation where the two approaches give different results: The model has interactions of order three or higher.</p>
-</div>
-<div class="section level3">
-<h3 id="typical-workflow-to-explain-any-model">Typical workflow to explain any model<a class="anchor" aria-label="anchor" href="#typical-workflow-to-explain-any-model"></a>
-</h3>
-<ol style="list-style-type: decimal">
-<li>
-<strong>Sample rows to explain:</strong> Sample 500 to 2000 rows <code>X</code> to be explained. If the training dataset is small, simply use the full training data for this purpose. <code>X</code> should only contain feature columns.</li>
-<li>
-<strong>Select background data (optional):</strong> Both algorithms require a representative background dataset <code>bg_X</code> to calculate marginal means. For this purpose, set aside 50 to 500 rows from the training data. If the training data is small, use the full training data. In cases with a natural “off” value (like MNIST digits), this can also be a single row with all values set to the off value. If not specified, maximum <code>bg_n = 200</code> rows are randomly sampled from <code>X</code>.</li>
-<li>
-<strong>Crunch:</strong> Use <code>kernelshap(object, X, bg_X = NULL, ...)</code> or <code>permshap(object, X, bg_X = NULL, ...)</code> to calculate SHAP values. Runtime is proportional to <code>nrow(X)</code>, while memory consumption scales linearly in <code>nrow(bg_X)</code>.</li>
-<li>
-<strong>Analyze:</strong> Use {shapviz} to visualize the results.</li>
-</ol>
-<p><strong>Remarks</strong></p>
+<p>To explain your model, select an explanation dataset <code>X</code> (up to 1000 rows from the training data) and apply the recommended function. Use {shapviz} to visualize the resulting SHAP values.</p>
+<p><strong>Remarks for <code><a href="reference/permshap.html">permshap()</a></code> and <code><a href="reference/kernelshap.html">kernelshap()</a></code></strong></p>
 <ul>
-<li>Multivariate predictions are handled at no additional computational cost.</li>
-<li>Case weights are supported via the argument <code>bg_w</code>.</li>
-<li>By changing the defaults in <code><a href="reference/kernelshap.html">kernelshap()</a></code>, the iterative pure sampling approach in [3] can be enforced.</li>
-<li>The <code><a href="reference/additive_shap.html">additive_shap()</a></code> explainer is easier to use: Only the model and <code>X</code> are required.</li>
+<li>
+<code>X</code> should only contain feature columns.</li>
+<li>Both algorithms need a representative background data <code>bg_X</code> to calculate marginal means (up to 500 rows from the training data). In cases with a natural “off” value (like MNIST digits), this can also be a single row with all values set to the off value. If unspecified, 200 rows are randomly sampled from <code>X</code>.</li>
+<li>By changing the defaults in <code><a href="reference/kernelshap.html">kernelshap()</a></code>, the iterative pure sampling approach of [3] can be enforced.</li>
+<li>
+<code><a href="reference/permshap.html">permshap()</a></code> vs. <code><a href="reference/kernelshap.html">kernelshap()</a></code>: For models with interactions of order up to two, exact Kernel SHAP agrees with exact permutation SHAP.</li>
+<li>
+<code><a href="reference/additive_shap.html">additive_shap()</a></code> vs. the model-agnostic explainers: The results would agree if the full training data would be used as background data.</li>
 </ul>
-</div>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -149,7 +135,7 @@
 <span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a></span>
 <span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>diamonds <span class="ot">&lt;-</span> <span class="fu">transform</span>(</span>
 <span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  diamonds,</span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  <span class="at">log_price =</span> <span class="fu">log</span>(price), </span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  <span class="at">log_price =</span> <span class="fu">log</span>(price),</span>
 <span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>  <span class="at">log_carat =</span> <span class="fu">log</span>(carat)</span>
 <span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>)</span>
 <span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a></span>
@@ -167,35 +153,34 @@
 <span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">10</span>)</span>
 <span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a>X <span class="ot">&lt;-</span> diamonds[<span class="fu">sample</span>(<span class="fu">nrow</span>(diamonds), <span class="dv">1000</span>), xvars]</span>
 <span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a></span>
-<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co"># 2) Optional: Select background data. If not specified, a random sample of 200 rows</span></span>
-<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a><span class="co">#    from X is used</span></span>
-<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a>bg_X <span class="ot">&lt;-</span> diamonds[<span class="fu">sample</span>(<span class="fu">nrow</span>(diamonds), <span class="dv">200</span>), ]</span>
-<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a></span>
-<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a><span class="co"># 3) Crunch SHAP values for all 1000 rows of X (22 seconds)</span></span>
-<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a><span class="co"># Note: Since the number of features is small, we use permshap()</span></span>
-<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a><span class="fu">system.time</span>(</span>
-<span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a>  ps <span class="ot">&lt;-</span> <span class="fu">permshap</span>(fit, X, <span class="at">bg_X =</span> bg_X)</span>
-<span id="cb2-34"><a href="#cb2-34" tabindex="-1"></a>)</span>
-<span id="cb2-35"><a href="#cb2-35" tabindex="-1"></a>ps</span>
-<span id="cb2-36"><a href="#cb2-36" tabindex="-1"></a></span>
-<span id="cb2-37"><a href="#cb2-37" tabindex="-1"></a><span class="co"># SHAP values of first observations:</span></span>
-<span id="cb2-38"><a href="#cb2-38" tabindex="-1"></a>      log_carat     clarity       color         cut</span>
-<span id="cb2-39"><a href="#cb2-39" tabindex="-1"></a>[<span class="dv">1</span>,]  <span class="fl">1.1913247</span>  <span class="fl">0.09005467</span> <span class="sc">-</span><span class="fl">0.13430720</span> <span class="fl">0.000682593</span></span>
-<span id="cb2-40"><a href="#cb2-40" tabindex="-1"></a>[<span class="dv">2</span>,] <span class="sc">-</span><span class="fl">0.4931989</span> <span class="sc">-</span><span class="fl">0.11724773</span>  <span class="fl">0.09868921</span> <span class="fl">0.028563613</span></span>
-<span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a></span>
-<span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a><span class="co"># Kernel SHAP gives almost the same:</span></span>
-<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a><span class="fu">system.time</span>(  <span class="co"># 49 s</span></span>
-<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a>  ks <span class="ot">&lt;-</span> <span class="fu">kernelshap</span>(fit, X, <span class="at">bg_X =</span> bg_X)</span>
-<span id="cb2-45"><a href="#cb2-45" tabindex="-1"></a>)</span>
-<span id="cb2-46"><a href="#cb2-46" tabindex="-1"></a>ks</span>
-<span id="cb2-47"><a href="#cb2-47" tabindex="-1"></a><span class="co">#       log_carat     clarity       color        cut</span></span>
-<span id="cb2-48"><a href="#cb2-48" tabindex="-1"></a><span class="co"># [1,]  1.1911791  0.0900462 -0.13531648 0.001845958</span></span>
-<span id="cb2-49"><a href="#cb2-49" tabindex="-1"></a><span class="co"># [2,] -0.4927482 -0.1168517  0.09815062 0.028255442</span></span>
-<span id="cb2-50"><a href="#cb2-50" tabindex="-1"></a></span>
-<span id="cb2-51"><a href="#cb2-51" tabindex="-1"></a><span class="co"># 4) Analyze with our sister package {shapviz}</span></span>
-<span id="cb2-52"><a href="#cb2-52" tabindex="-1"></a>ps <span class="ot">&lt;-</span> <span class="fu">shapviz</span>(ps)</span>
-<span id="cb2-53"><a href="#cb2-53" tabindex="-1"></a><span class="fu">sv_importance</span>(ps)</span>
-<span id="cb2-54"><a href="#cb2-54" tabindex="-1"></a><span class="fu">sv_dependence</span>(ps, xvars)</span></code></pre></div>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co"># 2) Optional: Select background data. If unspecified, 200 rows from X are used</span></span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a>bg_X <span class="ot">&lt;-</span> diamonds[<span class="fu">sample</span>(<span class="fu">nrow</span>(diamonds), <span class="dv">200</span>), ]</span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a></span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a><span class="co"># 3) Crunch SHAP values (22 seconds)</span></span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a><span class="co"># Note: Since the number of features is small, we use permshap()</span></span>
+<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a><span class="fu">system.time</span>(</span>
+<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a>  ps <span class="ot">&lt;-</span> <span class="fu">permshap</span>(fit, X, <span class="at">bg_X =</span> bg_X)</span>
+<span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a>)</span>
+<span id="cb2-34"><a href="#cb2-34" tabindex="-1"></a>ps</span>
+<span id="cb2-35"><a href="#cb2-35" tabindex="-1"></a></span>
+<span id="cb2-36"><a href="#cb2-36" tabindex="-1"></a><span class="co"># SHAP values of first observations:</span></span>
+<span id="cb2-37"><a href="#cb2-37" tabindex="-1"></a>      log_carat     clarity       color         cut</span>
+<span id="cb2-38"><a href="#cb2-38" tabindex="-1"></a>[<span class="dv">1</span>,]  <span class="fl">1.1913247</span>  <span class="fl">0.09005467</span> <span class="sc">-</span><span class="fl">0.13430720</span> <span class="fl">0.000682593</span></span>
+<span id="cb2-39"><a href="#cb2-39" tabindex="-1"></a>[<span class="dv">2</span>,] <span class="sc">-</span><span class="fl">0.4931989</span> <span class="sc">-</span><span class="fl">0.11724773</span>  <span class="fl">0.09868921</span> <span class="fl">0.028563613</span></span>
+<span id="cb2-40"><a href="#cb2-40" tabindex="-1"></a></span>
+<span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a><span class="co"># Kernel SHAP gives almost the same:</span></span>
+<span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a><span class="fu">system.time</span>(  <span class="co"># 22 s</span></span>
+<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a>  ks <span class="ot">&lt;-</span> <span class="fu">kernelshap</span>(fit, X, <span class="at">bg_X =</span> bg_X)</span>
+<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a>)</span>
+<span id="cb2-45"><a href="#cb2-45" tabindex="-1"></a>ks</span>
+<span id="cb2-46"><a href="#cb2-46" tabindex="-1"></a><span class="co">#       log_carat     clarity       color        cut</span></span>
+<span id="cb2-47"><a href="#cb2-47" tabindex="-1"></a><span class="co"># [1,]  1.1911791  0.0900462 -0.13531648 0.001845958</span></span>
+<span id="cb2-48"><a href="#cb2-48" tabindex="-1"></a><span class="co"># [2,] -0.4927482 -0.1168517  0.09815062 0.028255442</span></span>
+<span id="cb2-49"><a href="#cb2-49" tabindex="-1"></a></span>
+<span id="cb2-50"><a href="#cb2-50" tabindex="-1"></a><span class="co"># 4) Analyze with {shapviz}</span></span>
+<span id="cb2-51"><a href="#cb2-51" tabindex="-1"></a>ps <span class="ot">&lt;-</span> <span class="fu">shapviz</span>(ps)</span>
+<span id="cb2-52"><a href="#cb2-52" tabindex="-1"></a><span class="fu">sv_importance</span>(ps)</span>
+<span id="cb2-53"><a href="#cb2-53" tabindex="-1"></a><span class="fu">sv_dependence</span>(ps, xvars)</span></code></pre></div>
 <p><img src="reference/figures/README-rf-imp.svg"></p>
 <p><img src="reference/figures/README-rf-dep.svg"></p>
 </div>
@@ -206,8 +191,8 @@
 <div class="section level3">
 <h3 id="parallel-computing">Parallel computing<a class="anchor" aria-label="anchor" href="#parallel-computing"></a>
 </h3>
-<p>Parallel computing is supported via {foreach}. Note that this does not work with all models, and that there is no progress bar.</p>
-<p>On Windows, sometimes not all packages or global objects are passed to the parallel sessions. Often, this can be fixed via <code>parallel_args</code>, see the generalized additive model below.</p>
+<p>Parallel computing for <code><a href="reference/permshap.html">permshap()</a></code> and <code><a href="reference/kernelshap.html">kernelshap()</a></code> is supported via {foreach}. Note that this does not work for all models.</p>
+<p>On Windows, sometimes not all packages or global objects are passed to the parallel sessions. Often, this can be fixed via <code>parallel_args</code>, see this example:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://doFuture.futureverse.org" class="external-link">doFuture</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">mgcv</span><span class="op">)</span></span>
@@ -216,6 +201,7 @@
 <span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">multisession</span>, workers <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>  <span class="co"># Windows</span></span>
 <span><span class="co"># plan(multicore, workers = 4)   # Linux, macOS, Solaris</span></span>
 <span></span>
+<span><span class="co"># GAM with interactions - we cannot use additive_shap()</span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">gam</a></span><span class="op">(</span><span class="va">log_price</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/s.html" class="external-link">s</a></span><span class="op">(</span><span class="va">log_carat</span><span class="op">)</span> <span class="op">+</span> <span class="va">clarity</span> <span class="op">*</span> <span class="va">color</span> <span class="op">+</span> <span class="va">cut</span>, data <span class="op">=</span> <span class="va">diamonds</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span>  <span class="co"># 4 seconds in parallel</span></span>
@@ -253,7 +239,7 @@
 <li>uses sufficiently large batches, and</li>
 <li>turns off the Keras progress bar.</li>
 </ul>
-<p>The results are not fully reproducible though.</p>
+<p>(The results are not fully reproducible.)</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tensorflow.rstudio.com/" class="external-link">keras</a></span><span class="op">)</span></span>
 <span></span>
