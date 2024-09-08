@@ -95,23 +95,20 @@
 <p>The package contains three functions to crunch SHAP values:</p>
 <ul>
 <li>
-<code><a href="reference/permshap.html">permshap()</a></code>: Exact permutation SHAP algorithm of [1]. Recommended for models with up to 8 features.</li>
+<strong><code><a href="reference/permshap.html">permshap()</a></code></strong>: Exact permutation SHAP algorithm of [1]. Recommended for models with up to 8 features.</li>
 <li>
-<code><a href="reference/kernelshap.html">kernelshap()</a></code>: Kernel SHAP algorithm of [2] and [3]. Recommended for models with more than 8 features.</li>
+<strong><code><a href="reference/kernelshap.html">kernelshap()</a></code></strong>: Kernel SHAP algorithm of [2] and [3]. Recommended for models with more than 8 features.</li>
 <li>
-<code><a href="reference/additive_shap.html">additive_shap()</a></code>: For <em>additive models</em> fitted via <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>, <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code>, <code><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">mgcv::gam()</a></code>, <code><a href="https://rdrr.io/pkg/mgcv/man/bam.html" class="external-link">mgcv::bam()</a></code>, <code>gam::gam()</code>, <code><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">survival::coxph()</a></code>, or <code><a href="https://rdrr.io/pkg/survival/man/survreg.html" class="external-link">survival::survreg()</a></code>. Exponentially faster than the model-agnostic options above, and recommended if possible.</li>
+<strong><code><a href="reference/additive_shap.html">additive_shap()</a></code></strong>: For <em>additive models</em> fitted via <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>, <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code>, <code><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">mgcv::gam()</a></code>, <code><a href="https://rdrr.io/pkg/mgcv/man/bam.html" class="external-link">mgcv::bam()</a></code>, <code>gam::gam()</code>, <code><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">survival::coxph()</a></code>, or <code><a href="https://rdrr.io/pkg/survival/man/survreg.html" class="external-link">survival::survreg()</a></code>. Exponentially faster than the model-agnostic options above, and recommended if possible.</li>
 </ul>
-<p>To explain your model, select an explanation dataset <code>X</code> (up to 1000 rows from the training data) and apply the recommended function. Use {shapviz} to visualize the resulting SHAP values.</p>
-<p><strong>Remarks for <code><a href="reference/permshap.html">permshap()</a></code> and <code><a href="reference/kernelshap.html">kernelshap()</a></code></strong></p>
+<p>To explain your model, select an explanation dataset <code>X</code> (up to 1000 rows from the training data, feature columns only) and apply the recommended function. Use {shapviz} to visualize the resulting SHAP values.</p>
+<p><strong>Remarks to <code><a href="reference/permshap.html">permshap()</a></code> and <code><a href="reference/kernelshap.html">kernelshap()</a></code></strong></p>
 <ul>
-<li>
-<code>X</code> should only contain feature columns.</li>
 <li>Both algorithms need a representative background data <code>bg_X</code> to calculate marginal means (up to 500 rows from the training data). In cases with a natural “off” value (like MNIST digits), this can also be a single row with all values set to the off value. If unspecified, 200 rows are randomly sampled from <code>X</code>.</li>
-<li>By changing the defaults in <code><a href="reference/kernelshap.html">kernelshap()</a></code>, the iterative pure sampling approach of [3] can be enforced.</li>
+<li>Exact Kernel SHAP is an approximation to exact permutation SHAP. Since exact calculations are usually sufficiently fast for up to eight features, we recommend <code><a href="reference/permshap.html">permshap()</a></code> in this case. With more features, <code><a href="reference/kernelshap.html">kernelshap()</a></code> switches to a comparably fast, almost exact algorithm. That is why we recommend <code><a href="reference/kernelshap.html">kernelshap()</a></code> in this case.</li>
+<li>For models with interactions of order up to two, SHAP values of exact permutation SHAP and exact Kernel SHAP agree.</li>
 <li>
-<code><a href="reference/permshap.html">permshap()</a></code> vs. <code><a href="reference/kernelshap.html">kernelshap()</a></code>: For models with interactions of order up to two, exact Kernel SHAP agrees with exact permutation SHAP.</li>
-<li>
-<code><a href="reference/additive_shap.html">additive_shap()</a></code> vs. the model-agnostic explainers: The results would agree if the full training data would be used as background data.</li>
+<code><a href="reference/permshap.html">permshap()</a></code> and <code><a href="reference/kernelshap.html">kernelshap()</a></code> give the same results as <code>additive_shap</code> as long as the full training data would be used as background data.</li>
 </ul>
 </div>
 <div class="section level2">

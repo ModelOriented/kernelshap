@@ -86,16 +86,16 @@ works for models fitted via</p><ul><li><p><code><a href="https://rdrr.io/r/stats
 
 
 <dl><dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
-<dd><p>Fitted model object.</p></dd>
+<dd><p>Fitted additive model.</p></dd>
 
 
 <dt id="arg-x">X<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>Dataframe with rows to be explained. Will be used like
+<dd><p>Dataframe with rows to be explained. Passed to
 <code>predict(object, newdata = X, type = "terms")</code>.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
-<dd><p>Set to <code>FALSE</code> to suppress messages and the progress bar.</p></dd>
+<dd><p>Set to <code>FALSE</code> to suppress messages.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -115,7 +115,7 @@ works for models fitted via</p><ul><li><p><code><a href="https://rdrr.io/r/stats
     <div id="details">
     <h2>Details</h2>
     <p>The SHAP values are extracted via <code>predict(object, newdata = X, type = "terms")</code>,
-a logic heavily inspired by <code>fastshap:::explain.lm(..., exact = TRUE)</code>.
+a logic adopted from <code>fastshap:::explain.lm(..., exact = TRUE)</code>.
 Models with interactions (specified via <code>:</code> or <code>*</code>), or with terms of
 multiple features like <code>log(x1/x2)</code> are not supported.</p>
 <p>Note that the SHAP values obtained by <code>additive_shap()</code> are expected to

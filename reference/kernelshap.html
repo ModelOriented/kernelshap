@@ -3,8 +3,12 @@
 Covert and Lee (2021), abbreviated by CL21.
 For up to \(p=8\) features, the resulting Kernel SHAP values are exact regarding
 the selected background data. For larger \(p\), an almost exact
-hybrid algorithm involving iterative sampling is used, see Details.
-For up to eight features, however, we recomment to use permshap()."><meta property="og:image" content="/logo.png"><meta name="robots" content="noindex"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
+hybrid algorithm combining exact calculations and iterative sampling is used,
+see Details.
+Note that (exact) Kernel SHAP is only an approximation of (exact) permutation SHAP.
+Thus, for up to eight features, we recommend permshap(). For more features,
+permshap() is slow compared the optimized hybrid strategy of our Kernel SHAP
+implementation."><meta property="og:image" content="/logo.png"><meta name="robots" content="noindex"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]--><!-- google analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-5650686-14"></script><script>
@@ -66,8 +70,12 @@ For up to eight features, however, we recomment to use permshap()."><meta proper
 Covert and Lee (2021), abbreviated by CL21.
 For up to \(p=8\) features, the resulting Kernel SHAP values are exact regarding
 the selected background data. For larger \(p\), an almost exact
-hybrid algorithm involving iterative sampling is used, see Details.
-For up to eight features, however, we recomment to use <code><a href="permshap.html">permshap()</a></code>.</p>
+hybrid algorithm combining exact calculations and iterative sampling is used,
+see Details.</p>
+<p>Note that (exact) Kernel SHAP is only an approximation of (exact) permutation SHAP.
+Thus, for up to eight features, we recommend <code><a href="permshap.html">permshap()</a></code>. For more features,
+<code><a href="permshap.html">permshap()</a></code> is slow compared the optimized hybrid strategy of our Kernel SHAP
+implementation.</p>
     </div>
 
     <div id="ref-usage">
@@ -269,7 +277,7 @@ exact calculations.</p></li>
 </ul></div>
     <div id="details">
     <h2>Details</h2>
-    <p>Pure iterative Kernel SHAP sampling as in Covert and Lee (2021) works like this:</p><ol><li><p>A binary "on-off" vector \(z\) is drawn from \(\{0, 1\}^p\)
+    <p>The pure iterative Kernel SHAP sampling as in Covert and Lee (2021) works like this:</p><ol><li><p>A binary "on-off" vector \(z\) is drawn from \(\{0, 1\}^p\)
 such that its sum follows the SHAP Kernel weight distribution
 (normalized to the range \(\{1, \dots, p-1\}\)).</p></li>
 <li><p>For each \(j\) with \(z_j = 1\), the \(j\)-th column of the
