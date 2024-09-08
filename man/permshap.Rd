@@ -94,7 +94,7 @@ background data.
 \item \code{bg_w}: The background case weights.
 \item \code{m_exact}: Integer providing the effective number of exact on-off vectors used.
 \item \code{exact}: Logical flag indicating whether calculations are exact or not
-(currently \code{TRUE}).
+(currently always \code{TRUE}).
 \item \code{txt}: Summary text.
 \item \code{predictions}: \eqn{(n \times K)} matrix with predictions of \code{X}.
 \item \code{algorithm}: "permshap".
@@ -103,7 +103,7 @@ background data.
 \description{
 Exact permutation SHAP algorithm with respect to a background dataset,
 see Strumbelj and Kononenko. The function works for up to 14 features.
-For eight or more features, we recomment to switch to \code{\link[=kernelshap]{kernelshap()}}.
+For more than eight features, we recommend \code{\link[=kernelshap]{kernelshap()}} due to its higher speed.
 }
 \section{Methods (by class)}{
 \itemize{

@@ -2,7 +2,7 @@
 #'
 #' Exact permutation SHAP algorithm with respect to a background dataset,
 #' see Strumbelj and Kononenko. The function works for up to 14 features.
-#' For eight or more features, we recomment to switch to [kernelshap()].
+#' For more than eight features, we recommend [kernelshap()] due to its higher speed.
 #'
 #' @inheritParams kernelshap
 #' @returns
@@ -16,12 +16,12 @@
 #'   - `bg_w`: The background case weights.
 #'   - `m_exact`: Integer providing the effective number of exact on-off vectors used.
 #'   - `exact`: Logical flag indicating whether calculations are exact or not
-#'     (currently `TRUE`).
+#'     (currently always `TRUE`).
 #'   - `txt`: Summary text.
 #'   - `predictions`: \eqn{(n \times K)} matrix with predictions of `X`.
 #'   - `algorithm`: "permshap".
 #' @references
-#'   1. Erik Strumbelj and Igor Kononenko. Explaining prediction models and individual 
+#'   1. Erik Strumbelj and Igor Kononenko. Explaining prediction models and individual
 #'     predictions with feature contributions. Knowledge and Information Systems 41, 2014.
 #' @export
 #' @examples
@@ -80,7 +80,7 @@ permshap.default <- function(
   if (verbose) {
     message(txt)
   }
-  
+
   basic_checks(X = X, feature_names = feature_names, pred_fun = pred_fun)
   prep_bg <- prepare_bg(X = X, bg_X = bg_X, bg_n = bg_n, bg_w = bg_w, verbose = verbose)
   bg_X <- prep_bg$bg_X
@@ -92,32 +92,32 @@ permshap.default <- function(
   bg_preds <- align_pred(pred_fun(object, bg_X, ...))
   v0 <- wcolMeans(bg_preds, w = bg_w)         # Average pred of bg data: 1 x K
   v1 <- align_pred(pred_fun(object, X, ...))  # Predictions on X:        n x K
-  
+
   # Drop unnecessary columns in bg_X. If X is matrix, also column order is relevant
   # Predictions will never be applied directly to bg_X anymore
   if (!identical(colnames(bg_X), feature_names)) {
     bg_X <- bg_X[, feature_names, drop = FALSE]
   }
-  
+
   # Precalculations that are identical for each row to be explained
   Z <- exact_Z(p, feature_names = feature_names, keep_extremes = TRUE)
   m_exact <- nrow(Z) - 2L  # We won't evaluate vz for first and last row
   precalc <- list(
     Z = Z,
-    Z_code = rowpaste(Z), 
+    Z_code = rowpaste(Z),
     bg_X_rep = rep_rows(bg_X, rep.int(seq_len(bg_n), m_exact))
   )
-  
+
   if (m_exact * bg_n > 2e5) {
     warning_burden(m_exact, bg_n = bg_n)
   }
-  
+
   # Apply permutation SHAP to each row of X
   if (isTRUE(parallel)) {
     parallel_args <- c(list(i = seq_len(n)), parallel_args)
     res <- do.call(foreach::foreach, parallel_args) %dopar% permshap_one(
       x = X[i, , drop = FALSE],
-      v1 = v1[i, , drop = FALSE], 
+      v1 = v1[i, , drop = FALSE],
       object = object,
       pred_fun = pred_fun,
       bg_w = bg_w,
@@ -133,7 +133,7 @@ permshap.default <- function(
     for (i in seq_len(n)) {
       res[[i]] <- permshap_one(
         x = X[i, , drop = FALSE],
-        v1 = v1[i, , drop = FALSE], 
+        v1 = v1[i, , drop = FALSE],
         object = object,
         pred_fun = pred_fun,
         bg_w = bg_w,
