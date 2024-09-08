@@ -7,12 +7,12 @@
 additive_shap(object, X, verbose = TRUE, ...)
 }
 \arguments{
-\item{object}{Fitted model object.}
+\item{object}{Fitted additive model.}
 
-\item{X}{Dataframe with rows to be explained. Will be used like
+\item{X}{Dataframe with rows to be explained. Passed to
 \code{predict(object, newdata = X, type = "terms")}.}
 
-\item{verbose}{Set to \code{FALSE} to suppress messages and the progress bar.}
+\item{verbose}{Set to \code{FALSE} to suppress messages.}
 
 \item{...}{Currently unused.}
 }
@@ -43,7 +43,7 @@ works for models fitted via
 }
 \details{
 The SHAP values are extracted via \code{predict(object, newdata = X, type = "terms")},
-a logic heavily inspired by \code{fastshap:::explain.lm(..., exact = TRUE)}.
+a logic adopted from \code{fastshap:::explain.lm(..., exact = TRUE)}.
 Models with interactions (specified via \code{:} or \code{*}), or with terms of
 multiple features like \code{log(x1/x2)} are not supported.
 

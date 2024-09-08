@@ -15,19 +15,18 @@
 
 The package contains three functions to crunch SHAP values:
 
-- `permshap()`: Exact permutation SHAP algorithm of [1]. Recommended for models with up to 8 features.
-- `kernelshap()`: Kernel SHAP algorithm of [2] and [3]. Recommended for models with more than 8 features.
-- `additive_shap()`: For *additive models* fitted via `lm()`, `glm()`, `mgcv::gam()`, `mgcv::bam()`, `gam::gam()`, `survival::coxph()`, or `survival::survreg()`. Exponentially faster than the model-agnostic options above, and recommended if possible.
+- **`permshap()`**: Exact permutation SHAP algorithm of [1]. Recommended for models with up to 8 features.
+- **`kernelshap()`**: Kernel SHAP algorithm of [2] and [3]. Recommended for models with more than 8 features.
+- **`additive_shap()`**: For *additive models* fitted via `lm()`, `glm()`, `mgcv::gam()`, `mgcv::bam()`, `gam::gam()`, `survival::coxph()`, or `survival::survreg()`. Exponentially faster than the model-agnostic options above, and recommended if possible.
 
-To explain your model, select an explanation dataset `X` (up to 1000 rows from the training data) and apply the recommended function. Use {shapviz} to visualize the resulting SHAP values. 
+To explain your model, select an explanation dataset `X` (up to 1000 rows from the training data, feature columns only) and apply the recommended function. Use {shapviz} to visualize the resulting SHAP values. 
 
-**Remarks for `permshap()` and `kernelshap()`**
+**Remarks to `permshap()` and `kernelshap()`**
 
-- `X` should only contain feature columns.
 - Both algorithms need a representative background data `bg_X` to calculate marginal means (up to 500 rows from the training data). In cases with a natural "off" value (like MNIST digits), this can also be a single row with all values set to the off value. If unspecified, 200 rows are randomly sampled from `X`.
-- By changing the defaults in `kernelshap()`, the iterative pure sampling approach of [3] can be enforced.
-- `permshap()` vs. `kernelshap()`: For models with interactions of order up to two, exact Kernel SHAP agrees with exact permutation SHAP.
-- `additive_shap()` vs. the model-agnostic explainers: The results would agree if the full training data would be used as background data.
+- Exact Kernel SHAP is an approximation to exact permutation SHAP. Since exact calculations are usually sufficiently fast for up to eight features, we recommend `permshap()` in this case. With more features, `kernelshap()` switches to a comparably fast, almost exact algorithm. That is why we recommend `kernelshap()` in this case.
+- For models with interactions of order up to two, SHAP values of exact permutation SHAP and exact Kernel SHAP agree.
+- `permshap()` and `kernelshap()` give the same results as `additive_shap` as long as the full training data would be used as background data.
 
 ## Installation
 

@@ -169,11 +169,16 @@ Efficient implementation of Kernel SHAP, see Lundberg and Lee (2017), and
 Covert and Lee (2021), abbreviated by CL21.
 For up to \eqn{p=8} features, the resulting Kernel SHAP values are exact regarding
 the selected background data. For larger \eqn{p}, an almost exact
-hybrid algorithm involving iterative sampling is used, see Details.
-For up to eight features, however, we recomment to use \code{\link[=permshap]{permshap()}}.
+hybrid algorithm combining exact calculations and iterative sampling is used,
+see Details.
+
+Note that (exact) Kernel SHAP is only an approximation of (exact) permutation SHAP.
+Thus, for up to eight features, we recommend \code{\link[=permshap]{permshap()}}. For more features,
+\code{\link[=permshap]{permshap()}} is slow compared the optimized hybrid strategy of our Kernel SHAP
+implementation.
 }
 \details{
-Pure iterative Kernel SHAP sampling as in Covert and Lee (2021) works like this:
+The pure iterative Kernel SHAP sampling as in Covert and Lee (2021) works like this:
 \enumerate{
 \item A binary "on-off" vector \eqn{z} is drawn from \eqn{\{0, 1\}^p}
 such that its sum follows the SHAP Kernel weight distribution

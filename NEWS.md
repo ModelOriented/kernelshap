@@ -3,6 +3,7 @@
 ## Documentation
 
 - More compact README.
+- Updated function description.
 
 # kernelshap 0.7.0
 
