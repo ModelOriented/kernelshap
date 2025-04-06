@@ -5,6 +5,10 @@
 - More compact README.
 - Updated function description.
 
+## Maintenance
+
+- Update code coverage version [#150](https://github.com/ModelOriented/kernelshap/pull/150).
+
 # kernelshap 0.7.0
 
 This release is intended to be the last before stable version 1.0.0.
