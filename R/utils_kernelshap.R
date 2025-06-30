@@ -1,83 +1,83 @@
 # Kernel SHAP algorithm for a single row x
 # If exact, a single call to predict() is necessary.
 # If sampling is involved, we need at least two additional calls to predict().
-kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, deg, 
+kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, deg,
                            paired, m, tol, max_iter, v0, precalc, ...) {
   p <- length(feature_names)
-  
+
   # Calculate A_exact and b_exact
   if (exact || deg >= 1L) {
-    A_exact <- precalc[["A"]]                                     #  (p x p)
-    bg_X_exact <- precalc[["bg_X_exact"]]                         #  (m_ex*n_bg x p)
-    Z <- precalc[["Z"]]                                           #  (m_ex x p)
+    A_exact <- precalc[["A"]] #  (p x p)
+    bg_X_exact <- precalc[["bg_X_exact"]] #  (m_ex*n_bg x p)
+    Z <- precalc[["Z"]] #  (m_ex x p)
     m_exact <- nrow(Z)
-    v0_m_exact <- v0[rep.int(1L, m_exact), , drop = FALSE]        #  (m_ex x K)
+    v0_m_exact <- v0[rep.int(1L, m_exact), , drop = FALSE] #  (m_ex x K)
 
     # Most expensive part
-    vz <- get_vz(                                                 #  (m_ex x K)
-      X = rep_rows(x, rep.int(1L, nrow(bg_X_exact))),             #  (m_ex*n_bg x p)
-      bg = bg_X_exact,                                            #  (m_ex*n_bg x p)
-      Z = Z,                                                      #  (m_ex x p)
-      object = object, 
+    vz <- get_vz( #  (m_ex x K)
+      X = rep_rows(x, rep.int(1L, nrow(bg_X_exact))), #  (m_ex*n_bg x p)
+      bg = bg_X_exact, #  (m_ex*n_bg x p)
+      Z = Z, #  (m_ex x p)
+      object = object,
       pred_fun = pred_fun,
-      w = bg_w, 
+      w = bg_w,
       ...
     )
     # Note: w is correctly replicated along columns of (vz - v0_m_exact)
-    b_exact <- crossprod(Z, precalc[["w"]] * (vz - v0_m_exact))   #  (p x K)
-    
+    b_exact <- crossprod(Z, precalc[["w"]] * (vz - v0_m_exact)) #  (p x K)
+
     # Some of the hybrid cases are exact as well
     if (exact || trunc(p / 2) == deg) {
-      beta <- solver(A_exact, b_exact, constraint = v1 - v0)      #  (p x K)
-      return(list(beta = beta, sigma = 0 * beta, n_iter = 1L, converged = TRUE))  
+      beta <- solver(A_exact, b_exact, constraint = v1 - v0) #  (p x K)
+      return(list(beta = beta, sigma = 0 * beta, n_iter = 1L, converged = TRUE))
     }
-  } 
-  
+  }
+
   # Iterative sampling part, always using A_exact and b_exact to fill up the weights
-  bg_X_m <- precalc[["bg_X_m"]]                                   #  (m*n_bg x p)
-  X <- rep_rows(x, rep.int(1L, nrow(bg_X_m)))                     #  (m*n_bg x p)
-  v0_m <- v0[rep.int(1L, m), , drop = FALSE]                      #  (m x K)
-  
-  est_m = list()
+  bg_X_m <- precalc[["bg_X_m"]] #  (m*n_bg x p)
+  X <- rep_rows(x, rep.int(1L, nrow(bg_X_m))) #  (m*n_bg x p)
+  v0_m <- v0[rep.int(1L, m), , drop = FALSE] #  (m x K)
+
+  est_m <- list()
   converged <- FALSE
   n_iter <- 0L
-  A_sum <- matrix(                                                #  (p x p)
-    0, nrow = p, ncol = p, dimnames = list(feature_names, feature_names)
+  A_sum <- matrix( #  (p x p)
+    data = 0, nrow = p, ncol = p, dimnames = list(feature_names, feature_names)
   )
-  b_sum <- matrix(                                                #  (p x K)
-    0, nrow = p, ncol = ncol(v0), dimnames = list(feature_names, colnames(v1))
-  )      
+  b_sum <- matrix( #  (p x K)
+    data = 0, nrow = p, ncol = ncol(v0), dimnames = list(feature_names, colnames(v1))
+  )
   if (deg == 0L) {
     A_exact <- A_sum
     b_exact <- b_sum
   }
-  
-  while(!isTRUE(converged) && n_iter < max_iter) {
+
+  while (!isTRUE(converged) && n_iter < max_iter) {
     n_iter <- n_iter + 1L
     input <- input_sampling(
       p = p, m = m, deg = deg, paired = paired, feature_names = feature_names
     )
     Z <- input[["Z"]]
-    
+
     # Expensive                                                              #  (m x K)
     vz <- get_vz(
       X = X, bg = bg_X_m, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
     )
-    
+
     # The sum of weights of A_exact and input[["A"]] is 1, same for b
-    A_temp <- A_exact + input[["A"]]                                         #  (p x p)
-    b_temp <- b_exact + crossprod(Z, input[["w"]] * (vz - v0_m))             #  (p x K)
-    A_sum <- A_sum + A_temp                                                  #  (p x p)
-    b_sum <- b_sum + b_temp                                                  #  (p x K)
-    
-    # Least-squares with constraint that beta_1 + ... + beta_p = v_1 - v_0. 
-    # The additional constraint beta_0 = v_0 is dealt via offset   
-    est_m[[n_iter]] <- solver(A_temp, b_temp, constraint = v1 - v0)          #  (p x K)
-    
+    A_temp <- A_exact + input[["A"]] #  (p x p)
+    b_temp <- b_exact + crossprod(Z, input[["w"]] * (vz - v0_m)) #  (p x K)
+    A_sum <- A_sum + A_temp #  (p x p)
+    b_sum <- b_sum + b_temp #  (p x K)
+
+    # Least-squares with constraint that beta_1 + ... + beta_p = v_1 - v_0.
+    # The additional constraint beta_0 = v_0 is dealt via offset
+    est_m[[n_iter]] <- solver(A_temp, b_temp, constraint = v1 - v0) #  (p x K)
+
     # Covariance calculation would fail in the first iteration
     if (n_iter >= 2L) {
       beta_n <- solver(A_sum / n_iter, b_sum / n_iter, constraint = v1 - v0) #  (p x K)
-      sigma_n <- get_sigma(est_m, iter = n_iter)                             #  (p x K)
+      sigma_n <- get_sigma(est_m, iter = n_iter) #  (p x K)
       converged <- all(conv_crit(sigma_n, beta_n) < tol)
     }
   }
@@ -90,27 +90,27 @@ solver <- function(A, b, constraint) {
   p <- ncol(A)
   Ainv <- MASS::ginv(A)
   dimnames(Ainv) <- dimnames(A)
-  s <- (matrix(colSums(Ainv %*% b), nrow = 1L) - constraint) / sum(Ainv)     #  (1 x K)
-  Ainv %*% (b - s[rep.int(1L, p), , drop = FALSE])                           #  (p x K)
+  s <- (matrix(colSums(Ainv %*% b), nrow = 1L) - constraint) / sum(Ainv) #  (1 x K)
+  Ainv %*% (b - s[rep.int(1L, p), , drop = FALSE]) #  (p x K)
 }
 
-# Draw m binary vectors z of length p with sum(z) distributed according 
-# to Kernel SHAP weights -> (m x p) matrix. 
+# Draw m binary vectors z of length p with sum(z) distributed according
+# to Kernel SHAP weights -> (m x p) matrix.
 # The argument S can be used to restrict the range of sum(z).
 sample_Z <- function(p, m, feature_names, S = 1:(p - 1L)) {
   # First draw s = sum(z) according to Kernel weights (renormalized to sum 1)
   probs <- kernel_weights(p, S = S)
   N <- S[sample.int(length(S), m, replace = TRUE, prob = probs)]
-  
+
   # Then, conditional on that number, set random positions of z to 1
   # Original, unvectorized code
   # out <- vapply(
-  #   N, 
-  #   function(z) {out <- numeric(p); out[sample(1:p, z)] <- 1; out}, 
+  #   N,
+  #   function(z) {out <- numeric(p); out[sample(1:p, z)] <- 1; out},
   #   FUN.VALUE = numeric(p)
   # )
   # t(out)
-  
+
   # Vectorized by Mathias Ambuehl
   out <- rep(rep.int(0:1, m), as.vector(rbind(p - N, N)))
   dim(out) <- c(p, m)
@@ -122,7 +122,7 @@ sample_Z <- function(p, m, feature_names, S = 1:(p - 1L)) {
 
 # Calculate standard error from list of m estimates
 get_sigma <- function(est, iter) {
-  apply(abind1(est), 3L, FUN = function(Y) sqrt(diag(stats::cov(Y)) / iter))
+  apply(abind1(est), 2L:3L, FUN = sd) / sqrt(iter)
 }
 
 # Convergence criterion
@@ -173,8 +173,8 @@ input_exact <- function(p, feature_names) {
 
 #' Exact Matrix A
 #'
-#' Internal function that calculates exact A. 
-#' Notice the difference to the off-diagnonals in the Supplement of 
+#' Internal function that calculates exact A.
+#' Notice the difference to the off-diagnonals in the Supplement of
 #' Covert and Lee (2021). Credits to David Watson for figuring out the correct formula,
 #' see our discussions in https://github.com/ModelOriented/kernelshap/issues/22
 #'
@@ -189,7 +189,7 @@ exact_A <- function(p, feature_names) {
   c_pr <- S * (S - 1) / p / (p - 1)
   off_diag <- sum(kernel_weights(p) * c_pr)
   A <- matrix(
-    off_diag, nrow = p, ncol = p, dimnames = list(feature_names, feature_names)
+    data = off_diag, nrow = p, ncol = p, dimnames = list(feature_names, feature_names)
   )
   diag(A) <- 0.5
   A
@@ -207,7 +207,11 @@ partly_exact_Z <- function(p, k, feature_names) {
     Z <- diag(p)
   } else {
     Z <- t(
-      utils::combn(seq_len(p), k, FUN = function(z) {x <- numeric(p); x[z] <- 1; x})
+      utils::combn(seq_len(p), k, FUN = function(z) {
+        x <- numeric(p)
+        x[z] <- 1
+        x
+      })
     )
   }
   if (p != 2L * k) {
@@ -228,10 +232,10 @@ input_partly_exact <- function(p, deg, feature_names) {
   if (p < 2L * deg) {
     stop("p must be >=2*deg")
   }
-  
+
   kw <- kernel_weights(p)
   Z <- w <- vector("list", deg)
-  
+
   for (k in seq_len(deg)) {
     Z[[k]] <- partly_exact_Z(p, k = k, feature_names = feature_names)
     n <- nrow(Z[[k]])
@@ -240,7 +244,7 @@ input_partly_exact <- function(p, deg, feature_names) {
   }
   w <- unlist(w, recursive = FALSE, use.names = FALSE)
   Z <- do.call(rbind, Z)
-  
+
   list(Z = Z, w = w, A = crossprod(Z, w * Z))
 }
 
