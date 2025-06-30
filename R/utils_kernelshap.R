@@ -52,7 +52,7 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
     b_exact <- b_sum
   }
 
-  while (!isTRUE(converged) && n_iter < max_iter) {
+  while (!converged && n_iter < max_iter) {
     n_iter <- n_iter + 1L
     input <- input_sampling(
       p = p, m = m, deg = deg, paired = paired, feature_names = feature_names
