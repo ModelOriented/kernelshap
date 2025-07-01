@@ -1,3 +1,15 @@
+# kernelshap 0.8.0
+
+### Major improvement
+
+`permshap()` now uses a sampling approach when the number of features p is larger than 8. 
+The algorithm iterates until the resulting values are sufficiently precise.
+Additionally, standard errors are provided.
+
+During each iteration, the algorithm runs p antithetic sampling schemes, each
+starting at a different feature. We call this **balanced antithetic sampling**. 
+Each iteration amounts to evaluating the Shapley formula 2p times per feature.
+
 # kernelshap 0.7.1
 
 ## Documentation

@@ -1,9 +1,16 @@
 #' Permutation SHAP
 #'
-#' Exact permutation SHAP algorithm with respect to a background dataset,
-#' see Strumbelj and Kononenko. The function works for up to 14 features.
-#' For more than eight features, we recommend [kernelshap()] due to its higher speed.
+#' Permutation SHAP algorithm with respect to a background dataset,
+#' see Strumbelj and Kononenko.
+#' For up to `p = 8` features, by default, exact permutation SHAP is calculated.
+#' for more features, a sampling version is used. Per iteration, a total of
+#' \eqn{p \cdot (2p + 1)} permutations are evaluated.
+#' The algorithm iterates until convergence.
 #'
+#' @param low_memory If `FALSE` (default up to p = 20), the algorithm calculates
+#'   predictions for all chains per iteration at once, which is faster but requires
+#'   more memory. If `TRUE`, the algorithm calculates predictions for each chain
+#'   separately,
 #' @inheritParams kernelshap
 #' @returns
 #'   An object of class "kernelshap" with the following components:
@@ -14,9 +21,13 @@
 #'     background data.
 #'   - `bg_X`: The background data.
 #'   - `bg_w`: The background case weights.
-#'   - `m_exact`: Integer providing the effective number of exact on-off vectors used.
-#'   - `exact`: Logical flag indicating whether calculations are exact or not
-#'     (currently always `TRUE`).
+#'   - `SE`: Standard errors corresponding to `S` (and organized like `S`).
+#'   - `n_iter`: Integer vector of length n providing the number of iterations
+#'     per row of `X`.
+#'   - `converged`: Logical vector of length n indicating convergence per row of `X`.
+#'   - `m`: Integer providing the number of permutations per iteration.
+#'   - `m_exact`: Integer providing the number of permutations for exact calculations.
+#'   - `exact`: Logical flag indicating whether calculations are exact or not.
 #'   - `txt`: Summary text.
 #'   - `predictions`: \eqn{(n \times K)} matrix with predictions of `X`.
 #'   - `algorithm`: "permshap".
@@ -63,20 +74,23 @@ permshap.default <- function(
     feature_names = colnames(X),
     bg_w = NULL,
     bg_n = 200L,
+    exact = length(feature_names) <= 8L,
+    low_memory = length(feature_names) > 20L,
+    tol = 0.01,
+    max_iter = 10L,
     parallel = FALSE,
     parallel_args = NULL,
     verbose = TRUE,
-    ...
-  ) {
+    ...) {
   p <- length(feature_names)
   if (p <= 1L) {
     stop("Case p = 1 not implemented. Use kernelshap() instead.")
   }
-  if (p > 14L) {
-    stop("Permutation SHAP only supported for up to 14 features")
+  if (exact && p > 14L) {
+    stop("Exact permutation SHAP only supported for up to 14 features")
   }
 
-  txt <- "Exact permutation SHAP"
+  txt <- paste(if (exact) "Exact" else "Sampling version of", "permutation SHAP")
   if (verbose) {
     message(txt)
   }
@@ -90,8 +104,8 @@ permshap.default <- function(
 
   # Baseline and predictions on explanation data
   bg_preds <- align_pred(pred_fun(object, bg_X, ...))
-  v0 <- wcolMeans(bg_preds, w = bg_w)         # Average pred of bg data: 1 x K
-  v1 <- align_pred(pred_fun(object, X, ...))  # Predictions on X:        n x K
+  v0 <- wcolMeans(bg_preds, w = bg_w) # Average pred of bg data: 1 x K
+  v1 <- align_pred(pred_fun(object, X, ...)) # Predictions on X:        n x K
 
   # Drop unnecessary columns in bg_X. If X is matrix, also column order is relevant
   # Predictions will never be applied directly to bg_X anymore
@@ -99,16 +113,25 @@ permshap.default <- function(
     bg_X <- bg_X[, feature_names, drop = FALSE]
   }
 
-  # Precalculations that are identical for each row to be explained
-  Z <- exact_Z(p, feature_names = feature_names, keep_extremes = TRUE)
-  m_exact <- nrow(Z) - 2L  # We won't evaluate vz for first and last row
-  precalc <- list(
-    Z = Z,
-    Z_code = rowpaste(Z),
-    bg_X_rep = rep_rows(bg_X, rep.int(seq_len(bg_n), m_exact))
-  )
+  # Pre-calculations that are identical for each row to be explained
+  if (exact) {
+    Z <- exact_Z(p, feature_names = feature_names, keep_extremes = TRUE)
+    m <- 0L
+    m_exact <- nrow(Z) - 2L # We won't evaluate vz for first and last row
+    precalc <- list(
+      Z = Z,
+      Z_code = rowpaste(Z),
+      bg_X_rep = rep_rows(bg_X, rep.int(seq_len(bg_n), m_exact))
+    )
+  } else {
+    m <- 2L * (p - 1L) * (if (low_memory) 1L else p)
+    m_exact <- 0L
+    precalc <- list(
+      bg_X_rep = rep_rows(bg_X, rep.int(seq_len(bg_n), m))
+    )
+  }
 
-  if (m_exact * bg_n > 2e5) {
+  if (max(m, m_exact) * bg_n > 2e5) {
     warning_burden(m_exact, bg_n = bg_n)
   }
 
@@ -123,6 +146,11 @@ permshap.default <- function(
       bg_w = bg_w,
       v0 = v0,
       precalc = precalc,
+      feature_names = feature_names,
+      exact = exact,
+      low_memory = low_memory,
+      tol = tol,
+      max_iter = max_iter,
       ...
     )
   } else {
@@ -139,6 +167,11 @@ permshap.default <- function(
         bg_w = bg_w,
         v0 = v0,
         precalc = precalc,
+        feature_names = feature_names,
+        exact = exact,
+        low_memory = low_memory,
+        tol = tol,
+        max_iter = max_iter,
         ...
       )
       if (verbose && n >= 2L) {
@@ -146,17 +179,27 @@ permshap.default <- function(
       }
     }
   }
+
+  # Organize output
+  converged <- vapply(res, `[[`, "converged", FUN.VALUE = logical(1L))
+  if (!exact && verbose && !all(converged)) {
+    warning("\nNon-convergence for ", sum(!converged), " rows.")
+  }
   if (verbose) {
     cat("\n")
   }
   out <- list(
-    S = reorganize_list(res),
+    S = reorganize_list(lapply(res, `[[`, "beta")),
     X = X,
     baseline = as.vector(v0),
     bg_X = bg_X,
     bg_w = bg_w,
+    SE = reorganize_list(lapply(res, `[[`, "sigma")),
+    n_iter = vapply(res, `[[`, "n_iter", FUN.VALUE = integer(1L)),
+    converged = converged,
+    m = m,
     m_exact = m_exact,
-    exact = TRUE,
+    exact = exact,
     txt = txt,
     predictions = v1,
     algorithm = "permshap"
@@ -164,6 +207,7 @@ permshap.default <- function(
   class(out) <- "kernelshap"
   out
 }
+
 
 #' @describeIn permshap Permutation SHAP method for "ranger" models, see Readme for an example.
 #' @export
@@ -175,13 +219,15 @@ permshap.ranger <- function(
     feature_names = colnames(X),
     bg_w = NULL,
     bg_n = 200L,
+    exact = length(feature_names) <= 8L,
+    low_memory = length(feature_names) > 20L,
+    tol = 0.01,
+    max_iter = 10L,
     parallel = FALSE,
     parallel_args = NULL,
     verbose = TRUE,
     survival = c("chf", "prob"),
-    ...
-  ) {
-
+    ...) {
   if (is.null(pred_fun)) {
     pred_fun <- create_ranger_pred_fun(object$treetype, survival = match.arg(survival))
   }
@@ -194,10 +240,13 @@ permshap.ranger <- function(
     feature_names = feature_names,
     bg_w = bg_w,
     bg_n = bg_n,
+    exact = exact,
+    low_memory = low_memory,
+    tol = tol,
+    max_iter = max_iter,
     parallel = parallel,
     parallel_args = parallel_args,
     verbose = verbose,
     ...
   )
 }
-

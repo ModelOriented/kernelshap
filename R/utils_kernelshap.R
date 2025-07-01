@@ -120,11 +120,6 @@ sample_Z <- function(p, m, feature_names, S = 1:(p - 1L)) {
   t(out)
 }
 
-# Calculate standard error from list of m estimates
-get_sigma <- function(est, iter) {
-  apply(abind1(est), 2L:3L, FUN = sd) / sqrt(iter)
-}
-
 # Convergence criterion
 conv_crit <- function(sig, bet) {
   if (any(dim(sig) != dim(bet))) {
