@@ -3,7 +3,7 @@
 Covert and Lee (2021), abbreviated by CL21.
 For up to p=8 features, the resulting SHAP values are exact regarding
 the selected background data. For larger p, an almost exact
-hybrid algorithm combining exact calculations and iterative sampling is used,
+hybrid algorithm combining exact calculations and iterative paired sampling is used,
 see Details.
 Note that (exact) Kernel SHAP is only an approximation of (exact) permutation SHAP.
 Thus, for up to eight features, we recommend permshap(). For more features,
@@ -69,7 +69,7 @@ permshap() is inefficient compared the optimized hybrid strategy of Kernel SHAP.
 Covert and Lee (2021), abbreviated by CL21.
 For up to p=8 features, the resulting SHAP values are exact regarding
 the selected background data. For larger p, an almost exact
-hybrid algorithm combining exact calculations and iterative sampling is used,
+hybrid algorithm combining exact calculations and iterative paired sampling is used,
 see Details.</p>
 <p>Note that (exact) Kernel SHAP is only an approximation of (exact) permutation SHAP.
 Thus, for up to eight features, we recommend <code><a href="permshap.html">permshap()</a></code>. For more features,
@@ -90,7 +90,6 @@ Thus, for up to eight features, we recommend <code><a href="permshap.html">perms
 <span>  bg_n <span class="op">=</span> <span class="fl">200L</span>,</span>
 <span>  exact <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">feature_names</span><span class="op">)</span> <span class="op">&lt;=</span> <span class="fl">8L</span>,</span>
 <span>  hybrid_degree <span class="op">=</span> <span class="fl">1L</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">feature_names</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fl">4</span><span class="op">:</span><span class="fl">16</span>,</span>
-<span>  paired_sampling <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  m <span class="op">=</span> <span class="fl">2L</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">feature_names</span><span class="op">)</span> <span class="op">*</span> <span class="op">(</span><span class="fl">1L</span> <span class="op">+</span> <span class="fl">3L</span> <span class="op">*</span> <span class="op">(</span><span class="va">hybrid_degree</span> <span class="op">==</span> <span class="fl">0L</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  tol <span class="op">=</span> <span class="fl">0.005</span>,</span>
 <span>  max_iter <span class="op">=</span> <span class="fl">100L</span>,</span>
@@ -111,7 +110,6 @@ Thus, for up to eight features, we recommend <code><a href="permshap.html">perms
 <span>  bg_n <span class="op">=</span> <span class="fl">200L</span>,</span>
 <span>  exact <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">feature_names</span><span class="op">)</span> <span class="op">&lt;=</span> <span class="fl">8L</span>,</span>
 <span>  hybrid_degree <span class="op">=</span> <span class="fl">1L</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">feature_names</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fl">4</span><span class="op">:</span><span class="fl">16</span>,</span>
-<span>  paired_sampling <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  m <span class="op">=</span> <span class="fl">2L</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">feature_names</span><span class="op">)</span> <span class="op">*</span> <span class="op">(</span><span class="fl">1L</span> <span class="op">+</span> <span class="fl">3L</span> <span class="op">*</span> <span class="op">(</span><span class="va">hybrid_degree</span> <span class="op">==</span> <span class="fl">0L</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  tol <span class="op">=</span> <span class="fl">0.005</span>,</span>
 <span>  max_iter <span class="op">=</span> <span class="fl">100L</span>,</span>
@@ -195,14 +193,6 @@ Convergence usually happens in the minimal possible number of iterations of two.
 <li><p><code>k&gt;2</code>: Uses all on-off vectors with
 \(\sum z \in \{1, \dots, k, p-k, \dots, p-1\}\).</p></li>
 </ul></dd>
-
-
-<dt id="arg-paired-sampling">paired_sampling<a class="anchor" aria-label="anchor" href="#arg-paired-sampling"></a></dt>
-<dd><p>Logical flag indicating whether to do the sampling in a paired
-manner. This means that with every on-off vector \(z\), also \(1-z\) is
-considered. CL21 shows its superiority compared to standard sampling, therefore the
-default (<code>TRUE</code>) should usually not be changed except for studying properties
-of Kernel SHAP algorithms. Ignored if <code>exact = TRUE</code>.</p></dd>
 
 
 <dt id="arg-m">m<a class="anchor" aria-label="anchor" href="#arg-m"></a></dt>
