@@ -63,6 +63,11 @@
 <p>During each iteration, the algorithm runs p antithetic sampling schemes, each starting at a different feature. We call this <strong>balanced antithetic sampling</strong>. Each iteration amounts to evaluating Shapley’s formula 2p times per feature. For models with interactions up to order two, this strategy provides exact SHAP values with a single iteration. In this case, the results also agree with Kernel SHAP.</p>
 </div>
 <div class="section level4">
+<h4 id="user-visible-changes-0-8-0">User visible changes<a class="anchor" aria-label="anchor" href="#user-visible-changes-0-8-0"></a></h4>
+<ul><li>In exact mode, <code><a href="../reference/kernelshap.html">kernelshap()</a></code> now does not return the following elements anymore: <code>m</code> (= 0), <code>converged</code> (all <code>TRUE</code>), <code>n_iter</code> (all 1), and <code>SE</code> (all values 0) <a href="https://github.com/ModelOriented/kernelshap/pull/153" class="external-link">#153</a>.</li>
+<li>In sampling mode. <code><a href="../reference/kernelshap.html">kernelshap()</a></code> returns above elements at the end of the output <a href="https://github.com/ModelOriented/kernelshap/pull/153" class="external-link">#153</a>.</li>
+</ul></div>
+<div class="section level4">
 <h4 id="documentation-0-8-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-8-0"></a></h4>
 <ul><li>New DESCRIPTION file.</li>
 </ul></div>
