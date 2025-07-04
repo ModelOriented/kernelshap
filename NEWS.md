@@ -12,6 +12,12 @@ Each iteration amounts to evaluating Shapley's formula 2p times per feature.
 For models with interactions up to order two, this strategy provides exact SHAP values
 with a single iteration. In this case, the results also agree with Kernel SHAP.
 
+### User visible changes
+
+- In exact mode, `kernelshap()` now does not return the following elements anymore:
+  `m` (= 0), `converged` (all `TRUE`), `n_iter` (all 1), and `SE` (all values 0)  [#153](https://github.com/ModelOriented/kernelshap/pull/153).
+- In sampling mode. `kernelshap()` returns above elements at the end of the output [#153](https://github.com/ModelOriented/kernelshap/pull/153).
+
 ### Documentation
 
 - New DESCRIPTION file.

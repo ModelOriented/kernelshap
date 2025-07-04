@@ -147,34 +147,32 @@ dimension \eqn{K > 1}, a list of \eqn{K} such matrices.
 background data.
 \item \code{bg_X}: The background data.
 \item \code{bg_w}: The background case weights.
-\item \code{SE}: Standard errors corresponding to \code{S} (and organized like \code{S}).
-\item \code{n_iter}: Integer vector of length n providing the number of iterations
-per row of \code{X}.
-\item \code{converged}: Logical vector of length n indicating convergence per row of \code{X}.
-\item \code{m}: Integer providing the effective number of sampled on-off vectors used
-per iteration.
-\item \code{m_exact}: Integer providing the effective number of exact on-off vectors used
-per iteration.
+\item \code{m_exact}: Number of on-off vectors for exact calculations per iteration.
 \item \code{prop_exact}: Proportion of the Kernel SHAP weight distribution covered by
 exact calculations.
 \item \code{exact}: Logical flag indicating whether calculations are exact or not.
 \item \code{txt}: Summary text.
 \item \code{predictions}: \eqn{(n \times K)} matrix with predictions of \code{X}.
 \item \code{algorithm}: "kernelshap".
+\item \code{m}: Number of sampled on-off vectors used per iteration (if sampling needed).
+\item \code{SE}: Standard errors corresponding to \code{S} (if sampling needed).
+\item \code{n_iter}: Integer vector of length n providing the number of iterations
+per row of \code{X} (if sampling needed).
+\item \code{converged}: Logical vector of length n indicating convergence per row of \code{X}
+(if sampling needed).
 }
 }
 \description{
 Efficient implementation of Kernel SHAP, see Lundberg and Lee (2017), and
 Covert and Lee (2021), abbreviated by CL21.
-For up to \eqn{p=8} features, the resulting Kernel SHAP values are exact regarding
-the selected background data. For larger \eqn{p}, an almost exact
+For up to p=8 features, the resulting SHAP values are exact regarding
+the selected background data. For larger p, an almost exact
 hybrid algorithm combining exact calculations and iterative sampling is used,
 see Details.
 
 Note that (exact) Kernel SHAP is only an approximation of (exact) permutation SHAP.
 Thus, for up to eight features, we recommend \code{\link[=permshap]{permshap()}}. For more features,
-\code{\link[=permshap]{permshap()}} is slow compared the optimized hybrid strategy of our Kernel SHAP
-implementation.
+\code{\link[=permshap]{permshap()}} is inefficient compared the optimized hybrid strategy of Kernel SHAP.
 }
 \details{
 The pure iterative Kernel SHAP sampling as in Covert and Lee (2021) works like this:

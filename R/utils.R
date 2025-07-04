@@ -220,9 +220,7 @@ case_p1 <- function(n, feature_names, v0, v1, X, verbose) {
     message(txt)
   }
   S <- v1 - v0[rep(1L, n), , drop = FALSE] #  (n x K)
-  SE <- matrix(numeric(n), dimnames = list(NULL, feature_names)) #  (n x 1)
   if (ncol(v1) > 1L) {
-    SE <- replicate(ncol(v1), SE, simplify = FALSE)
     S <- lapply(
       asplit(S, MARGIN = 2L), function(M) {
         as.matrix(M, dimnames = list(NULL, feature_names))
@@ -237,10 +235,6 @@ case_p1 <- function(n, feature_names, v0, v1, X, verbose) {
     baseline = as.vector(v0),
     bg_X = NULL,
     bg_w = NULL,
-    SE = SE,
-    n_iter = integer(n),
-    converged = rep(TRUE, n),
-    m = 0L,
     m_exact = 0L,
     prop_exact = 1,
     exact = TRUE,

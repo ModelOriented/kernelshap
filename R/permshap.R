@@ -4,14 +4,15 @@
 #' Permutation SHAP algorithm with respect to a background dataset,
 #' see Strumbelj and Kononenko.
 #'
-#' By default, for up to p=8 features, exact SHAP values are provided.
+#' For up to p=8 features, the resulting SHAP values are exact regarding
+#' the selected background data.
 #' For larger p, we use a sampling approach that iterates until the resulting values
 #' are sufficiently precise. In this case, standard errors are provided.
 #' During each iteration, the algorithm runs p antithetic sampling schemes, each
-#' starting at a different feature. We call this **balanced antithetic sampling**.
+#' starting with a different feature. We call this **balanced antithetic sampling**.
 #' Each iteration amounts to evaluating Shapley's formula 2p times per feature.
 #' For models with interactions up to order two, this strategy provides exact SHAP values
-#' within a single iteration. In this case, the results also agree with Kernel SHAP.
+#' within a single iteration, and the results agree with Kernel SHAP.
 #'
 #' @param low_memory If `FALSE` (default up to p = 20), the algorithm requires p times
 #' as much memory as when `low_memory = TRUE`.
@@ -25,8 +26,7 @@
 #'     background data.
 #'   - `bg_X`: The background data.
 #'   - `bg_w`: The background case weights.
-#'   - `m`: Integer providing the number of on-off vectors evaluated
-#'      (if sampling needed, per iteration).
+#'   - `m`: Number of on-off vectors evaluated (if sampling needed: per iteration).
 #'   - `exact`: Logical flag indicating whether calculations are exact or not.
 #'   - `txt`: Summary text.
 #'   - `predictions`: \eqn{(n \times K)} matrix with predictions of `X`.
@@ -209,7 +209,7 @@ permshap.default <- function(
     cat("\n")
   }
   class(out) <- "kernelshap"
-  out
+  return(out)
 }
 
 

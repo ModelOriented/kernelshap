@@ -118,8 +118,7 @@ dimension \eqn{K > 1}, a list of \eqn{K} such matrices.
 background data.
 \item \code{bg_X}: The background data.
 \item \code{bg_w}: The background case weights.
-\item \code{m}: Integer providing the number of on-off vectors evaluated
-(if sampling needed, per iteration).
+\item \code{m}: Number of on-off vectors evaluated (if sampling needed: per iteration).
 \item \code{exact}: Logical flag indicating whether calculations are exact or not.
 \item \code{txt}: Summary text.
 \item \code{predictions}: \eqn{(n \times K)} matrix with predictions of \code{X}.
@@ -135,14 +134,15 @@ per row of \code{X} (if sampling needed).
 Permutation SHAP algorithm with respect to a background dataset,
 see Strumbelj and Kononenko.
 
-By default, for up to p=8 features, exact SHAP values are provided.
+For up to p=8 features, the resulting SHAP values are exact regarding
+the selected background data.
 For larger p, we use a sampling approach that iterates until the resulting values
 are sufficiently precise. In this case, standard errors are provided.
 During each iteration, the algorithm runs p antithetic sampling schemes, each
-starting at a different feature. We call this \strong{balanced antithetic sampling}.
+starting with a different feature. We call this \strong{balanced antithetic sampling}.
 Each iteration amounts to evaluating Shapley's formula 2p times per feature.
 For models with interactions up to order two, this strategy provides exact SHAP values
-within a single iteration. In this case, the results also agree with Kernel SHAP.
+within a single iteration, and the results agree with Kernel SHAP.
 }
 \section{Methods (by class)}{
 \itemize{
