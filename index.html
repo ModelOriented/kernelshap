@@ -20,7 +20,7 @@
 <link href="dalexverse-2.css" rel="stylesheet">
 <!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
 <script src="pkgdown.js"></script><meta property="og:title" content="Kernel SHAP">
-<meta property="og:description" content="Efficient implementation of Kernel SHAP, see Lundberg and Lee (2017), and Covert and Lee (2021) &lt;http://proceedings.mlr.press/v130/covert21a&gt;. Furthermore, for up to 14 features, exact permutation SHAP values can be calculated. The package plays well together with meta-learning packages like tidymodels, caret or mlr3. Visualizations can be done using the R package shapviz.">
+<meta property="og:description" content="Efficient implementation of Kernel SHAP (Lundberg and Lee, 2017, &lt;doi:10.48550/arXiv.1705.07874&gt;) permutation SHAP, and additive SHAP for model interpretability. For Kernel SHAP and permutation SHAP, if the number of features is too large for exact calculations, the algorithms iterate until the SHAP values are sufficiently precise in terms of their standard errors. The package integrates smoothly with meta-learning packages such as tidymodels, caret or mlr3. It supports multi-output models, case weights, and parallel computations. Visualizations can be done using the R package shapviz.">
 <meta property="og:image" content="/logo.png">
 <meta name="robots" content="noindex">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
@@ -51,7 +51,7 @@
         <div class="info">
           <span class="partof">part of the <a href="https://github.com/ModelOriented/DrWhy" class="external-link">DrWhy.AI</a>
            developed by the <a href="https://mi2.ai/" class="external-link">MI².AI</a> </span>
-          <span class="version version-default">0.7.1</span>
+          <span class="version version-default">0.8.0</span>
         </div>
       </div>
     </div>
@@ -95,7 +95,7 @@
 <p>The package contains three functions to crunch SHAP values:</p>
 <ul>
 <li>
-<strong><code><a href="reference/permshap.html">permshap()</a></code></strong>: Exact permutation SHAP algorithm of [1]. Recommended for models with up to 8 features.</li>
+<strong><code><a href="reference/permshap.html">permshap()</a></code></strong>: Permutation SHAP algorithm of [1]. Recommended for models with up to 8 features, or if you don’t trust Kernel SHAP.</li>
 <li>
 <strong><code><a href="reference/kernelshap.html">kernelshap()</a></code></strong>: Kernel SHAP algorithm of [2] and [3]. Recommended for models with more than 8 features.</li>
 <li>
@@ -105,8 +105,8 @@
 <p><strong>Remarks to <code><a href="reference/permshap.html">permshap()</a></code> and <code><a href="reference/kernelshap.html">kernelshap()</a></code></strong></p>
 <ul>
 <li>Both algorithms need a representative background data <code>bg_X</code> to calculate marginal means (up to 500 rows from the training data). In cases with a natural “off” value (like MNIST digits), this can also be a single row with all values set to the off value. If unspecified, 200 rows are randomly sampled from <code>X</code>.</li>
-<li>Exact Kernel SHAP is an approximation to exact permutation SHAP. Since exact calculations are usually sufficiently fast for up to eight features, we recommend <code><a href="reference/permshap.html">permshap()</a></code> in this case. With more features, <code><a href="reference/kernelshap.html">kernelshap()</a></code> switches to a comparably fast, almost exact algorithm. That is why we recommend <code><a href="reference/kernelshap.html">kernelshap()</a></code> in this case.</li>
-<li>For models with interactions of order up to two, SHAP values of exact permutation SHAP and exact Kernel SHAP agree.</li>
+<li>Exact Kernel SHAP is an approximation to exact permutation SHAP. Since exact calculations are usually sufficiently fast for up to eight features, we recommend <code><a href="reference/permshap.html">permshap()</a></code> in this case. With more features, <code><a href="reference/kernelshap.html">kernelshap()</a></code> switches to a comparably fast, almost exact algorithm with faster convergence than the sampling version of permutation SHAP. That is why we recommend <code><a href="reference/kernelshap.html">kernelshap()</a></code> in this case.</li>
+<li>For models with interactions of order up to two, SHAP values of permutation SHAP and Kernel SHAP agree, and the sampling versions provide the same results as the exact versions after minimal number of iterations.</li>
 <li>
 <code><a href="reference/permshap.html">permshap()</a></code> and <code><a href="reference/kernelshap.html">kernelshap()</a></code> give the same results as <code>additive_shap</code> as long as the full training data would be used as background data.</li>
 </ul>
@@ -165,26 +165,27 @@
 <span id="cb2-38"><a href="#cb2-38" tabindex="-1"></a>[<span class="dv">1</span>,]  <span class="fl">1.1913247</span>  <span class="fl">0.09005467</span> <span class="sc">-</span><span class="fl">0.13430720</span> <span class="fl">0.000682593</span></span>
 <span id="cb2-39"><a href="#cb2-39" tabindex="-1"></a>[<span class="dv">2</span>,] <span class="sc">-</span><span class="fl">0.4931989</span> <span class="sc">-</span><span class="fl">0.11724773</span>  <span class="fl">0.09868921</span> <span class="fl">0.028563613</span></span>
 <span id="cb2-40"><a href="#cb2-40" tabindex="-1"></a></span>
-<span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a><span class="co"># Kernel SHAP gives almost the same:</span></span>
-<span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a><span class="fu">system.time</span>(  <span class="co"># 22 s</span></span>
-<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a>  ks <span class="ot">&lt;-</span> <span class="fu">kernelshap</span>(fit, X, <span class="at">bg_X =</span> bg_X)</span>
-<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a>)</span>
-<span id="cb2-45"><a href="#cb2-45" tabindex="-1"></a>ks</span>
-<span id="cb2-46"><a href="#cb2-46" tabindex="-1"></a><span class="co">#       log_carat     clarity       color        cut</span></span>
-<span id="cb2-47"><a href="#cb2-47" tabindex="-1"></a><span class="co"># [1,]  1.1911791  0.0900462 -0.13531648 0.001845958</span></span>
-<span id="cb2-48"><a href="#cb2-48" tabindex="-1"></a><span class="co"># [2,] -0.4927482 -0.1168517  0.09815062 0.028255442</span></span>
-<span id="cb2-49"><a href="#cb2-49" tabindex="-1"></a></span>
-<span id="cb2-50"><a href="#cb2-50" tabindex="-1"></a><span class="co"># 4) Analyze with {shapviz}</span></span>
-<span id="cb2-51"><a href="#cb2-51" tabindex="-1"></a>ps <span class="ot">&lt;-</span> <span class="fu">shapviz</span>(ps)</span>
-<span id="cb2-52"><a href="#cb2-52" tabindex="-1"></a><span class="fu">sv_importance</span>(ps)</span>
-<span id="cb2-53"><a href="#cb2-53" tabindex="-1"></a><span class="fu">sv_dependence</span>(ps, xvars)</span></code></pre></div>
+<span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a><span class="co"># Kernel SHAP gives very slightly different values because the model contains</span></span>
+<span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a><span class="co"># interations of order &gt; 2:</span></span>
+<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a><span class="fu">system.time</span>(  <span class="co"># 22 s</span></span>
+<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a>  ks <span class="ot">&lt;-</span> <span class="fu">kernelshap</span>(fit, X, <span class="at">bg_X =</span> bg_X)</span>
+<span id="cb2-45"><a href="#cb2-45" tabindex="-1"></a>)</span>
+<span id="cb2-46"><a href="#cb2-46" tabindex="-1"></a>ks</span>
+<span id="cb2-47"><a href="#cb2-47" tabindex="-1"></a><span class="co">#       log_carat     clarity       color        cut</span></span>
+<span id="cb2-48"><a href="#cb2-48" tabindex="-1"></a><span class="co"># [1,]  1.1911791  0.0900462 -0.13531648 0.001845958</span></span>
+<span id="cb2-49"><a href="#cb2-49" tabindex="-1"></a><span class="co"># [2,] -0.4927482 -0.1168517  0.09815062 0.028255442</span></span>
+<span id="cb2-50"><a href="#cb2-50" tabindex="-1"></a></span>
+<span id="cb2-51"><a href="#cb2-51" tabindex="-1"></a><span class="co"># 4) Analyze with {shapviz}</span></span>
+<span id="cb2-52"><a href="#cb2-52" tabindex="-1"></a>ps <span class="ot">&lt;-</span> <span class="fu">shapviz</span>(ps)</span>
+<span id="cb2-53"><a href="#cb2-53" tabindex="-1"></a><span class="fu">sv_importance</span>(ps)</span>
+<span id="cb2-54"><a href="#cb2-54" tabindex="-1"></a><span class="fu">sv_dependence</span>(ps, xvars)</span></code></pre></div>
 <p><img src="reference/figures/README-rf-imp.svg"></p>
 <p><img src="reference/figures/README-rf-dep.svg"></p>
 </div>
 <div class="section level2">
 <h2 id="more-examples">More Examples<a class="anchor" aria-label="anchor" href="#more-examples"></a>
 </h2>
-<p>{kernelshap} can deal with almost any situation. We will show some of the flexibility here. The first two examples require you to run at least up to Step 2 of the “Basic Usage” code.</p>
+<p>The {kernelshap} package can deal with almost any situation. We will show some of the flexibility here. The first two examples require you to run at least up to Step 2 of the “Basic Usage” code.</p>
 <div class="section level3">
 <h3 id="parallel-computing">Parallel computing<a class="anchor" aria-label="anchor" href="#parallel-computing"></a>
 </h3>
@@ -435,8 +436,8 @@
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>Michael Mayer <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0009-0007-2540-9629" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> </li>
-<li>David Watson <br><small class="roles"> Author </small> <a href="https://orcid.org/0000-0001-9632-2159" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> </li>
+<li>Michael Mayer <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0009-0007-2540-9629" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
+<li>David Watson <br><small class="roles"> Author </small> <a href="https://orcid.org/0000-0001-9632-2159" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
 <li><a href="authors.html">More about authors...</a></li>
 </ul>
 </div>
@@ -463,7 +464,7 @@
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
       </footer>

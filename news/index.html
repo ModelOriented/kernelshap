@@ -25,7 +25,7 @@
         <div class="info">
           <span class="partof">part of the <a href="https://github.com/ModelOriented/DrWhy" class="external-link">DrWhy.AI</a>
            developed by the <a href="https://mi2.ai/" class="external-link">MI².AI</a> </span>
-          <span class="version version-default">0.7.1</span>
+          <span class="version version-default">0.8.0</span>
         </div>
       </div>
     </div>
@@ -55,6 +55,18 @@
       <small>Source: <a href="https://github.com/ModelOriented/kernelshap/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="0.8.0" id="kernelshap-080">kernelshap 0.8.0<a class="anchor" aria-label="anchor" href="#kernelshap-080"></a></h2>
+<div class="section level4">
+<h4 id="major-improvement-0-8-0">Major improvement<a class="anchor" aria-label="anchor" href="#major-improvement-0-8-0"></a></h4>
+<p><code><a href="../reference/permshap.html">permshap()</a></code> now uses a sampling approach when the number of features p is larger than 8. The algorithm iterates until the resulting values are sufficiently precise. Additionally, standard errors are provided <a href="https://github.com/ModelOriented/kernelshap/pull/152" class="external-link">#152</a>.</p>
+<p>During each iteration, the algorithm runs p antithetic sampling schemes, each starting at a different feature. We call this <strong>balanced antithetic sampling</strong>. Each iteration amounts to evaluating Shapley’s formula 2p times per feature. For models with interactions up to order two, this strategy provides exact SHAP values with a single iteration. In this case, the results also agree with Kernel SHAP.</p>
+</div>
+<div class="section level4">
+<h4 id="documentation-0-8-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-8-0"></a></h4>
+<ul><li>New DESCRIPTION file.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.7.1" id="kernelshap-071">kernelshap 0.7.1<a class="anchor" aria-label="anchor" href="#kernelshap-071"></a></h2>
 <div class="section level3">
@@ -362,7 +374,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
       </footer></div>
