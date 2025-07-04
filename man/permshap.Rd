@@ -16,6 +16,10 @@ permshap(object, ...)
   feature_names = colnames(X),
   bg_w = NULL,
   bg_n = 200L,
+  exact = length(feature_names) <= 8L,
+  low_memory = length(feature_names) > 20L,
+  tol = 0.01,
+  max_iter = 10L,
   parallel = FALSE,
   parallel_args = NULL,
   verbose = TRUE,
@@ -30,6 +34,10 @@ permshap(object, ...)
   feature_names = colnames(X),
   bg_w = NULL,
   bg_n = 200L,
+  exact = length(feature_names) <= 8L,
+  low_memory = length(feature_names) > 20L,
+  tol = 0.01,
+  max_iter = 10L,
   parallel = FALSE,
   parallel_args = NULL,
   verbose = TRUE,
@@ -68,6 +76,24 @@ If \code{bg_X = NULL}, must be of same length as \code{X}. Set to \code{NULL} fo
 
 \item{bg_n}{If \code{bg_X = NULL}: Size of background data to be sampled from \code{X}.}
 
+\item{exact}{If \code{TRUE}, the algorithm will produce exact SHAP values
+with respect to the background data.
+The default is \code{TRUE} for up to eight features, and \code{FALSE} otherwise.}
+
+\item{low_memory}{If \code{FALSE} (default up to p = 20), the algorithm requires p times
+as much memory as when \code{low_memory = TRUE}.}
+
+\item{tol}{Tolerance determining when to stop. As in CL21, the algorithm keeps
+iterating until \eqn{\textrm{max}(\sigma_n)/(\textrm{max}(\beta_n) - \textrm{min}(\beta_n)) < \textrm{tol}},
+where the \eqn{\beta_n} are the SHAP values of a given observation,
+and \eqn{\sigma_n} their standard errors.
+For multidimensional predictions, the criterion must be satisfied for each
+dimension separately. The stopping criterion uses the fact that standard errors
+and SHAP values are all on the same scale. Ignored if \code{exact = TRUE}.}
+
+\item{max_iter}{If the stopping criterion (see \code{tol}) is not reached after
+\code{max_iter} iterations, the algorithm stops. Ignored if \code{exact = TRUE}.}
+
 \item{parallel}{If \code{TRUE}, use parallel \code{\link[foreach:foreach]{foreach::foreach()}} to loop over rows
 to be explained. Must register backend beforehand, e.g., via 'doFuture' package,
 see README for an example. Parallelization automatically disables the progress bar.}
@@ -92,18 +118,31 @@ dimension \eqn{K > 1}, a list of \eqn{K} such matrices.
 background data.
 \item \code{bg_X}: The background data.
 \item \code{bg_w}: The background case weights.
-\item \code{m_exact}: Integer providing the effective number of exact on-off vectors used.
-\item \code{exact}: Logical flag indicating whether calculations are exact or not
-(currently always \code{TRUE}).
+\item \code{m}: Integer providing the number of on-off vectors evaluated
+(if sampling needed, per iteration).
+\item \code{exact}: Logical flag indicating whether calculations are exact or not.
 \item \code{txt}: Summary text.
 \item \code{predictions}: \eqn{(n \times K)} matrix with predictions of \code{X}.
 \item \code{algorithm}: "permshap".
+\item \code{SE}: Standard errors corresponding to \code{S} (if sampling needed).
+\item \code{n_iter}: Integer vector of length n providing the number of iterations
+per row of \code{X} (if sampling needed).
+\item \code{converged}: Logical vector of length n indicating convergence per row of \code{X}
+(if sampling needed).
 }
 }
 \description{
-Exact permutation SHAP algorithm with respect to a background dataset,
-see Strumbelj and Kononenko. The function works for up to 14 features.
-For more than eight features, we recommend \code{\link[=kernelshap]{kernelshap()}} due to its higher speed.
+Permutation SHAP algorithm with respect to a background dataset,
+see Strumbelj and Kononenko.
+
+By default, for up to p=8 features, exact SHAP values are provided.
+For larger p, we use a sampling approach that iterates until the resulting values
+are sufficiently precise. In this case, standard errors are provided.
+During each iteration, the algorithm runs p antithetic sampling schemes, each
+starting at a different feature. We call this \strong{balanced antithetic sampling}.
+Each iteration amounts to evaluating Shapley's formula 2p times per feature.
+For models with interactions up to order two, this strategy provides exact SHAP values
+within a single iteration. In this case, the results also agree with Kernel SHAP.
 }
 \section{Methods (by class)}{
 \itemize{

@@ -1,18 +1,18 @@
 #' Fast Row Subsetting
-#' 
+#'
 #' Internal function used to row-subset data.frames.
 #' Brings a massive speed-up for data.frames. All other classes (tibble, data.table,
 #' matrix) are subsetted in the usual way.
-#' 
+#'
 #' @noRd
 #' @keywords internal
-#' 
+#'
 #' @param x A matrix-like object.
 #' @param i Logical or integer vector of rows to pick.
 #' @returns Subsetted version of `x`.
 rep_rows <- function(x, i) {
   if (!(all(class(x) == "data.frame"))) {
-    return(x[i, , drop = FALSE])  # matrix, tibble, data.table, ...
+    return(x[i, , drop = FALSE]) # matrix, tibble, data.table, ...
   }
   # data.frame
   out <- lapply(x, function(z) if (length(dim(z)) != 2L) z[i] else z[i, , drop = FALSE])
@@ -22,12 +22,12 @@ rep_rows <- function(x, i) {
 }
 
 #' Weighted Version of colMeans()
-#' 
+#'
 #' Internal function used to calculate column-wise weighted means.
-#' 
+#'
 #' @noRd
 #' @keywords internal
-#' 
+#'
 #' @param x A matrix-like object.
 #' @param w Optional case weights.
 #' @returns A (1 x ncol(x)) matrix of column means.
@@ -56,8 +56,9 @@ exact_Z <- function(p, feature_names, keep_extremes = FALSE) {
 
 #' Masker
 #'
-#' Internal function. 
+#' Internal function.
 #' For each on-off vector (rows in `Z`), the (weighted) average prediction is returned.
+#' In Python, this function is called "masker", and Z is the "mask".
 #'
 #' @noRd
 #' @keywords internal
@@ -72,12 +73,12 @@ exact_Z <- function(p, feature_names, keep_extremes = FALSE) {
 get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
   m <- nrow(Z)
   not_Z <- !Z
-  n_bg <- nrow(bg) / m   # because bg was replicated m times
-  
+  n_bg <- nrow(bg) / m # because bg was replicated m times
+
   # Replicate not_Z, so that X, bg, not_Z are all of dimension (m*n_bg x p)
   g <- rep_each(m, each = n_bg)
   not_Z <- not_Z[g, , drop = FALSE]
-  
+
   if (is.matrix(X)) {
     # Remember that columns of X and bg are perfectly aligned in this case
     X[not_Z] <- bg[not_Z]
@@ -88,7 +89,7 @@ get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
     }
   }
   preds <- align_pred(pred_fun(object, X, ...))
-  
+
   # Aggregate (distinguishing fast 1-dim case)
   if (ncol(preds) == 1L) {
     return(wrowmean_vector(preds, ngroups = m, w = w))
@@ -97,6 +98,27 @@ get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
     return(rowsum(preds, group = g, reorder = FALSE) / n_bg)
   }
   rowsum(preds * w, group = g, reorder = FALSE) / sum(w)
+}
+
+#' Calculates Standard error
+#'
+#' Binds list of matrices along new first axis.
+#'
+#' @noRd
+#' @keywords internal
+#'
+#' @param est List of n (p x K) matrices with estimates.
+#' @returns A (p x K) matrix with standard errors.
+get_sigma <- function(est) {
+  apply(abind1(est), 2L:3L, FUN = stats::sd) / sqrt(length(est))
+}
+
+# Convergence criterion
+conv_crit <- function(sig, bet) {
+  if (any(dim(sig) != dim(bet))) {
+    stop("sig must have same dimension as bet")
+  }
+  apply(sig, 2L, FUN = max) / apply(bet, 2L, FUN = function(z) diff(range(z)))
 }
 
 #' Combine Matrices
@@ -110,7 +132,7 @@ get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
 #' @returns A (n x p x K) array.
 abind1 <- function(a) {
   out <- array(
-    dim = c(length(a), dim(a[[1L]])), 
+    dim = c(length(a), dim(a[[1L]])),
     dimnames = c(list(NULL), dimnames(a[[1L]]))
   )
   for (i in seq_along(a)) {
@@ -121,7 +143,7 @@ abind1 <- function(a) {
 
 #' Reorganize List
 #'
-#' Internal function that turns list of n (p x K) matrices into list of K (n x p) 
+#' Internal function that turns list of n (p x K) matrices into list of K (n x p)
 #' matrices. Reduce if K = 1.
 #'
 #' @noRd
@@ -187,7 +209,7 @@ summarize_strategy <- function(p, exact, deg) {
   }
   if (deg == 0L) {
     return("Kernel SHAP values by iterative sampling")
-  } 
+  }
   paste("Kernel SHAP values by the hybrid strategy of degree", deg)
 }
 
@@ -197,13 +219,14 @@ case_p1 <- function(n, feature_names, v0, v1, X, verbose) {
   if (verbose) {
     message(txt)
   }
-  S <- v1 - v0[rep(1L, n), , drop = FALSE]                        #  (n x K)
-  SE <- matrix(numeric(n), dimnames = list(NULL, feature_names))  #  (n x 1)
+  S <- v1 - v0[rep(1L, n), , drop = FALSE] #  (n x K)
+  SE <- matrix(numeric(n), dimnames = list(NULL, feature_names)) #  (n x 1)
   if (ncol(v1) > 1L) {
     SE <- replicate(ncol(v1), SE, simplify = FALSE)
     S <- lapply(
-      asplit(S, MARGIN = 2L), function(M) 
+      asplit(S, MARGIN = 2L), function(M) {
         as.matrix(M, dimnames = list(NULL, feature_names))
+      }
     )
   } else {
     colnames(S) <- feature_names
@@ -230,22 +253,22 @@ case_p1 <- function(n, feature_names, v0, v1, X, verbose) {
 }
 
 #' Fast Index Generation (from {hstats})
-#' 
+#'
 #' For not too small m, much faster than `rep(seq_len(m), each = each)`.
-#' 
+#'
 #' @noRd
 #' @keywords internal
-#' 
+#'
 #' @param m Integer. See `each`.
 #' @param each Integer. How many times should each value in `1:m` be repeated?
 #' @returns Like `x`, but converted to matrix.
 #' @examples
 #' rep_each(10, 2)
-#' rep(1:10, each = 2)  # Dito
+#' rep(1:10, each = 2) # Dito
 rep_each <- function(m, each) {
   out <- .col(dim = c(each, m))
   dim(out) <- NULL
-  out 
+  out
 }
 
 #' Grouped Means for Single-Column Matrices (adapted from {hstats})
@@ -274,12 +297,12 @@ wrowmean_vector <- function(x, ngroups = 1L, w = NULL) {
 }
 
 #' Basic Input Checks
-#' 
+#'
 #' @noRd
 #' @keywords internal
-#' 
+#'
 #' @inheritParams kernelshap
-#' 
+#'
 #' @returns TRUE or an error
 basic_checks <- function(X, feature_names, pred_fun) {
   stopifnot(
@@ -287,7 +310,7 @@ basic_checks <- function(X, feature_names, pred_fun) {
     dim(X) >= 1L,
     length(feature_names) >= 1L,
     all(feature_names %in% colnames(X)),
-    "If X is a matrix, feature_names must equal colnames(X)" = 
+    "If X is a matrix, feature_names must equal colnames(X)" =
       !is.matrix(X) || identical(colnames(X), feature_names),
     is.function(pred_fun)
   )
@@ -295,17 +318,17 @@ basic_checks <- function(X, feature_names, pred_fun) {
 }
 
 #' Prepare Background Data
-#' 
+#'
 #' @noRd
 #' @keywords internal
-#' 
+#'
 #' @inheritParams kernelshap
-#' 
+#'
 #' @returns List with bg_X and bg_w.
 prepare_bg <- function(X, bg_X, bg_n, bg_w, verbose) {
   n <- nrow(X)
   if (is.null(bg_X)) {
-    if (n <= bg_n) {  # No subsampling required
+    if (n <= bg_n) { # No subsampling required
       if (n < min(20L, bg_n)) {
         stop("X is too small to act as background data. Please specify 'bg_X'.")
       }
@@ -313,7 +336,7 @@ prepare_bg <- function(X, bg_X, bg_n, bg_w, verbose) {
         warning("X is quite small to act as background data. Consider specifying a larger 'bg_X'.")
       }
       bg_X <- X
-    } else {          # Subsampling
+    } else { # Subsampling
       if (verbose) {
         message("Sampling ", bg_n, " rows from X as background data.")
       }
@@ -342,36 +365,37 @@ prepare_bg <- function(X, bg_X, bg_n, bg_w, verbose) {
 }
 
 #' Warning on Slow Computations
-#' 
+#'
 #' @noRd
 #' @keywords internal
-#' 
+#'
 #' @param m Number of on-off vectors.
 #' @param bg_n Number of rows in the background data.
-#' 
+#'
 #' @returns TRUE.
 warning_burden <- function(m, bg_n) {
-  warning("\nPredictions on large data sets with ", m, "x", bg_n,
-          " observations are being done.\n",
-          "Consider reducing the computational burden (e.g. use smaller X_bg)")
+  warning(
+    "\nPredictions on large data sets with ", m, "x", bg_n,
+    " observations are being done.\n",
+    "Consider reducing the computational burden (e.g. use smaller X_bg)"
+  )
   TRUE
 }
 
 #' Prepare Case Weights
-#' 
+#'
 #' @noRd
 #' @keywords internal
-#' 
+#'
 #' @param w Vector of case weights.
 #' @param bg_n Number of rows in the background data.
-#' 
+#'
 #' @returns TRUE or an error.
 prep_w <- function(w, bg_n) {
   stopifnot(
-    length(w) == bg_n, 
-    all(w >= 0), 
+    length(w) == bg_n,
+    all(w >= 0),
     !all(w == 0)
   )
   if (!is.double(w)) as.double(w) else w
 }
-

@@ -1,6 +1,6 @@
-#=============================================================================
+# =============================================================================
 # Put together the package
-#=============================================================================
+# =============================================================================
 
 # WORKFLOW: UPDATE EXISTING PACKAGE
 # 1) Modify package content and documentation.
@@ -15,14 +15,19 @@ library(usethis)
 use_description(
   fields = list(
     Title = "Kernel SHAP",
-    Version = "0.7.1",
-    Description = "Efficient implementation of Kernel SHAP, see Lundberg and Lee (2017),
-    and Covert and Lee (2021) <http://proceedings.mlr.press/v130/covert21a>.
-    Furthermore, for up to 14 features, exact permutation SHAP values can be calculated.
-    The package plays well together with meta-learning packages like 'tidymodels', 'caret' or 'mlr3'.
+    Version = "0.8.0",
+    Description = "Efficient implementation of Kernel SHAP
+    (Lundberg and Lee, 2017, <doi:10.48550/arXiv.1705.07874>)
+    permutation SHAP, and additive SHAP for model interpretability.
+    For Kernel SHAP and permutation SHAP, if the number of features is too large
+    for exact calculations, the algorithms iterate until the SHAP values are
+    sufficiently precise in terms of their standard errors.
+    The package integrates smoothly with meta-learning packages
+    such as 'tidymodels', 'caret' or 'mlr3'.
+    It supports multi-output models, case weights, and parallel computations.
     Visualizations can be done using the R package 'shapviz'.",
     `Authors@R` =
-    "c(person('Michael', family='Mayer', role=c('aut', 'cre'), email='mayermichael79@gmail.com', comment=c(ORCID='0009-0007-2540-9629')),
+      "c(person('Michael', family='Mayer', role=c('aut', 'cre'), email='mayermichael79@gmail.com', comment=c(ORCID='0009-0007-2540-9629')),
        person('David', family='Watson', role='aut', email='david.s.watson11@gmail.com', comment=c(ORCID='0000-0001-9632-2159')),
        person('Przemyslaw', family='Biecek', email='przemyslaw.biecek@gmail.com', role='ctb', comment=c(ORCID='0000-0001-8423-1823'))
       )",
@@ -42,8 +47,10 @@ use_package("doFuture", "Suggests")
 use_gpl_license(2)
 
 # Your files that do not belong to the package itself (others are added by "use_* function")
-use_build_ignore(c("^packaging.R$", "[.]Rproj$", "^compare_with_python.R$",
-                   "^cran-comments.md$", "^logo.png$"), escape = FALSE)
+use_build_ignore(c(
+  "^packaging.R$", "[.]Rproj$", "^compare_with_python.R$",
+  "^cran-comments.md$", "^logo.png$"
+), escape = FALSE)
 
 # If your code uses the pipe operator %>%
 # use_pipe()
@@ -81,9 +88,9 @@ use_github_action("pkgdown")
 # Revdep
 use_revdep()
 
-#=============================================================================
+# =============================================================================
 # Finish package building (can use fresh session)
-#=============================================================================
+# =============================================================================
 
 library(devtools)
 

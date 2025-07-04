@@ -1,6 +1,6 @@
 Package: kernelshap
 Title: Kernel SHAP
-Version: 0.7.1
+Version: 0.8.0
 Authors@R: c(
     person("Michael", "Mayer", , "mayermichael79@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0009-0007-2540-9629")),
@@ -9,13 +9,16 @@ Authors@R: c(
     person("Przemyslaw", "Biecek", , "przemyslaw.biecek@gmail.com", role = "ctb",
            comment = c(ORCID = "0000-0001-8423-1823"))
   )
-Description: Efficient implementation of Kernel SHAP, see Lundberg and Lee
-    (2017), and Covert and Lee (2021)
-    <http://proceedings.mlr.press/v130/covert21a>.  Furthermore, for up to
-    14 features, exact permutation SHAP values can be calculated.  The
-    package plays well together with meta-learning packages like
-    'tidymodels', 'caret' or 'mlr3'.  Visualizations can be done using the
-    R package 'shapviz'.
+Description: Efficient implementation of Kernel SHAP (Lundberg and Lee,
+    2017, <doi:10.48550/arXiv.1705.07874>) permutation SHAP, and additive
+    SHAP for model interpretability.  For Kernel SHAP and permutation
+    SHAP, if the number of features is too large for exact calculations,
+    the algorithms iterate until the SHAP values are sufficiently precise
+    in terms of their standard errors.  The package integrates smoothly
+    with meta-learning packages such as 'tidymodels', 'caret' or 'mlr3'.
+    It supports multi-output models, case weights, and parallel
+    computations.  Visualizations can be done using the R package
+    'shapviz'.
 License: GPL (>= 2)
 Depends: 
     R (>= 3.2.0)

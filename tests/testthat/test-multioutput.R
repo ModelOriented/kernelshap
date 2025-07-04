@@ -13,22 +13,24 @@ preds_Y <- unname(predict(fit_Y, iris))
 
 shap_y <- list(
   kernelshap(fit_y, iris[J, x], bg_X = iris, verbose = FALSE),
-  permshap(fit_y, iris[J, x], bg_X = iris, verbose = FALSE)
+  permshap(fit_y, iris[J, x], bg_X = iris, verbose = FALSE),
+  permshap(fit_y, iris[J, x], bg_X = iris, exact = FALSE, verbose = FALSE)
 )
 
 shap_Y <- list(
   kernelshap(fit_Y, iris[J, x], bg_X = iris, verbose = FALSE),
-  permshap(fit_Y, iris[J, x], bg_X = iris, verbose = FALSE)
+  permshap(fit_Y, iris[J, x], bg_X = iris, verbose = FALSE),
+  permshap(fit_Y, iris[J, x], bg_X = iris, exact = FALSE, verbose = FALSE)
 )
 
 test_that("Baseline equals average prediction on background data", {
-  for (i in 1:2) {
-    expect_equal(shap_Y[[i]]$baseline, unname(colMeans(Y)))  
+  for (i in 1:3) {
+    expect_equal(shap_Y[[i]]$baseline, unname(colMeans(Y)))
   }
 })
 
 test_that("SHAP + baseline = prediction", {
-  for (i in 1:2) {
+  for (i in 1:3) {
     s <- shap_Y[[i]]
     expect_equal(rowSums(s$S[[1L]]) + s$baseline[1L], preds_Y[J, 1L])
     expect_equal(rowSums(s$S[[2L]]) + s$baseline[2L], preds_Y[J, 2L])
@@ -36,10 +38,8 @@ test_that("SHAP + baseline = prediction", {
 })
 
 test_that("First dimension of multioutput model equals single output", {
-  for (i in 1:2) {
+  for (i in 1:3) {
     expect_equal(shap_Y[[i]]$baseline[1L], shap_y[[i]]$baseline)
     expect_equal(shap_Y[[i]]$S[[1L]], shap_y[[i]]$S)
   }
 })
-
-

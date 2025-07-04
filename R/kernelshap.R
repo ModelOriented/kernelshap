@@ -87,10 +87,9 @@
 #' @param bg_w Optional vector of case weights for each row of `bg_X`.
 #'   If `bg_X = NULL`, must be of same length as `X`. Set to `NULL` for no weights.
 #' @param bg_n If `bg_X = NULL`: Size of background data to be sampled from `X`.
-#' @param exact If `TRUE`, the algorithm will produce exact Kernel SHAP values
-#'   with respect to the background data. In this case, the arguments `hybrid_degree`,
-#'   `m`, `paired_sampling`, `tol`, and `max_iter` are ignored.
-#'   The default is `TRUE` up to eight features, and `FALSE` otherwise.
+#' @param exact If `TRUE`, the algorithm will produce exact SHAP values
+#'   with respect to the background data.
+#'   The default is `TRUE` for up to eight features, and `FALSE` otherwise.
 #' @param hybrid_degree Integer controlling the exactness of the hybrid strategy. For
 #'   \eqn{4 \le p \le 16}, the default is 2, otherwise it is 1.
 #'   Ignored if `exact = TRUE`.
@@ -114,7 +113,7 @@
 #' @param m Even number of on-off vectors sampled during one iteration.
 #'   The default is \eqn{2p}, except when `hybrid_degree == 0`.
 #'   Then it is set to \eqn{8p}. Ignored if `exact = TRUE`.
-#' @param tol Tolerance determining when to stop. Following CL21, the algorithm keeps
+#' @param tol Tolerance determining when to stop. As in CL21, the algorithm keeps
 #'   iterating until \eqn{\textrm{max}(\sigma_n)/(\textrm{max}(\beta_n) - \textrm{min}(\beta_n)) < \textrm{tol}},
 #'   where the \eqn{\beta_n} are the SHAP values of a given observation,
 #'   and \eqn{\sigma_n} their standard errors.
@@ -190,7 +189,7 @@
 #'   feature_names = c("Petal.Length", "Petal.Width", "Species")
 #' )
 #' s
-kernelshap <- function(object, ...){
+kernelshap <- function(object, ...) {
   UseMethod("kernelshap")
 }
 
@@ -213,8 +212,7 @@ kernelshap.default <- function(
     parallel = FALSE,
     parallel_args = NULL,
     verbose = TRUE,
-    ...
-  ) {
+    ...) {
   p <- length(feature_names)
   basic_checks(X = X, feature_names = feature_names, pred_fun = pred_fun)
   stopifnot(
@@ -231,8 +229,8 @@ kernelshap.default <- function(
 
   # Calculate v1 and v0
   bg_preds <- align_pred(pred_fun(object, bg_X, ...))
-  v0 <- wcolMeans(bg_preds, bg_w)                    # Average pred of bg data: 1 x K
-  v1 <- align_pred(pred_fun(object, X, ...))         # Predictions on X:        n x K
+  v0 <- wcolMeans(bg_preds, bg_w) # Average pred of bg data: 1 x K
+  v1 <- align_pred(pred_fun(object, X, ...)) # Predictions on X:        n x K
 
   # For p = 1, exact Shapley values are returned
   if (p == 1L) {
@@ -259,7 +257,8 @@ kernelshap.default <- function(
       precalc <- input_exact(p, feature_names = feature_names)
     } else {
       precalc <- input_partly_exact(
-        p, deg = hybrid_degree, feature_names = feature_names
+        p,
+        deg = hybrid_degree, feature_names = feature_names
       )
     }
     m_exact <- nrow(precalc[["Z"]])
@@ -378,9 +377,7 @@ kernelshap.ranger <- function(
     parallel_args = NULL,
     verbose = TRUE,
     survival = c("chf", "prob"),
-    ...
-  ) {
-
+    ...) {
   if (is.null(pred_fun)) {
     pred_fun <- create_ranger_pred_fun(object$treetype, survival = match.arg(survival))
   }
@@ -405,4 +402,3 @@ kernelshap.ranger <- function(
     ...
   )
 }
-

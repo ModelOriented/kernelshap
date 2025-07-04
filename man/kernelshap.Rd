@@ -80,10 +80,9 @@ If \code{bg_X = NULL}, must be of same length as \code{X}. Set to \code{NULL} fo
 
 \item{bg_n}{If \code{bg_X = NULL}: Size of background data to be sampled from \code{X}.}
 
-\item{exact}{If \code{TRUE}, the algorithm will produce exact Kernel SHAP values
-with respect to the background data. In this case, the arguments \code{hybrid_degree},
-\code{m}, \code{paired_sampling}, \code{tol}, and \code{max_iter} are ignored.
-The default is \code{TRUE} up to eight features, and \code{FALSE} otherwise.}
+\item{exact}{If \code{TRUE}, the algorithm will produce exact SHAP values
+with respect to the background data.
+The default is \code{TRUE} for up to eight features, and \code{FALSE} otherwise.}
 
 \item{hybrid_degree}{Integer controlling the exactness of the hybrid strategy. For
 \eqn{4 \le p \le 16}, the default is 2, otherwise it is 1.
@@ -113,7 +112,7 @@ of Kernel SHAP algorithms. Ignored if \code{exact = TRUE}.}
 The default is \eqn{2p}, except when \code{hybrid_degree == 0}.
 Then it is set to \eqn{8p}. Ignored if \code{exact = TRUE}.}
 
-\item{tol}{Tolerance determining when to stop. Following CL21, the algorithm keeps
+\item{tol}{Tolerance determining when to stop. As in CL21, the algorithm keeps
 iterating until \eqn{\textrm{max}(\sigma_n)/(\textrm{max}(\beta_n) - \textrm{min}(\beta_n)) < \textrm{tol}},
 where the \eqn{\beta_n} are the SHAP values of a given observation,
 and \eqn{\sigma_n} their standard errors.
