@@ -18,7 +18,6 @@ kernelshap(object, ...)
   bg_n = 200L,
   exact = length(feature_names) <= 8L,
   hybrid_degree = 1L + length(feature_names) \%in\% 4:16,
-  paired_sampling = TRUE,
   m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)),
   tol = 0.005,
   max_iter = 100L,
@@ -38,7 +37,6 @@ kernelshap(object, ...)
   bg_n = 200L,
   exact = length(feature_names) <= 8L,
   hybrid_degree = 1L + length(feature_names) \%in\% 4:16,
-  paired_sampling = TRUE,
   m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)),
   tol = 0.005,
   max_iter = 100L,
@@ -102,12 +100,6 @@ Convergence usually happens in the minimal possible number of iterations of two.
 \eqn{\sum z \in \{1, \dots, k, p-k, \dots, p-1\}}.
 }}
 
-\item{paired_sampling}{Logical flag indicating whether to do the sampling in a paired
-manner. This means that with every on-off vector \eqn{z}, also \eqn{1-z} is
-considered. CL21 shows its superiority compared to standard sampling, therefore the
-default (\code{TRUE}) should usually not be changed except for studying properties
-of Kernel SHAP algorithms. Ignored if \code{exact = TRUE}.}
-
 \item{m}{Even number of on-off vectors sampled during one iteration.
 The default is \eqn{2p}, except when \code{hybrid_degree == 0}.
 Then it is set to \eqn{8p}. Ignored if \code{exact = TRUE}.}
@@ -167,7 +159,7 @@ Efficient implementation of Kernel SHAP, see Lundberg and Lee (2017), and
 Covert and Lee (2021), abbreviated by CL21.
 For up to p=8 features, the resulting SHAP values are exact regarding
 the selected background data. For larger p, an almost exact
-hybrid algorithm combining exact calculations and iterative sampling is used,
+hybrid algorithm combining exact calculations and iterative paired sampling is used,
 see Details.
 
 Note that (exact) Kernel SHAP is only an approximation of (exact) permutation SHAP.

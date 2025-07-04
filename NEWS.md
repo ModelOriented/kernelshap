@@ -2,9 +2,9 @@
 
 ### Major improvement
 
-`permshap()` now uses a sampling approach when the number of features p is larger than 8. 
+`permshap()` has received a sampling version, which is useful if the number of features p is larger than 8. 
 The algorithm iterates until the resulting values are sufficiently precise.
-Additionally, standard errors are provided [#152](https://github.com/ModelOriented/kernelshap/pull/152).
+Additionally, standard errors are provided ([#152](https://github.com/ModelOriented/kernelshap/pull/152)).
 
 During each iteration, the algorithm runs p antithetic sampling schemes, each
 starting at a different feature. We call this **balanced antithetic sampling**. 
@@ -14,9 +14,10 @@ with a single iteration. In this case, the results also agree with Kernel SHAP.
 
 ### User visible changes
 
-- In exact mode, `kernelshap()` now does not return the following elements anymore:
-  `m` (= 0), `converged` (all `TRUE`), `n_iter` (all 1), and `SE` (all values 0)  [#153](https://github.com/ModelOriented/kernelshap/pull/153).
-- In sampling mode. `kernelshap()` returns above elements at the end of the output [#153](https://github.com/ModelOriented/kernelshap/pull/153).
+- In exact mode, `kernelshap()` does not return the following elements anymore:
+  `m` (= 0), `converged` (all `TRUE`), `n_iter` (all 1), and `SE` (all values 0) ([#153](https://github.com/ModelOriented/kernelshap/pull/153)).
+- In sampling mode of `kernelshap()`, above elements have been moved to the end of the output list ([#153](https://github.com/ModelOriented/kernelshap/pull/153)).
+- Removed unpaired sampling in `kernelshap()` ([#154](https://github.com/ModelOriented/kernelshap/pull/154)).
 
 ### Documentation
 
