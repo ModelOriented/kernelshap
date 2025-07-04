@@ -3,15 +3,14 @@
 #' @description
 #' Efficient implementation of Kernel SHAP, see Lundberg and Lee (2017), and
 #' Covert and Lee (2021), abbreviated by CL21.
-#' For up to \eqn{p=8} features, the resulting Kernel SHAP values are exact regarding
-#' the selected background data. For larger \eqn{p}, an almost exact
+#' For up to p=8 features, the resulting SHAP values are exact regarding
+#' the selected background data. For larger p, an almost exact
 #' hybrid algorithm combining exact calculations and iterative sampling is used,
 #' see Details.
 #'
 #' Note that (exact) Kernel SHAP is only an approximation of (exact) permutation SHAP.
 #' Thus, for up to eight features, we recommend [permshap()]. For more features,
-#' [permshap()] is slow compared the optimized hybrid strategy of our Kernel SHAP
-#' implementation.
+#' [permshap()] is inefficient compared the optimized hybrid strategy of Kernel SHAP.
 #'
 #' @details
 #' The pure iterative Kernel SHAP sampling as in Covert and Lee (2021) works like this:
@@ -142,20 +141,19 @@
 #'     background data.
 #'   - `bg_X`: The background data.
 #'   - `bg_w`: The background case weights.
-#'   - `SE`: Standard errors corresponding to `S` (and organized like `S`).
-#'   - `n_iter`: Integer vector of length n providing the number of iterations
-#'     per row of `X`.
-#'   - `converged`: Logical vector of length n indicating convergence per row of `X`.
-#'   - `m`: Integer providing the effective number of sampled on-off vectors used
-#'     per iteration.
-#'   - `m_exact`: Integer providing the effective number of exact on-off vectors used
-#'     per iteration.
+#'   - `m_exact`: Number of on-off vectors for exact calculations per iteration.
 #'   - `prop_exact`: Proportion of the Kernel SHAP weight distribution covered by
 #'     exact calculations.
 #'   - `exact`: Logical flag indicating whether calculations are exact or not.
 #'   - `txt`: Summary text.
 #'   - `predictions`: \eqn{(n \times K)} matrix with predictions of `X`.
 #'   - `algorithm`: "kernelshap".
+#'   - `m`: Number of sampled on-off vectors used per iteration (if sampling needed).
+#'   - `SE`: Standard errors corresponding to `S` (if sampling needed).
+#'   - `n_iter`: Integer vector of length n providing the number of iterations
+#'     per row of `X` (if sampling needed).
+#'   - `converged`: Logical vector of length n indicating convergence per row of `X`
+#'     (if sampling needed).
 #' @references
 #'   1. Scott M. Lundberg and Su-In Lee. A unified approach to interpreting model
 #'     predictions. Proceedings of the 31st International Conference on Neural
@@ -251,14 +249,13 @@ kernelshap.default <- function(
     bg_X <- bg_X[, feature_names, drop = FALSE]
   }
 
-  # Precalculations that are identical for each row to be explained
+  # Pre-calculations that are identical for each row to be explained
   if (exact || hybrid_degree >= 1L) {
     if (exact) {
       precalc <- input_exact(p, feature_names = feature_names)
     } else {
       precalc <- input_partly_exact(
-        p,
-        deg = hybrid_degree, feature_names = feature_names
+        p = p, deg = hybrid_degree, feature_names = feature_names
       )
     }
     m_exact <- nrow(precalc[["Z"]])
@@ -327,14 +324,7 @@ kernelshap.default <- function(
   }
 
   # Organize output
-  converged <- vapply(res, `[[`, "converged", FUN.VALUE = logical(1L))
-  if (verbose && !all(converged)) {
-    warning("\nNon-convergence for ", sum(!converged), " rows.")
-  }
-
-  if (verbose) {
-    cat("\n")
-  }
+  exact <- exact || trunc(p / 2) == hybrid_degree
 
   out <- list(
     S = reorganize_list(lapply(res, `[[`, "beta")),
@@ -342,19 +332,28 @@ kernelshap.default <- function(
     baseline = as.vector(v0),
     bg_X = bg_X,
     bg_w = bg_w,
-    SE = reorganize_list(lapply(res, `[[`, "sigma")),
-    n_iter = vapply(res, `[[`, "n_iter", FUN.VALUE = integer(1L)),
-    converged = converged,
-    m = m,
     m_exact = m_exact,
     prop_exact = prop_exact,
-    exact = exact || trunc(p / 2) == hybrid_degree,
+    exact = exact,
     txt = txt,
     predictions = v1,
     algorithm = "kernelshap"
   )
+  if (!exact) {
+    out$m <- m
+    out$SE <- reorganize_list(lapply(res, `[[`, "sigma"))
+    out$n_iter <- vapply(res, `[[`, "n_iter", FUN.VALUE = integer(1L))
+    out$converged <- vapply(res, `[[`, "converged", FUN.VALUE = logical(1L))
+
+    if (verbose && !all(out$converged)) {
+      warning("\nNon-convergence for ", sum(!out$converged), " rows.")
+    }
+  }
+  if (verbose) {
+    cat("\n")
+  }
   class(out) <- "kernelshap"
-  out
+  return(out)
 }
 
 #' @describeIn kernelshap Kernel SHAP method for "ranger" models, see Readme for an example.

@@ -170,7 +170,6 @@ test_that("Special case p = 1 works only for kernelshap()", {
   )
   expect_equal(s$baseline, mean(iris$Sepal.Length))
   expect_equal(unname(rowSums(s$S)) + s$baseline, preds[J])
-  expect_equal(s$SE[1L], 0)
 
   expect_error( # Not implemented
     permshap(

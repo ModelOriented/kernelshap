@@ -29,7 +29,7 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
     # Some of the hybrid cases are exact as well
     if (exact || trunc(p / 2) == deg) {
       beta <- solver(A_exact, b_exact, constraint = v1 - v0) #  (p x K)
-      return(list(beta = beta, sigma = 0 * beta, n_iter = 1L, converged = TRUE))
+      return(list(beta = beta))
     }
   }
 
