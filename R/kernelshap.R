@@ -5,7 +5,7 @@
 #' Covert and Lee (2021), abbreviated by CL21.
 #' For up to p=8 features, the resulting SHAP values are exact regarding
 #' the selected background data. For larger p, an almost exact
-#' hybrid algorithm combining exact calculations and iterative sampling is used,
+#' hybrid algorithm combining exact calculations and iterative paired sampling is used,
 #' see Details.
 #'
 #' Note that (exact) Kernel SHAP is only an approximation of (exact) permutation SHAP.
@@ -104,11 +104,6 @@
 #'     Convergence usually happens in the minimal possible number of iterations of two.
 #'   - `k>2`: Uses all on-off vectors with
 #'     \eqn{\sum z \in \{1, \dots, k, p-k, \dots, p-1\}}.
-#' @param paired_sampling Logical flag indicating whether to do the sampling in a paired
-#'   manner. This means that with every on-off vector \eqn{z}, also \eqn{1-z} is
-#'   considered. CL21 shows its superiority compared to standard sampling, therefore the
-#'   default (`TRUE`) should usually not be changed except for studying properties
-#'   of Kernel SHAP algorithms. Ignored if `exact = TRUE`.
 #' @param m Even number of on-off vectors sampled during one iteration.
 #'   The default is \eqn{2p}, except when `hybrid_degree == 0`.
 #'   Then it is set to \eqn{8p}. Ignored if `exact = TRUE`.
@@ -203,7 +198,6 @@ kernelshap.default <- function(
     bg_n = 200L,
     exact = length(feature_names) <= 8L,
     hybrid_degree = 1L + length(feature_names) %in% 4:16,
-    paired_sampling = TRUE,
     m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)),
     tol = 0.005,
     max_iter = 100L,
@@ -216,7 +210,6 @@ kernelshap.default <- function(
   stopifnot(
     exact %in% c(TRUE, FALSE),
     p == 1L || exact || hybrid_degree %in% 0:(p / 2),
-    paired_sampling %in% c(TRUE, FALSE),
     "m must be even" = trunc(m / 2) == m / 2
   )
   prep_bg <- prepare_bg(X = X, bg_X = bg_X, bg_n = bg_n, bg_w = bg_w, verbose = verbose)
@@ -286,7 +279,6 @@ kernelshap.default <- function(
       bg_w = bg_w,
       exact = exact,
       deg = hybrid_degree,
-      paired = paired_sampling,
       m = m,
       tol = tol,
       max_iter = max_iter,
@@ -309,7 +301,6 @@ kernelshap.default <- function(
         bg_w = bg_w,
         exact = exact,
         deg = hybrid_degree,
-        paired = paired_sampling,
         m = m,
         tol = tol,
         max_iter = max_iter,
@@ -368,7 +359,6 @@ kernelshap.ranger <- function(
     bg_n = 200L,
     exact = length(feature_names) <= 8L,
     hybrid_degree = 1L + length(feature_names) %in% 4:16,
-    paired_sampling = TRUE,
     m = 2L * length(feature_names) * (1L + 3L * (hybrid_degree == 0L)),
     tol = 0.005,
     max_iter = 100L,
@@ -391,7 +381,6 @@ kernelshap.ranger <- function(
     bg_n = bg_n,
     exact = exact,
     hybrid_degree = hybrid_degree,
-    paired_sampling = paired_sampling,
     m = m,
     tol = tol,
     max_iter = max_iter,

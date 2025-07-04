@@ -1,8 +1,8 @@
-# kernelshap 0.7.0
+# kernelshap 0.8.0
 
-Hello CRAN team
+Dear CRAN team
 
-This update comes with a major convenience improvement: Background data is automatically sampled from the explanation data, given that is sufficiently large.
+The package (finally!) contains a sampling version of permutation SHAP.
 
 ## Checks
 

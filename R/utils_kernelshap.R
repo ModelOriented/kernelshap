@@ -2,7 +2,7 @@
 # If exact, a single call to predict() is necessary.
 # If sampling is involved, we need at least two additional calls to predict().
 kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, deg,
-                           paired, m, tol, max_iter, v0, precalc, ...) {
+                           m, tol, max_iter, v0, precalc, ...) {
   p <- length(feature_names)
 
   # Calculate A_exact and b_exact
@@ -54,9 +54,7 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
 
   while (!converged && n_iter < max_iter) {
     n_iter <- n_iter + 1L
-    input <- input_sampling(
-      p = p, m = m, deg = deg, paired = paired, feature_names = feature_names
-    )
+    input <- input_sampling(p = p, m = m, deg = deg, feature_names = feature_names)
     Z <- input[["Z"]]
 
     # Expensive                                                              #  (m x K)
@@ -120,7 +118,7 @@ sample_Z <- function(p, m, feature_names, S = 1:(p - 1L)) {
   t(out)
 }
 
-# Provides random input for SHAP sampling:
+# Provides random input for paired SHAP sampling:
 # - Z: Matrix with m on-off vectors z with sum(z) following Kernel weight distribution.
 # - w: Vector (1/m, 1/m, ...) of length m (if pure sampling)
 # - A: Matrix A = Z'wZ
@@ -128,17 +126,13 @@ sample_Z <- function(p, m, feature_names, S = 1:(p - 1L)) {
 #
 # If deg > 0, vectors z with sum(z) restricted to [deg+1, p-deg-1] are sampled.
 # This case is used in combination with input_partly_hybrid(). Consequently, sum(w) < 1.
-input_sampling <- function(p, m, deg, paired, feature_names) {
+input_sampling <- function(p, m, deg, feature_names) {
   if (p < 2L * deg + 2L) {
     stop("p must be >=2*deg + 2")
   }
   S <- (deg + 1L):(p - deg - 1L)
-  Z <- sample_Z(
-    p = p, m = if (paired) m / 2 else m, feature_names = feature_names, S = S
-  )
-  if (paired) {
-    Z <- rbind(Z, 1 - Z)
-  }
+  Z <- sample_Z(p = p, m = m / 2, feature_names = feature_names, S = S)
+  Z <- rbind(Z, 1 - Z)
   w_total <- if (deg == 0L) 1 else 1 - 2 * sum(kernel_weights(p)[seq_len(deg)])
   w <- w_total / m
   list(Z = Z, w = rep.int(w, m), A = crossprod(Z) * w)
