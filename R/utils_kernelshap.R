@@ -77,7 +77,7 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
     # Covariance calculation would fail in the first iteration
     if (n_iter >= 2L) {
       beta_n <- solver(A_sum / n_iter, b_sum / n_iter, constraint = v1 - v0) #  (p x K)
-      sigma_n <- get_sigma(est_m, iter = n_iter) #  (p x K)
+      sigma_n <- get_sigma(est_m) #  (p x K)
       converged <- all(conv_crit(sigma_n, beta_n) < tol)
     }
   }
@@ -118,14 +118,6 @@ sample_Z <- function(p, m, feature_names, S = 1:(p - 1L)) {
   out[] <- out[ord]
   rownames(out) <- feature_names
   t(out)
-}
-
-# Convergence criterion
-conv_crit <- function(sig, bet) {
-  if (any(dim(sig) != dim(bet))) {
-    stop("sig must have same dimension as bet")
-  }
-  apply(sig, 2L, FUN = max) / apply(bet, 2L, FUN = function(z) diff(range(z)))
 }
 
 # Provides random input for SHAP sampling:

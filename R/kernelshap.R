@@ -89,7 +89,7 @@
 #' @param bg_n If `bg_X = NULL`: Size of background data to be sampled from `X`.
 #' @param exact If `TRUE`, the algorithm will produce exact SHAP values
 #'   with respect to the background data.
-#'   The default is `TRUE` up to eight features, and `FALSE` otherwise.
+#'   The default is `TRUE` for up to eight features, and `FALSE` otherwise.
 #' @param hybrid_degree Integer controlling the exactness of the hybrid strategy. For
 #'   \eqn{4 \le p \le 16}, the default is 2, otherwise it is 1.
 #'   Ignored if `exact = TRUE`.

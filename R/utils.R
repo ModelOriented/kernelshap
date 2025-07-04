@@ -58,6 +58,7 @@ exact_Z <- function(p, feature_names, keep_extremes = FALSE) {
 #'
 #' Internal function.
 #' For each on-off vector (rows in `Z`), the (weighted) average prediction is returned.
+#' In Python, this function is called "masker", and Z is the "mask".
 #'
 #' @noRd
 #' @keywords internal
@@ -107,12 +108,18 @@ get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
 #' @keywords internal
 #'
 #' @param est List of n (p x K) matrices with estimates.
-#' @param iter The number of iterations.
 #' @returns A (p x K) matrix with standard errors.
-get_sigma <- function(est, iter) {
-  apply(abind1(est), 2L:3L, FUN = stats::sd) / sqrt(iter)
+get_sigma <- function(est) {
+  apply(abind1(est), 2L:3L, FUN = stats::sd) / sqrt(length(est))
 }
 
+# Convergence criterion
+conv_crit <- function(sig, bet) {
+  if (any(dim(sig) != dim(bet))) {
+    stop("sig must have same dimension as bet")
+  }
+  apply(sig, 2L, FUN = max) / apply(bet, 2L, FUN = function(z) diff(range(z)))
+}
 
 #' Combine Matrices
 #'

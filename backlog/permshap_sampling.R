@@ -6,8 +6,8 @@ pred_fun <- predict
 object <- ranger(Sepal.Length ~ ., data = iris)
 
 
-system.time(permshap(object, X = iris[-1], bg_X = iris[, -1]))
-system.time(permshap(object, X = iris[-1], bg_X = iris[, -1], exact = F))
+permshap(object, X = iris[-1], bg_X = iris[, -1])
+permshap(object, X = iris[-1], bg_X = iris[, -1], exact = F)
 
 # Sepal.Width Petal.Length Petal.Width   Species
 #   0.2195135    -1.955357   0.3149451 0.5823533

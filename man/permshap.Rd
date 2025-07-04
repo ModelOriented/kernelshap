@@ -78,12 +78,10 @@ If \code{bg_X = NULL}, must be of same length as \code{X}. Set to \code{NULL} fo
 
 \item{exact}{If \code{TRUE}, the algorithm will produce exact SHAP values
 with respect to the background data.
-The default is \code{TRUE} up to eight features, and \code{FALSE} otherwise.}
+The default is \code{TRUE} for up to eight features, and \code{FALSE} otherwise.}
 
-\item{low_memory}{If \code{FALSE} (default up to p = 20), the algorithm calculates
-predictions for all chains per iteration at once, which is faster but requires
-more memory. If \code{TRUE}, the algorithm calculates predictions for each chain
-separately,}
+\item{low_memory}{If \code{FALSE} (default up to p = 20), the algorithm requires p times
+as much memory as when \code{low_memory = TRUE}.}
 
 \item{tol}{Tolerance determining when to stop. As in CL21, the algorithm keeps
 iterating until \eqn{\textrm{max}(\sigma_n)/(\textrm{max}(\beta_n) - \textrm{min}(\beta_n)) < \textrm{tol}},
@@ -120,25 +118,31 @@ dimension \eqn{K > 1}, a list of \eqn{K} such matrices.
 background data.
 \item \code{bg_X}: The background data.
 \item \code{bg_w}: The background case weights.
-\item \code{SE}: Standard errors corresponding to \code{S} (and organized like \code{S}).
-\item \code{n_iter}: Integer vector of length n providing the number of iterations
-per row of \code{X}.
-\item \code{converged}: Logical vector of length n indicating convergence per row of \code{X}.
-\item \code{m}: Integer providing the number of permutations per iteration.
-\item \code{m_exact}: Integer providing the number of permutations for exact calculations.
+\item \code{m}: Integer providing the number of on-off vectors evaluated
+(if sampling needed, per iteration).
 \item \code{exact}: Logical flag indicating whether calculations are exact or not.
 \item \code{txt}: Summary text.
 \item \code{predictions}: \eqn{(n \times K)} matrix with predictions of \code{X}.
 \item \code{algorithm}: "permshap".
+\item \code{SE}: Standard errors corresponding to \code{S} (if sampling needed).
+\item \code{n_iter}: Integer vector of length n providing the number of iterations
+per row of \code{X} (if sampling needed).
+\item \code{converged}: Logical vector of length n indicating convergence per row of \code{X}
+(if sampling needed).
 }
 }
 \description{
 Permutation SHAP algorithm with respect to a background dataset,
 see Strumbelj and Kononenko.
-For up to \code{p = 8} features, by default, exact permutation SHAP is calculated.
-for more features, a sampling version is used. Per iteration, a total of
-\eqn{p \cdot (2p + 1)} permutations are evaluated.
-The algorithm iterates until convergence.
+
+By default, for up to p=8 features, exact SHAP values are provided.
+For larger p, we use a sampling approach that iterates until the resulting values
+are sufficiently precise. In this case, standard errors are provided.
+During each iteration, the algorithm runs p antithetic sampling schemes, each
+starting at a different feature. We call this \strong{balanced antithetic sampling}.
+Each iteration amounts to evaluating Shapley's formula 2p times per feature.
+For models with interactions up to order two, this strategy provides exact SHAP values
+within a single iteration. In this case, the results also agree with Kernel SHAP.
 }
 \section{Methods (by class)}{
 \itemize{

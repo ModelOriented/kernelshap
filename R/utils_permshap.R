@@ -10,8 +10,9 @@
 #' @param v0 Average prediction on background data.
 #' @param x A single row to be explained.
 #' @param precalc A list with pre-calculated values that are identical for all rows.
-#' @return A list with (p x K) matrix of SHAP values, a (p x K) matrix of standard
-#'   errors, number of iterations, and convergence status.
+#' @return A list with (p x K) matrix of SHAP values, and for the sampling version
+#'   a (p x K) matrix of standard errors, number of iterations,
+#'   and convergence status.
 permshap_one <- function(
     x,
     v1,
@@ -43,16 +44,14 @@ permshap_one <- function(
     vz <- rbind(v0, vz, v1) # we add the cheaply calculated v0 and v1
     rownames(vz) <- precalc[["Z_code"]]
     beta <- shapley_formula(Z, vz = vz)
-    out <- list(beta = beta, sigma = 0 * beta, n_iter = 1L, converged = TRUE)
-    return(out)
+    return(list(beta = beta))
   }
 
-  # Approximate SHAP values
-  K <- ncol(v0)
+  # Sampling version
   p <- length(feature_names)
 
   beta_n <- matrix(
-    data = 0, nrow = p, ncol = K, dimnames = list(feature_names, colnames(v0))
+    data = 0, nrow = p, ncol = ncol(v0), dimnames = list(feature_names, colnames(v0))
   )
   est_m <- list()
   converged <- FALSE
@@ -60,6 +59,8 @@ permshap_one <- function(
   stride <- 2L * (p - 1L)
 
   while (!converged && n_iter < max_iter) {
+    # For each iteration, we could reuse vz of the first and last row of Z
+    # to avoid most of the remaining overhead
     n_iter <- n_iter + 1L
     chains <- balanced_chains(p)
     Z <- lapply(chains, sample_Z_from_chain, feature_names = feature_names)
@@ -84,16 +85,15 @@ permshap_one <- function(
       vz <- do.call(rbind, vz)
     }
     for (j in seq_len(p)) {
-      chain <- chains[[j]]
       vzj <- vz[(1L + (j - 1L) * stride):(j * stride), , drop = FALSE]
       vzj <- pad_vz(vzj, v0 = v0, v1 = v1)
-      J <- order(chain)
+      J <- order(chains[[j]])
       forward <- vzj[J, , drop = FALSE] - vzj[J + 1L, , drop = FALSE]
       backward <- vzj[p + J + 1L, , drop = FALSE] - vzj[p + J, , drop = FALSE]
-      est_m[[length(est_m) + 1L]] <- delta <- (forward + backward) / (2 * p)
-      beta_n <- beta_n + delta
+      est_m[[length(est_m) + 1L]] <- delta <- (forward + backward) / 2
+      beta_n <- beta_n + delta / p # dividing by p to get a mean
     }
-    sigma_n <- get_sigma(est_m, iter = n_iter)
+    sigma_n <- get_sigma(est_m)
     rownames(sigma_n) <- feature_names
     converged <- all(conv_crit(sigma_n, beta_n / n_iter) < tol)
   }
@@ -163,7 +163,7 @@ rowpaste <- function(Z) {
 #'
 #' Creates `p` permutations of the numbers `1:p` such that each number appears once
 #' as the first element.
-#' Only used in approximate permutation SHAP.
+#' Only used in iterative permutation SHAP.
 #'
 #' @noRd
 #' @keywords internal
@@ -184,7 +184,7 @@ balanced_chains <- function(p) {
 #' Creates a (2 * (p - 1) x p) on-off-matrix with antithetic rows.
 #' The first and last rows (all `TRUE`) and the middle one (all `FALSE`) are skipped
 #' (because we already know their values).
-#' Only used in approximate permutation SHAP.
+#' Only used in iterative permutation SHAP.
 #'
 #' @noRd
 #' @keywords internal
@@ -204,7 +204,7 @@ sample_Z_from_chain <- function(J, feature_names) {
 #' Fills Gaps in vz
 #'
 #' Fills the first and last rows of `vz` with `v1`, and the middle one with `v0`.
-#' Only used in approximate permutation SHAP.
+#' Only used in iterative permutation SHAP.
 #'
 #' @noRd
 #' @keywords internal

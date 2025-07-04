@@ -82,7 +82,7 @@ If \code{bg_X = NULL}, must be of same length as \code{X}. Set to \code{NULL} fo
 
 \item{exact}{If \code{TRUE}, the algorithm will produce exact SHAP values
 with respect to the background data.
-The default is \code{TRUE} up to eight features, and \code{FALSE} otherwise.}
+The default is \code{TRUE} for up to eight features, and \code{FALSE} otherwise.}
 
 \item{hybrid_degree}{Integer controlling the exactness of the hybrid strategy. For
 \eqn{4 \le p \le 16}, the default is 2, otherwise it is 1.

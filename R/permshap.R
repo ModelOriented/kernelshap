@@ -1,16 +1,20 @@
 #' Permutation SHAP
 #'
+#' @description
 #' Permutation SHAP algorithm with respect to a background dataset,
 #' see Strumbelj and Kononenko.
-#' For up to `p = 8` features, by default, exact permutation SHAP is calculated.
-#' for more features, a sampling version is used. Per iteration, a total of
-#' \eqn{p \cdot (2p + 1)} permutations are evaluated.
-#' The algorithm iterates until convergence.
 #'
-#' @param low_memory If `FALSE` (default up to p = 20), the algorithm calculates
-#'   predictions for all chains per iteration at once, which is faster but requires
-#'   more memory. If `TRUE`, the algorithm calculates predictions for each chain
-#'   separately,
+#' By default, for up to p=8 features, exact SHAP values are provided.
+#' For larger p, we use a sampling approach that iterates until the resulting values
+#' are sufficiently precise. In this case, standard errors are provided.
+#' During each iteration, the algorithm runs p antithetic sampling schemes, each
+#' starting at a different feature. We call this **balanced antithetic sampling**.
+#' Each iteration amounts to evaluating Shapley's formula 2p times per feature.
+#' For models with interactions up to order two, this strategy provides exact SHAP values
+#' within a single iteration. In this case, the results also agree with Kernel SHAP.
+#'
+#' @param low_memory If `FALSE` (default up to p = 20), the algorithm requires p times
+#' as much memory as when `low_memory = TRUE`.
 #' @inheritParams kernelshap
 #' @returns
 #'   An object of class "kernelshap" with the following components:
@@ -21,16 +25,17 @@
 #'     background data.
 #'   - `bg_X`: The background data.
 #'   - `bg_w`: The background case weights.
-#'   - `SE`: Standard errors corresponding to `S` (and organized like `S`).
-#'   - `n_iter`: Integer vector of length n providing the number of iterations
-#'     per row of `X`.
-#'   - `converged`: Logical vector of length n indicating convergence per row of `X`.
-#'   - `m`: Integer providing the number of permutations per iteration.
-#'   - `m_exact`: Integer providing the number of permutations for exact calculations.
+#'   - `m`: Integer providing the number of on-off vectors evaluated
+#'      (if sampling needed, per iteration).
 #'   - `exact`: Logical flag indicating whether calculations are exact or not.
 #'   - `txt`: Summary text.
 #'   - `predictions`: \eqn{(n \times K)} matrix with predictions of `X`.
 #'   - `algorithm`: "permshap".
+#'   - `SE`: Standard errors corresponding to `S` (if sampling needed).
+#'   - `n_iter`: Integer vector of length n providing the number of iterations
+#'     per row of `X` (if sampling needed).
+#'   - `converged`: Logical vector of length n indicating convergence per row of `X`
+#'     (if sampling needed).
 #' @references
 #'   1. Erik Strumbelj and Igor Kononenko. Explaining prediction models and individual
 #'     predictions with feature contributions. Knowledge and Information Systems 41, 2014.
@@ -116,23 +121,21 @@ permshap.default <- function(
   # Pre-calculations that are identical for each row to be explained
   if (exact) {
     Z <- exact_Z(p, feature_names = feature_names, keep_extremes = TRUE)
-    m <- 0L
-    m_exact <- nrow(Z) - 2L # We won't evaluate vz for first and last row
+    m <- nrow(Z) - 2L # We won't evaluate vz for first and last row
     precalc <- list(
       Z = Z,
       Z_code = rowpaste(Z),
-      bg_X_rep = rep_rows(bg_X, rep.int(seq_len(bg_n), m_exact))
+      bg_X_rep = rep_rows(bg_X, rep.int(seq_len(bg_n), m))
     )
   } else {
     m <- 2L * (p - 1L) * (if (low_memory) 1L else p)
-    m_exact <- 0L
     precalc <- list(
       bg_X_rep = rep_rows(bg_X, rep.int(seq_len(bg_n), m))
     )
   }
 
-  if (max(m, m_exact) * bg_n > 2e5) {
-    warning_burden(m_exact, bg_n = bg_n)
+  if (m * bg_n > 2e5) {
+    warning_burden(m, bg_n = bg_n)
   }
 
   # Apply permutation SHAP to each row of X
@@ -181,29 +184,30 @@ permshap.default <- function(
   }
 
   # Organize output
-  converged <- vapply(res, `[[`, "converged", FUN.VALUE = logical(1L))
-  if (!exact && verbose && !all(converged)) {
-    warning("\nNon-convergence for ", sum(!converged), " rows.")
-  }
-  if (verbose) {
-    cat("\n")
-  }
   out <- list(
     S = reorganize_list(lapply(res, `[[`, "beta")),
     X = X,
     baseline = as.vector(v0),
     bg_X = bg_X,
     bg_w = bg_w,
-    SE = reorganize_list(lapply(res, `[[`, "sigma")),
-    n_iter = vapply(res, `[[`, "n_iter", FUN.VALUE = integer(1L)),
-    converged = converged,
     m = m,
-    m_exact = m_exact,
     exact = exact,
     txt = txt,
     predictions = v1,
     algorithm = "permshap"
   )
+  if (!exact) {
+    out$SE <- reorganize_list(lapply(res, `[[`, "sigma"))
+    out$n_iter <- vapply(res, `[[`, "n_iter", FUN.VALUE = integer(1L))
+    out$converged <- vapply(res, `[[`, "converged", FUN.VALUE = logical(1L))
+
+    if (verbose && !all(out$converged)) {
+      warning("\nNon-convergence for ", sum(!out$converged), " rows.")
+    }
+  }
+  if (verbose) {
+    cat("\n")
+  }
   class(out) <- "kernelshap"
   out
 }
