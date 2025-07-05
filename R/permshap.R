@@ -21,9 +21,6 @@
 #' @param exact If `TRUE`, the algorithm will produce exact SHAP values
 #'   with respect to the background data.
 #'   The default is `TRUE` for up to eight features, and `FALSE` otherwise.
-#' @param low_memory If `FALSE` (default up to p = 15), the algorithm requires about
-#' p times as much memory to store data as when `low_memory = TRUE`, but has p times
-#' as many calls to `predict()`.
 #' @inheritParams kernelshap
 #' @returns
 #'   An object of class "kernelshap" with the following components:
@@ -88,9 +85,8 @@ permshap.default <- function(
     bg_w = NULL,
     bg_n = 200L,
     exact = length(feature_names) <= 8L,
-    low_memory = length(feature_names) > 15L,
     tol = 0.01,
-    max_iter = 10L,
+    max_iter = length(feature_names) * 10L,
     parallel = FALSE,
     parallel_args = NULL,
     verbose = TRUE,
@@ -136,7 +132,7 @@ permshap.default <- function(
       bg_X_rep = rep_rows(bg_X, rep.int(seq_len(bg_n), m))
     )
   } else {
-    m <- 2L * (p - 1L) * (if (low_memory) 1L else p)
+    m <- 2L * (p - 1L)
     precalc <- list(
       bg_X_rep = rep_rows(bg_X, rep.int(seq_len(bg_n), m))
     )
@@ -159,7 +155,6 @@ permshap.default <- function(
       precalc = precalc,
       feature_names = feature_names,
       exact = exact,
-      low_memory = low_memory,
       tol = tol,
       max_iter = max_iter,
       ...
@@ -180,7 +175,6 @@ permshap.default <- function(
         precalc = precalc,
         feature_names = feature_names,
         exact = exact,
-        low_memory = low_memory,
         tol = tol,
         max_iter = max_iter,
         ...
@@ -232,9 +226,8 @@ permshap.ranger <- function(
     bg_w = NULL,
     bg_n = 200L,
     exact = length(feature_names) <= 8L,
-    low_memory = length(feature_names) > 15L,
     tol = 0.01,
-    max_iter = 10L,
+    max_iter = length(feature_names) * 10L,
     parallel = FALSE,
     parallel_args = NULL,
     verbose = TRUE,
@@ -253,7 +246,6 @@ permshap.ranger <- function(
     bg_w = bg_w,
     bg_n = bg_n,
     exact = exact,
-    low_memory = low_memory,
     tol = tol,
     max_iter = max_iter,
     parallel = parallel,

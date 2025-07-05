@@ -23,7 +23,6 @@ permshap_one <- function(
     precalc,
     feature_names,
     exact,
-    low_memory,
     tol,
     max_iter,
     ...) {
@@ -43,8 +42,7 @@ permshap_one <- function(
     )
     vz <- rbind(v0, vz, v1) # we add the cheaply calculated v0 and v1
     rownames(vz) <- precalc[["Z_code"]]
-    beta <- shapley_formula(Z, vz = vz)
-    return(list(beta = beta))
+    return(list(beta = shapley_formula(Z, vz = vz)))
   }
 
   # Sampling version
@@ -56,47 +54,29 @@ permshap_one <- function(
   est_m <- list()
   converged <- FALSE
   n_iter <- 0L
-  stride <- 2L * (p - 1L)
 
   while (!converged && n_iter < max_iter) {
     # Improvement 1: For each iteration, we could reuse vz of the first and last row of Z
-    # Improvement 2: In low-memory case, we could move everything into an inner iteration,
-    #                which would provide a more efficient algo for models with
-    #                interactions of order up to 2.
-    n_iter <- n_iter + 1L
     chains <- balanced_chains(p)
-    Z <- lapply(chains, sample_Z_from_chain, feature_names = feature_names)
-    if (!low_memory) { # predictions for all chains at once
-      Z <- do.call(rbind, Z)
-      vz <- get_vz(
+
+    for (j in seq_len(p)) {
+      n_iter <- n_iter + 1L
+
+      Z <- sample_Z_from_chain(chains[[j]], feature_names = feature_names)
+      vzj <- get_vz(
         X = X, bg = bg, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
       )
-    } else { # predictions for each chain separately
-      vz <- vector("list", length = p)
-      for (j in seq_len(p)) {
-        vz[[j]] <- get_vz(
-          X = X,
-          bg = bg,
-          Z = Z[[j]],
-          object = object,
-          pred_fun = pred_fun,
-          w = bg_w,
-          ...
-        )
-      }
-      vz <- do.call(rbind, vz)
-    }
-    for (j in seq_len(p)) {
-      vzj <- vz[(1L + (j - 1L) * stride):(j * stride), , drop = FALSE]
       vzj <- pad_vz(vzj, v0 = v0, v1 = v1)
       J <- order(chains[[j]])
       forward <- vzj[J, , drop = FALSE] - vzj[J + 1L, , drop = FALSE]
       backward <- vzj[p + J + 1L, , drop = FALSE] - vzj[p + J, , drop = FALSE]
       est_m[[length(est_m) + 1L]] <- delta <- (forward + backward) / 2
-      beta_n <- beta_n + delta / p # dividing by p to get a mean
+      beta_n <- beta_n + delta
+      if (n_iter >= 2L) {
+        sigma_n <- get_sigma(est_m)
+        converged <- all(conv_crit(sigma_n, beta_n / n_iter) < tol)
+      }
     }
-    sigma_n <- get_sigma(est_m)
-    converged <- all(conv_crit(sigma_n, beta_n / n_iter) < tol)
   }
   rownames(sigma_n) <- feature_names
   out <- list(
