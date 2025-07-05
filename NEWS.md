@@ -29,7 +29,7 @@ we would need to set `max_iter = 1` in R, and `max_eval = 2p^2` in Python.
 - New DESCRIPTION file.
 - Adapted docstrings to reflect above changes ([#155](https://github.com/ModelOriented/kernelshap/pull/155))
 
-# kernelshap 0.7.1
+# kernelshap 0.7.1 (not on CRAN)
 
 ## Documentation
 
@@ -39,6 +39,7 @@ we would need to set `max_iter = 1` in R, and `max_eval = 2p^2` in Python.
 ## Maintenance
 
 - Update code coverage version [#150](https://github.com/ModelOriented/kernelshap/pull/150).
+- Improve code coverage [#156](https://github.com/ModelOriented/kernelshap/pull/156).
 
 # kernelshap 0.7.0
 

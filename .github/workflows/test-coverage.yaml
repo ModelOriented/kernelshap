@@ -36,7 +36,8 @@ jobs:
             function_exclusions = c(
               "kernelshap\\.ranger",
               "permshap\\.ranger",
-              "pred_ranger"
+              "pred_ranger",
+              "create_ranger_pred_fun"
             )
           )
           print(cov)

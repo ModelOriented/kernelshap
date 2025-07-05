@@ -16,7 +16,8 @@ shap <- list(
     fit, iris[x],
     bg_X = iris, exact = FALSE, hybrid_degree = 0, verbose = FALSE
   ),
-  permshap(fit, iris[x], bg_X = iris, exact = FALSE, verbose = FALSE)
+  permshap(fit, iris[x], bg_X = iris, exact = FALSE, verbose = FALSE),
+  permshap(fit, iris[x], bg_X = iris, exact = FALSE, low_memory = TRUE, verbose = FALSE)
 )
 
 test_that("baseline equals average prediction on background data", {
@@ -38,6 +39,11 @@ test_that("Exact and sampling modes agree with interactions of order 2", {
   expect_equal(shap[[2L]]$S, shap[[4L]]$S) # exact ps vs sampling ps
   expect_true(all(shap[[3L]]$n_iter == 2L)) # ks stops after second iteraction
   expect_true(all(shap[[4L]]$n_iter == 1L)) # ps stops after first iteration
+})
+
+test_that("low_memory T/F are consistent", {
+  expect_equal(shap[[4L]][-6L], shap[[5L]][-6L])
+  expect_equal(shap[[4L]]$m, shap[[5L]]$m * length(x))
 })
 
 test_that("auto-selection of background data works", {
