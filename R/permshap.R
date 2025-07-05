@@ -2,20 +2,28 @@
 #'
 #' @description
 #' Permutation SHAP algorithm with respect to a background dataset,
-#' see Strumbelj and Kononenko.
+#' see Strumbelj and Kononenko (2014) for the basic idea.
 #'
-#' For up to p=8 features, the resulting SHAP values are exact regarding
-#' the selected background data.
-#' For larger p, we use a sampling approach that iterates until the resulting values
+#' By default, for up to p=8 features, exact SHAP values are returned
+#' with respect to the selected background data.
+#' Otherwise, a sampling approach iterates until the resulting values
 #' are sufficiently precise. In this case, standard errors are provided.
 #' During each iteration, the algorithm runs p antithetic sampling schemes, each
 #' starting with a different feature. We call this **balanced antithetic sampling**.
 #' Each iteration amounts to evaluating Shapley's formula 2p times per feature.
-#' For models with interactions up to order two, this strategy provides exact SHAP values
-#' within a single iteration, and the results agree with Kernel SHAP.
+#' For models with interactions up to order two, one can show that
+#' even a single antithetic scheme provides exact SHAP values (with respect to the
+#' given background dataset).
+#' The Python implementation in "shap" uses a similar approach, but without
+#' providing standard errors, and without early stopping. To mimic its behavior,
+#' we would need to set `max_iter = 1` in R, and `max_eval = 2p^2` in Python.
 #'
-#' @param low_memory If `FALSE` (default up to p = 20), the algorithm requires p times
-#' as much memory as when `low_memory = TRUE`.
+#' @param exact If `TRUE`, the algorithm will produce exact SHAP values
+#'   with respect to the background data.
+#'   The default is `TRUE` for up to eight features, and `FALSE` otherwise.
+#' @param low_memory If `FALSE` (default up to p = 15), the algorithm requires about
+#' p times as much memory to store data as when `low_memory = TRUE`, but has p times
+#' as many calls to `predict()`.
 #' @inheritParams kernelshap
 #' @returns
 #'   An object of class "kernelshap" with the following components:
@@ -80,7 +88,7 @@ permshap.default <- function(
     bg_w = NULL,
     bg_n = 200L,
     exact = length(feature_names) <= 8L,
-    low_memory = length(feature_names) > 20L,
+    low_memory = length(feature_names) > 15L,
     tol = 0.01,
     max_iter = 10L,
     parallel = FALSE,
@@ -224,7 +232,7 @@ permshap.ranger <- function(
     bg_w = NULL,
     bg_n = 200L,
     exact = length(feature_names) <= 8L,
-    low_memory = length(feature_names) > 20L,
+    low_memory = length(feature_names) > 15L,
     tol = 0.01,
     max_iter = 10L,
     parallel = FALSE,

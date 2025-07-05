@@ -118,7 +118,11 @@ conv_crit <- function(sig, bet) {
   if (any(dim(sig) != dim(bet))) {
     stop("sig must have same dimension as bet")
   }
-  apply(sig, 2L, FUN = max) / apply(bet, 2L, FUN = function(z) diff(range(z)))
+  out <- apply(sig, 2L, FUN = max) / apply(bet, 2L, FUN = function(z) diff(range(z)))
+  if (anyNA(out)) { # 0 / 0 -> converged (0)
+    out[is.na(out)] <- 0
+  }
+  return(out)
 }
 
 #' Combine Matrices

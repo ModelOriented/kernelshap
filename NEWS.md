@@ -2,15 +2,20 @@
 
 ### Major improvement
 
-`permshap()` has received a sampling version, which is useful if the number of features p is larger than 8. 
+`permshap()` has received a sampling version, which is useful if the number of features p is larger than 8, when 
+exact calculations take too much time.
 The algorithm iterates until the resulting values are sufficiently precise.
 Additionally, standard errors are provided ([#152](https://github.com/ModelOriented/kernelshap/pull/152)).
 
 During each iteration, the algorithm runs p antithetic sampling schemes, each
 starting at a different feature. We call this **balanced antithetic sampling**. 
 Each iteration amounts to evaluating Shapley's formula 2p times per feature.
-For models with interactions up to order two, this strategy provides exact SHAP values
-with a single iteration. In this case, the results also agree with Kernel SHAP.
+For models with interactions up to order two, even a single antithetic scheme returns
+exact SHAP values. In this case, the results also agree with Kernel SHAP.
+
+The Python implementation in {shap} uses a similar approach, but without
+providing standard errors, and without early stopping. To mimic its behavior,
+we would need to set `max_iter = 1` in R, and `max_eval = 2p^2` in Python.
 
 ### User visible changes
 
@@ -22,6 +27,7 @@ with a single iteration. In this case, the results also agree with Kernel SHAP.
 ### Documentation
 
 - New DESCRIPTION file.
+- Adapted docstrings to reflect above changes ([#155](https://github.com/ModelOriented/kernelshap/pull/155))
 
 # kernelshap 0.7.1
 

@@ -26,8 +26,11 @@ To explain your model, select an explanation dataset `X` (up to 1000 rows from t
 - Both algorithms need a representative background data `bg_X` to calculate marginal means (up to 500 rows from the training data). In cases with a natural "off" value (like MNIST digits), this can also be a single row with all values set to the off value. If unspecified, 200 rows are randomly sampled from `X`.
 - Exact Kernel SHAP is an approximation to exact permutation SHAP. Since exact calculations are usually sufficiently fast for up to eight features, we recommend `permshap()` in this case. With more features, `kernelshap()` switches to a comparably fast, almost exact algorithm with faster convergence than the sampling version of permutation SHAP.
   That is why we recommend `kernelshap()` in this case.
-- For models with interactions of order up to two, SHAP values of permutation SHAP and Kernel SHAP agree, and the sampling versions provide the same results as the exact versions after one (`permshap()`) or two iterations (`kernelshap()`).
-- `permshap()` and `kernelshap()` give the same results as `additive_shap` as long as the full training data would be used as background data.
+- For models with interactions of order up to two, SHAP values of permutation SHAP and Kernel SHAP agree, 
+and the sampling versions provide the same results as the exact versions after one (`permshap()`) 
+or two iterations (`kernelshap()`). In the presence of interactions of order three or higher, this is no longer the case.
+- For additive models, `permshap()` and `kernelshap()` give the same results as `additive_shap` 
+as long as the full training data would be used as background data.
 
 ## Installation
 

@@ -3,14 +3,15 @@
 #' @description
 #' Efficient implementation of Kernel SHAP, see Lundberg and Lee (2017), and
 #' Covert and Lee (2021), abbreviated by CL21.
-#' For up to p=8 features, the resulting SHAP values are exact regarding
-#' the selected background data. For larger p, an almost exact
-#' hybrid algorithm combining exact calculations and iterative paired sampling is used,
-#' see Details.
+#' By default, for up to p=8 features, exact Kernel SHAP values are returned
+#' with respect to the selected background data.
+#' Otherwise, an almost exact hybrid algorithm combining exact calculations and
+#' iterative paired sampling is used, see Details.
 #'
 #' Note that (exact) Kernel SHAP is only an approximation of (exact) permutation SHAP.
 #' Thus, for up to eight features, we recommend [permshap()]. For more features,
-#' [permshap()] is inefficient compared the optimized hybrid strategy of Kernel SHAP.
+#' [permshap()] tends to be inefficient compared the optimized hybrid strategy
+#' of Kernel SHAP.
 #'
 #' @details
 #' The pure iterative Kernel SHAP sampling as in Covert and Lee (2021) works like this:
@@ -48,7 +49,7 @@
 #'   \eqn{\sum z \in \{2, p-2\}} to the process etc. The necessary predictions are
 #'   obtained along with other calculations similar to those described in CL21.
 #' 2. Step 2 (sampling part): The remaining weight is filled by sampling vectors z
-#'   according to Kernel SHAP weights renormalized to the values not yet covered by Step 1.
+#'   according to Kernel SHAP weights normalized to the values not yet covered by Step 1.
 #'   Together with the results from Step 1 - correctly weighted - this now forms a
 #'   complete iteration as in CL21. The difference is that most mass is covered by exact
 #'   calculations. Afterwards, the algorithm iterates until convergence.
@@ -60,8 +61,8 @@
 #' Kernel SHAP values with respect to the given background data.
 #' Since [kernelshap()] calculates predictions on data with \eqn{MN} rows
 #' (\eqn{N} is the background data size and \eqn{M} the number of \eqn{z} vectors), \eqn{p}
-#' should not be much higher than 10 for exact calculations.
-#' For similar reasons, degree 2 hybrids should not use \eqn{p} much larger than 40.
+#' should not be higher than 10 for exact calculations.
+#' For similar reasons, degree 2 hybrids should not use \eqn{p} larger than 40.
 #'
 #' @importFrom foreach %dopar%
 #'
@@ -86,7 +87,7 @@
 #' @param bg_w Optional vector of case weights for each row of `bg_X`.
 #'   If `bg_X = NULL`, must be of same length as `X`. Set to `NULL` for no weights.
 #' @param bg_n If `bg_X = NULL`: Size of background data to be sampled from `X`.
-#' @param exact If `TRUE`, the algorithm will produce exact SHAP values
+#' @param exact If `TRUE`, the algorithm will produce exact Kernel SHAP values
 #'   with respect to the background data.
 #'   The default is `TRUE` for up to eight features, and `FALSE` otherwise.
 #' @param hybrid_degree Integer controlling the exactness of the hybrid strategy. For
@@ -136,7 +137,7 @@
 #'     background data.
 #'   - `bg_X`: The background data.
 #'   - `bg_w`: The background case weights.
-#'   - `m_exact`: Number of on-off vectors for exact calculations per iteration.
+#'   - `m_exact`: Number of on-off vectors for exact calculations.
 #'   - `prop_exact`: Proportion of the Kernel SHAP weight distribution covered by
 #'     exact calculations.
 #'   - `exact`: Logical flag indicating whether calculations are exact or not.

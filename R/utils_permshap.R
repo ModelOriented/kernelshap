@@ -59,8 +59,10 @@ permshap_one <- function(
   stride <- 2L * (p - 1L)
 
   while (!converged && n_iter < max_iter) {
-    # For each iteration, we could reuse vz of the first and last row of Z
-    # to avoid most of the remaining overhead
+    # Improvement 1: For each iteration, we could reuse vz of the first and last row of Z
+    # Improvement 2: In low-memory case, we could move everything into an inner iteration,
+    #                which would provide a more efficient algo for models with
+    #                interactions of order up to 2.
     n_iter <- n_iter + 1L
     chains <- balanced_chains(p)
     Z <- lapply(chains, sample_Z_from_chain, feature_names = feature_names)
@@ -94,9 +96,9 @@ permshap_one <- function(
       beta_n <- beta_n + delta / p # dividing by p to get a mean
     }
     sigma_n <- get_sigma(est_m)
-    rownames(sigma_n) <- feature_names
     converged <- all(conv_crit(sigma_n, beta_n / n_iter) < tol)
   }
+  rownames(sigma_n) <- feature_names
   out <- list(
     beta = beta_n / n_iter, sigma = sigma_n, n_iter = n_iter, converged = converged
   )
