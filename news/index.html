@@ -59,8 +59,9 @@
 <h2 class="page-header" data-toc-text="0.8.0" id="kernelshap-080">kernelshap 0.8.0<a class="anchor" aria-label="anchor" href="#kernelshap-080"></a></h2>
 <div class="section level4">
 <h4 id="major-improvement-0-8-0">Major improvement<a class="anchor" aria-label="anchor" href="#major-improvement-0-8-0"></a></h4>
-<p><code><a href="../reference/permshap.html">permshap()</a></code> has received a sampling version, which is useful if the number of features p is larger than 8. The algorithm iterates until the resulting values are sufficiently precise. Additionally, standard errors are provided (<a href="https://github.com/ModelOriented/kernelshap/pull/152" class="external-link">#152</a>).</p>
-<p>During each iteration, the algorithm runs p antithetic sampling schemes, each starting at a different feature. We call this <strong>balanced antithetic sampling</strong>. Each iteration amounts to evaluating Shapley’s formula 2p times per feature. For models with interactions up to order two, this strategy provides exact SHAP values with a single iteration. In this case, the results also agree with Kernel SHAP.</p>
+<p><code><a href="../reference/permshap.html">permshap()</a></code> has received a sampling version, which is useful if the number of features p is larger than 8, when exact calculations take too much time. The algorithm iterates until the resulting values are sufficiently precise. Additionally, standard errors are provided (<a href="https://github.com/ModelOriented/kernelshap/pull/152" class="external-link">#152</a>).</p>
+<p>During each iteration, the algorithm runs p antithetic sampling schemes, each starting at a different feature. We call this <strong>balanced antithetic sampling</strong>. Each iteration amounts to evaluating Shapley’s formula 2p times per feature. For models with interactions up to order two, even a single antithetic scheme returns exact SHAP values. In this case, the results also agree with Kernel SHAP.</p>
+<p>The Python implementation in {shap} uses a similar approach, but without providing standard errors, and without early stopping. To mimic its behavior, we would need to set <code>max_iter = 1</code> in R, and <code>max_eval = 2p^2</code> in Python.</p>
 </div>
 <div class="section level4">
 <h4 id="user-visible-changes-0-8-0">User visible changes<a class="anchor" aria-label="anchor" href="#user-visible-changes-0-8-0"></a></h4>
@@ -71,6 +72,7 @@
 <div class="section level4">
 <h4 id="documentation-0-8-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-8-0"></a></h4>
 <ul><li>New DESCRIPTION file.</li>
+<li>Adapted docstrings to reflect above changes (<a href="https://github.com/ModelOriented/kernelshap/pull/155" class="external-link">#155</a>)</li>
 </ul></div>
 </div>
     <div class="section level2">
