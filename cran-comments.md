@@ -13,7 +13,8 @@ to other implementations, it iterates until convergence, and standard errors are
   
 ### `check_win_devel()`
 
-Status: OK
+Status: 1 NOTE
+R Under development (unstable) (2025-07-05 r88387 ucrt)
 
 ### Revdep
 
