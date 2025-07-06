@@ -4,6 +4,8 @@
 kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, deg,
                            m, tol, max_iter, v0, precalc, ...) {
   p <- length(feature_names)
+  K <- ncol(v1)
+  K_names <- colnames(v1)
 
   # Calculate A_exact and b_exact
   if (exact || deg >= 1L) {
@@ -37,16 +39,15 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
   bg_X_m <- precalc[["bg_X_m"]] #  (m*n_bg x p)
   X <- rep_rows(x, rep.int(1L, nrow(bg_X_m))) #  (m*n_bg x p)
   v0_m <- v0[rep.int(1L, m), , drop = FALSE] #  (m x K)
-
-  est_m <- list()
+  est_m <- array(
+    data = 0, dim = c(max_iter, p, K), dimnames = list(NULL, feature_names, K_names)
+  )
   converged <- FALSE
   n_iter <- 0L
   A_sum <- matrix( #  (p x p)
     data = 0, nrow = p, ncol = p, dimnames = list(feature_names, feature_names)
   )
-  b_sum <- matrix( #  (p x K)
-    data = 0, nrow = p, ncol = ncol(v0), dimnames = list(feature_names, colnames(v1))
-  )
+  b_sum <- matrix(0, nrow = p, ncol = K, dimnames = list(feature_names, K_names)) # (p x K)
   if (deg == 0L) {
     A_exact <- A_sum
     b_exact <- b_sum
@@ -70,13 +71,13 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
 
     # Least-squares with constraint that beta_1 + ... + beta_p = v_1 - v_0.
     # The additional constraint beta_0 = v_0 is dealt via offset
-    est_m[[n_iter]] <- solver(A_temp, b_temp, constraint = v1 - v0) #  (p x K)
+    est_m[n_iter, , ] <- solver(A_temp, b_temp, constraint = v1 - v0) #  (p x K)
 
     # Covariance calculation would fail in the first iteration
     if (n_iter >= 2L) {
       beta_n <- solver(A_sum / n_iter, b_sum / n_iter, constraint = v1 - v0) #  (p x K)
-      sigma_n <- get_sigma(est_m) #  (p x K)
-      converged <- all(conv_crit(sigma_n, beta_n) < tol)
+      sigma_n <- get_sigma(est_m[seq_len(n_iter), , , drop = FALSE]) #  (p x K)
+      converged <- check_convergence(beta = beta_n, sigma = sigma_n, tol = tol)
     }
   }
   list(beta = beta_n, sigma = sigma_n, n_iter = n_iter, converged = converged)

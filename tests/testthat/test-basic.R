@@ -38,7 +38,7 @@ test_that("Exact and sampling modes agree with interactions of order 2", {
   expect_equal(shap[[1L]]$S, shap[[3L]]$S) # exact ks vs sampling ks
   expect_equal(shap[[2L]]$S, shap[[4L]]$S) # exact ps vs sampling ps
   expect_true(all(shap[[3L]]$n_iter == 2L)) # ks stops after second iteraction
-  expect_true(all(shap[[4L]]$n_iter == 1L)) # ps stops after first iteration
+  expect_true(all(shap[[4L]]$n_iter == length(x))) # ps stops after p iteration
 })
 
 test_that("low_memory T/F are consistent", {

@@ -2,20 +2,22 @@
 
 ### Major improvement
 
-`permshap()` has received a sampling version, which is useful if the number of features p is larger than 8, when 
-exact calculations take too much time.
+`permshap()` has received a sampling version, which is useful if the number of features p is larger than 8.
 The algorithm iterates until the resulting values are sufficiently precise.
 Additionally, standard errors are provided ([#152](https://github.com/ModelOriented/kernelshap/pull/152)).
 
-During each iteration, the algorithm runs p antithetic sampling schemes, each
-starting at a different feature. We call this **balanced antithetic sampling**. 
-Each iteration amounts to evaluating Shapley's formula 2p times per feature.
-For models with interactions up to order two, even a single antithetic scheme returns
-exact SHAP values. In this case, the results also agree with Kernel SHAP.
+During each iteration, the algorithm runs an antithetic sampling scheme,
+enabling 2p evaluations of Shapley's formula.
+For models with interactions up to order two, one can show that
+even a single antithetic scheme provides exact SHAP values (with respect to the
+given background dataset).
 
-The Python implementation in {shap} uses a similar approach, but without
+The Python implementation in "shap" uses a similar approach, but without
 providing standard errors, and without early stopping. To mimic its behavior,
-we would need to set `max_iter = 1` in R, and `max_eval = 2p^2` in Python.
+we would need to set `max_iter = p` in R, and `max_eval = 2p^2` in Python.
+
+For faster convergence, we use balanced antithetic schemes in the sense that
+p subsequent schemes start at a different feature.
 
 ### User visible changes
 
@@ -23,11 +25,17 @@ we would need to set `max_iter = 1` in R, and `max_eval = 2p^2` in Python.
   `m` (= 0), `converged` (all `TRUE`), `n_iter` (all 1), and `SE` (all values 0) ([#153](https://github.com/ModelOriented/kernelshap/pull/153)).
 - In sampling mode of `kernelshap()`, above elements have been moved to the end of the output list ([#153](https://github.com/ModelOriented/kernelshap/pull/153)).
 - Removed unpaired sampling in `kernelshap()` ([#154](https://github.com/ModelOriented/kernelshap/pull/154)).
-
+- The stopping criterion in sampling mode of `kernelshap()` used a slightly too strict convergence rule.
+  This has been relaxed in [#156](https://github.com/ModelOriented/kernelshap/pull/156).
+- 
 ### Documentation
 
 - New DESCRIPTION file.
 - Adapted docstrings to reflect above changes ([#155](https://github.com/ModelOriented/kernelshap/pull/155))
+
+### Maintenance
+
+- Improve code coverage ([#156](https://github.com/ModelOriented/kernelshap/pull/156)).
 
 # kernelshap 0.7.1 (not on CRAN)
 
@@ -38,8 +46,7 @@ we would need to set `max_iter = 1` in R, and `max_eval = 2p^2` in Python.
 
 ## Maintenance
 
-- Update code coverage version [#150](https://github.com/ModelOriented/kernelshap/pull/150).
-- Improve code coverage [#156](https://github.com/ModelOriented/kernelshap/pull/156).
+- Update code coverage version ([#150](https://github.com/ModelOriented/kernelshap/pull/150)).
 
 # kernelshap 0.7.0
 

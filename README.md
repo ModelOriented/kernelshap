@@ -2,8 +2,8 @@
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/ModelOriented/kernelshap/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ModelOriented/kernelshap/actions/workflows/R-CMD-check.yaml)
-[![Codecov test coverage](https://codecov.io/gh/ModelOriented/kernelshap/graph/badge.svg)](https://app.codecov.io/gh/ModelOriented/kernelshap)
+[![R-CMD-check](https://github.com/ModelOriented/kernelshap/actions/workflows/R-CMD-check.yaml/badge.png)](https://github.com/ModelOriented/kernelshap/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/ModelOriented/kernelshap/graph/badge.png)](https://app.codecov.io/gh/ModelOriented/kernelshap)
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/kernelshap)](https://cran.r-project.org/package=kernelshap)
 
 [![](https://cranlogs.r-pkg.org/badges/kernelshap)](https://cran.r-project.org/package=kernelshap) 
@@ -15,8 +15,8 @@
 
 The package contains three functions to crunch SHAP values:
 
-- **`permshap()`**: Permutation SHAP algorithm of [1]. Recommended for models with up to 8 features, or if you don't trust Kernel SHAP.
-- **`kernelshap()`**: Kernel SHAP algorithm of [2] and [3]. Recommended for models with more than 8 features.
+- **`permshap()`**: Permutation SHAP algorithm of [1]. Recommended for models with up to 8 features, or if you don't trust Kernel SHAP. Both exact and sampling versions are available.
+- **`kernelshap()`**: Kernel SHAP algorithm of [2] and [3]. Recommended for models with more than 8 features. Both exact and (pseudo-exact) sampling versions are available.
 - **`additive_shap()`**: For *additive models* fitted via `lm()`, `glm()`, `mgcv::gam()`, `mgcv::bam()`, `gam::gam()`, `survival::coxph()`, or `survival::survreg()`. Exponentially faster than the model-agnostic options above, and recommended if possible.
 
 To explain your model, select an explanation dataset `X` (up to 1000 rows from the training data, feature columns only) and apply the recommended function. Use {shapviz} to visualize the resulting SHAP values. 
@@ -27,8 +27,8 @@ To explain your model, select an explanation dataset `X` (up to 1000 rows from t
 - Exact Kernel SHAP is an approximation to exact permutation SHAP. Since exact calculations are usually sufficiently fast for up to eight features, we recommend `permshap()` in this case. With more features, `kernelshap()` switches to a comparably fast, almost exact algorithm with faster convergence than the sampling version of permutation SHAP.
   That is why we recommend `kernelshap()` in this case.
 - For models with interactions of order up to two, SHAP values of permutation SHAP and Kernel SHAP agree, 
-and the sampling versions provide the same results as the exact versions after one (`permshap()`) 
-or two iterations (`kernelshap()`). In the presence of interactions of order three or higher, this is no longer the case.
+and the sampling versions provide the same results as the exact versions after minimal number of iterations.
+In the presence of interactions of order three or higher, this is no longer the case.
 - For additive models, `permshap()` and `kernelshap()` give the same results as `additive_shap` 
 as long as the full training data would be used as background data.
 
@@ -51,6 +51,8 @@ library(kernelshap)
 library(ggplot2)
 library(ranger)
 library(shapviz)
+
+options(ranger.num.threads = 8)
 
 diamonds <- transform(
   diamonds,
@@ -76,7 +78,7 @@ X <- diamonds[sample(nrow(diamonds), 1000), xvars]
 bg_X <- diamonds[sample(nrow(diamonds), 200), ]
 
 # 3) Crunch SHAP values (22 seconds)
-# Note: Since the number of features is small, we use permshap()
+# Since the number of features is small, we use permshap()
 system.time(
   ps <- permshap(fit, X, bg_X = bg_X)
 )
@@ -89,9 +91,7 @@ ps
 
 # Kernel SHAP gives very slightly different values because the model contains
 # interations of order > 2:
-system.time(  # 22 s
-  ks <- kernelshap(fit, X, bg_X = bg_X)
-)
+ks <- kernelshap(fit, X, bg_X = bg_X)
 ks
 #       log_carat     clarity       color        cut
 # [1,]  1.1911791  0.0900462 -0.13531648 0.001845958
@@ -105,7 +105,7 @@ sv_dependence(ps, xvars)
 
 ![](man/figures/README-rf-imp.svg)
 
-![](man/figures/README-rf-dep.svg)
+![](man/figures/README-rf-dep.png)
 
 ## More Examples
 
@@ -141,7 +141,7 @@ ps
 # [2,]  -0.51546 -0.1174766  0.11122775 0.030243973
 
 # Because there are no interactions of order above 2, Kernel SHAP gives the same:
-system.time(  # 13 s non-parallel
+system.time(  # 12 s non-parallel
   ks <- kernelshap(fit, X, bg_X = bg_X)
 )
 all.equal(ps$S, ks$S)
@@ -153,9 +153,9 @@ sv_importance(sv, kind = "bee")
 sv_dependence(sv, xvars)
 ```
 
-![](man/figures/README-gam-imp.svg)
+![](man/figures/README-gam-imp.png)
 
-![](man/figures/README-gam-dep.svg)
+![](man/figures/README-gam-dep.png)
 
 ### Taylored predict()
 
@@ -197,7 +197,7 @@ nn |>
 pred_fun <- function(mod, X) 
   predict(mod, data.matrix(X), batch_size = 1e4, verbose = FALSE, workers = 4)
 
-system.time(  # 50 s
+system.time(  # 42 s
   ps <- permshap(nn, X, bg_X = bg_X, pred_fun = pred_fun)
 )
 
@@ -208,7 +208,7 @@ sv_dependence(ps, xvars)
 
 ![](man/figures/README-nn-imp.svg)
 
-![](man/figures/README-nn-dep.svg)
+![](man/figures/README-nn-dep.png)
 
 ### Additive SHAP
 
@@ -249,7 +249,7 @@ sv_dependence(ps_prob, "Petal.Length")
 
 ![](man/figures/README-prob-imp.svg)
 
-![](man/figures/README-prob-dep.svg)
+![](man/figures/README-prob-dep.png)
 
 ### Meta-learners
 

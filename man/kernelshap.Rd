@@ -158,7 +158,7 @@ per row of \code{X} (if sampling needed).
 Efficient implementation of Kernel SHAP, see Lundberg and Lee (2017), and
 Covert and Lee (2021), abbreviated by CL21.
 By default, for up to p=8 features, exact Kernel SHAP values are returned
-with respect to the selected background data.
+(with respect to the selected background data).
 Otherwise, an almost exact hybrid algorithm combining exact calculations and
 iterative paired sampling is used, see Details.
 
