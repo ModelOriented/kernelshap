@@ -95,9 +95,9 @@
 <p>The package contains three functions to crunch SHAP values:</p>
 <ul>
 <li>
-<strong><code><a href="reference/permshap.html">permshap()</a></code></strong>: Permutation SHAP algorithm of [1]. Recommended for models with up to 8 features, or if you don’t trust Kernel SHAP.</li>
+<strong><code><a href="reference/permshap.html">permshap()</a></code></strong>: Permutation SHAP algorithm of [1]. Recommended for models with up to 8 features, or if you don’t trust Kernel SHAP. Both exact and sampling versions are available.</li>
 <li>
-<strong><code><a href="reference/kernelshap.html">kernelshap()</a></code></strong>: Kernel SHAP algorithm of [2] and [3]. Recommended for models with more than 8 features.</li>
+<strong><code><a href="reference/kernelshap.html">kernelshap()</a></code></strong>: Kernel SHAP algorithm of [2] and [3]. Recommended for models with more than 8 features. Both exact and (pseudo-exact) sampling versions are available.</li>
 <li>
 <strong><code><a href="reference/additive_shap.html">additive_shap()</a></code></strong>: For <em>additive models</em> fitted via <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>, <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code>, <code><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">mgcv::gam()</a></code>, <code><a href="https://rdrr.io/pkg/mgcv/man/bam.html" class="external-link">mgcv::bam()</a></code>, <code>gam::gam()</code>, <code><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">survival::coxph()</a></code>, or <code><a href="https://rdrr.io/pkg/survival/man/survreg.html" class="external-link">survival::survreg()</a></code>. Exponentially faster than the model-agnostic options above, and recommended if possible.</li>
 </ul>
@@ -106,7 +106,7 @@
 <ul>
 <li>Both algorithms need a representative background data <code>bg_X</code> to calculate marginal means (up to 500 rows from the training data). In cases with a natural “off” value (like MNIST digits), this can also be a single row with all values set to the off value. If unspecified, 200 rows are randomly sampled from <code>X</code>.</li>
 <li>Exact Kernel SHAP is an approximation to exact permutation SHAP. Since exact calculations are usually sufficiently fast for up to eight features, we recommend <code><a href="reference/permshap.html">permshap()</a></code> in this case. With more features, <code><a href="reference/kernelshap.html">kernelshap()</a></code> switches to a comparably fast, almost exact algorithm with faster convergence than the sampling version of permutation SHAP. That is why we recommend <code><a href="reference/kernelshap.html">kernelshap()</a></code> in this case.</li>
-<li>For models with interactions of order up to two, SHAP values of permutation SHAP and Kernel SHAP agree, and the sampling versions provide the same results as the exact versions after one (<code><a href="reference/permshap.html">permshap()</a></code>) or two iterations (<code><a href="reference/kernelshap.html">kernelshap()</a></code>). In the presence of interactions of order three or higher, this is no longer the case.</li>
+<li>For models with interactions of order up to two, SHAP values of permutation SHAP and Kernel SHAP agree, and the sampling versions provide the same results as the exact versions after minimal number of iterations. In the presence of interactions of order three or higher, this is no longer the case.</li>
 <li>For additive models, <code><a href="reference/permshap.html">permshap()</a></code> and <code><a href="reference/kernelshap.html">kernelshap()</a></code> give the same results as <code>additive_shap</code> as long as the full training data would be used as background data.</li>
 </ul>
 </div>
@@ -129,46 +129,46 @@
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">library</span>(ranger)</span>
 <span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">library</span>(shapviz)</span>
 <span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a></span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>diamonds <span class="ot">&lt;-</span> <span class="fu">transform</span>(</span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  diamonds,</span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  <span class="at">log_price =</span> <span class="fu">log</span>(price),</span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>  <span class="at">log_carat =</span> <span class="fu">log</span>(carat)</span>
-<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>)</span>
-<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a></span>
-<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>xvars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"log_carat"</span>, <span class="st">"clarity"</span>, <span class="st">"color"</span>, <span class="st">"cut"</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="fu">options</span>(<span class="at">ranger.num.threads =</span> <span class="dv">8</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>diamonds <span class="ot">&lt;-</span> <span class="fu">transform</span>(</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>  diamonds,</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>  <span class="at">log_price =</span> <span class="fu">log</span>(price),</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>  <span class="at">log_carat =</span> <span class="fu">log</span>(carat)</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>)</span>
 <span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a></span>
-<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">ranger</span>(</span>
-<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>  log_price <span class="sc">~</span> log_carat <span class="sc">+</span> clarity <span class="sc">+</span> color <span class="sc">+</span> cut, </span>
-<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>  <span class="at">data =</span> diamonds, </span>
-<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>  <span class="at">num.trees =</span> <span class="dv">100</span>,</span>
-<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">20</span></span>
-<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>)</span>
-<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a>fit  <span class="co"># OOB R-squared 0.989</span></span>
-<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a></span>
-<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="co"># 1) Sample rows to be explained</span></span>
-<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">10</span>)</span>
-<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a>X <span class="ot">&lt;-</span> diamonds[<span class="fu">sample</span>(<span class="fu">nrow</span>(diamonds), <span class="dv">1000</span>), xvars]</span>
-<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a></span>
-<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co"># 2) Optional: Select background data. If unspecified, 200 rows from X are used</span></span>
-<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a>bg_X <span class="ot">&lt;-</span> diamonds[<span class="fu">sample</span>(<span class="fu">nrow</span>(diamonds), <span class="dv">200</span>), ]</span>
-<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a></span>
-<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a><span class="co"># 3) Crunch SHAP values (22 seconds)</span></span>
-<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a><span class="co"># Note: Since the number of features is small, we use permshap()</span></span>
-<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a><span class="fu">system.time</span>(</span>
-<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a>  ps <span class="ot">&lt;-</span> <span class="fu">permshap</span>(fit, X, <span class="at">bg_X =</span> bg_X)</span>
-<span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a>)</span>
-<span id="cb2-34"><a href="#cb2-34" tabindex="-1"></a>ps</span>
-<span id="cb2-35"><a href="#cb2-35" tabindex="-1"></a></span>
-<span id="cb2-36"><a href="#cb2-36" tabindex="-1"></a><span class="co"># SHAP values of first observations:</span></span>
-<span id="cb2-37"><a href="#cb2-37" tabindex="-1"></a>      log_carat     clarity       color         cut</span>
-<span id="cb2-38"><a href="#cb2-38" tabindex="-1"></a>[<span class="dv">1</span>,]  <span class="fl">1.1913247</span>  <span class="fl">0.09005467</span> <span class="sc">-</span><span class="fl">0.13430720</span> <span class="fl">0.000682593</span></span>
-<span id="cb2-39"><a href="#cb2-39" tabindex="-1"></a>[<span class="dv">2</span>,] <span class="sc">-</span><span class="fl">0.4931989</span> <span class="sc">-</span><span class="fl">0.11724773</span>  <span class="fl">0.09868921</span> <span class="fl">0.028563613</span></span>
-<span id="cb2-40"><a href="#cb2-40" tabindex="-1"></a></span>
-<span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a><span class="co"># Kernel SHAP gives very slightly different values because the model contains</span></span>
-<span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a><span class="co"># interations of order &gt; 2:</span></span>
-<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a><span class="fu">system.time</span>(  <span class="co"># 22 s</span></span>
-<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a>  ks <span class="ot">&lt;-</span> <span class="fu">kernelshap</span>(fit, X, <span class="at">bg_X =</span> bg_X)</span>
-<span id="cb2-45"><a href="#cb2-45" tabindex="-1"></a>)</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>xvars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"log_carat"</span>, <span class="st">"clarity"</span>, <span class="st">"color"</span>, <span class="st">"cut"</span>)</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">ranger</span>(</span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>  log_price <span class="sc">~</span> log_carat <span class="sc">+</span> clarity <span class="sc">+</span> color <span class="sc">+</span> cut, </span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>  <span class="at">data =</span> diamonds, </span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>  <span class="at">num.trees =</span> <span class="dv">100</span>,</span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">20</span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a>)</span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a>fit  <span class="co"># OOB R-squared 0.989</span></span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a></span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a><span class="co"># 1) Sample rows to be explained</span></span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">10</span>)</span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a>X <span class="ot">&lt;-</span> diamonds[<span class="fu">sample</span>(<span class="fu">nrow</span>(diamonds), <span class="dv">1000</span>), xvars]</span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a></span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a><span class="co"># 2) Optional: Select background data. If unspecified, 200 rows from X are used</span></span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a>bg_X <span class="ot">&lt;-</span> diamonds[<span class="fu">sample</span>(<span class="fu">nrow</span>(diamonds), <span class="dv">200</span>), ]</span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a></span>
+<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a><span class="co"># 3) Crunch SHAP values (22 seconds)</span></span>
+<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a><span class="co"># Since the number of features is small, we use permshap()</span></span>
+<span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a><span class="fu">system.time</span>(</span>
+<span id="cb2-34"><a href="#cb2-34" tabindex="-1"></a>  ps <span class="ot">&lt;-</span> <span class="fu">permshap</span>(fit, X, <span class="at">bg_X =</span> bg_X)</span>
+<span id="cb2-35"><a href="#cb2-35" tabindex="-1"></a>)</span>
+<span id="cb2-36"><a href="#cb2-36" tabindex="-1"></a>ps</span>
+<span id="cb2-37"><a href="#cb2-37" tabindex="-1"></a></span>
+<span id="cb2-38"><a href="#cb2-38" tabindex="-1"></a><span class="co"># SHAP values of first observations:</span></span>
+<span id="cb2-39"><a href="#cb2-39" tabindex="-1"></a>      log_carat     clarity       color         cut</span>
+<span id="cb2-40"><a href="#cb2-40" tabindex="-1"></a>[<span class="dv">1</span>,]  <span class="fl">1.1913247</span>  <span class="fl">0.09005467</span> <span class="sc">-</span><span class="fl">0.13430720</span> <span class="fl">0.000682593</span></span>
+<span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a>[<span class="dv">2</span>,] <span class="sc">-</span><span class="fl">0.4931989</span> <span class="sc">-</span><span class="fl">0.11724773</span>  <span class="fl">0.09868921</span> <span class="fl">0.028563613</span></span>
+<span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a></span>
+<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a><span class="co"># Kernel SHAP gives very slightly different values because the model contains</span></span>
+<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a><span class="co"># interations of order &gt; 2:</span></span>
+<span id="cb2-45"><a href="#cb2-45" tabindex="-1"></a>ks <span class="ot">&lt;-</span> <span class="fu">kernelshap</span>(fit, X, <span class="at">bg_X =</span> bg_X)</span>
 <span id="cb2-46"><a href="#cb2-46" tabindex="-1"></a>ks</span>
 <span id="cb2-47"><a href="#cb2-47" tabindex="-1"></a><span class="co">#       log_carat     clarity       color        cut</span></span>
 <span id="cb2-48"><a href="#cb2-48" tabindex="-1"></a><span class="co"># [1,]  1.1911791  0.0900462 -0.13531648 0.001845958</span></span>
@@ -179,7 +179,7 @@
 <span id="cb2-53"><a href="#cb2-53" tabindex="-1"></a><span class="fu">sv_importance</span>(ps)</span>
 <span id="cb2-54"><a href="#cb2-54" tabindex="-1"></a><span class="fu">sv_dependence</span>(ps, xvars)</span></code></pre></div>
 <p><img src="reference/figures/README-rf-imp.svg"></p>
-<p><img src="reference/figures/README-rf-dep.svg"></p>
+<p><img src="reference/figures/README-rf-dep.png"></p>
 </div>
 <div class="section level2">
 <h2 id="more-examples">More Examples<a class="anchor" aria-label="anchor" href="#more-examples"></a>
@@ -214,7 +214,7 @@
 <span><span class="co"># [2,]  -0.51546 -0.1174766  0.11122775 0.030243973</span></span>
 <span></span>
 <span><span class="co"># Because there are no interactions of order above 2, Kernel SHAP gives the same:</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span>  <span class="co"># 13 s non-parallel</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span>  <span class="co"># 12 s non-parallel</span></span>
 <span>  <span class="va">ks</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/kernelshap.html">kernelshap</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/all.equal.html" class="external-link">all.equal</a></span><span class="op">(</span><span class="va">ps</span><span class="op">$</span><span class="va">S</span>, <span class="va">ks</span><span class="op">$</span><span class="va">S</span><span class="op">)</span></span>
@@ -224,8 +224,8 @@
 <span><span class="va">sv</span> <span class="op">&lt;-</span> <span class="fu">shapviz</span><span class="op">(</span><span class="va">ps</span><span class="op">)</span></span>
 <span><span class="fu">sv_importance</span><span class="op">(</span><span class="va">sv</span>, kind <span class="op">=</span> <span class="st">"bee"</span><span class="op">)</span></span>
 <span><span class="fu">sv_dependence</span><span class="op">(</span><span class="va">sv</span>, <span class="va">xvars</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-gam-imp.svg"></p>
-<p><img src="reference/figures/README-gam-dep.svg"></p>
+<p><img src="reference/figures/README-gam-imp.png"></p>
+<p><img src="reference/figures/README-gam-dep.png"></p>
 </div>
 <div class="section level3">
 <h3 id="taylored-predict">Taylored predict()<a class="anchor" aria-label="anchor" href="#taylored-predict"></a>
@@ -267,7 +267,7 @@
 <span><span class="va">pred_fun</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">mod</span>, <span class="va">X</span><span class="op">)</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">mod</span>, <span class="fu"><a href="https://rdrr.io/r/base/data.matrix.html" class="external-link">data.matrix</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span>, batch_size <span class="op">=</span> <span class="fl">1e4</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, workers <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span>  <span class="co"># 50 s</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span>  <span class="co"># 42 s</span></span>
 <span>  <span class="va">ps</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/permshap.html">permshap</a></span><span class="op">(</span><span class="va">nn</span>, <span class="va">X</span>, bg_X <span class="op">=</span> <span class="va">bg_X</span>, pred_fun <span class="op">=</span> <span class="va">pred_fun</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -275,7 +275,7 @@
 <span><span class="fu">sv_importance</span><span class="op">(</span><span class="va">ps</span>, show_numbers <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu">sv_dependence</span><span class="op">(</span><span class="va">ps</span>, <span class="va">xvars</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-nn-imp.svg"></p>
-<p><img src="reference/figures/README-nn-dep.svg"></p>
+<p><img src="reference/figures/README-nn-dep.png"></p>
 </div>
 <div class="section level3">
 <h3 id="additive-shap">Additive SHAP<a class="anchor" aria-label="anchor" href="#additive-shap"></a>
@@ -312,7 +312,7 @@
 <span><span class="fu">sv_importance</span><span class="op">(</span><span class="va">ps_prob</span><span class="op">)</span></span>
 <span><span class="fu">sv_dependence</span><span class="op">(</span><span class="va">ps_prob</span>, <span class="st">"Petal.Length"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-prob-imp.svg"></p>
-<p><img src="reference/figures/README-prob-dep.svg"></p>
+<p><img src="reference/figures/README-prob-dep.png"></p>
 </div>
 <div class="section level3">
 <h3 id="meta-learners">Meta-learners<a class="anchor" aria-label="anchor" href="#meta-learners"></a>
@@ -444,8 +444,8 @@
 <div class="dev-status">
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/ModelOriented/kernelshap/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/ModelOriented/kernelshap/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
-<li><a href="https://app.codecov.io/gh/ModelOriented/kernelshap" class="external-link"><img src="https://codecov.io/gh/ModelOriented/kernelshap/graph/badge.svg" alt="Codecov test coverage"></a></li>
+<li><a href="https://github.com/ModelOriented/kernelshap/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/ModelOriented/kernelshap/actions/workflows/R-CMD-check.yaml/badge.png" alt="R-CMD-check"></a></li>
+<li><a href="https://app.codecov.io/gh/ModelOriented/kernelshap" class="external-link"><img src="https://codecov.io/gh/ModelOriented/kernelshap/graph/badge.png" alt="Codecov test coverage"></a></li>
 <li><a href="https://cran.r-project.org/package=kernelshap" class="external-link"><img src="https://www.r-pkg.org/badges/version/kernelshap" alt="CRAN_Status_Badge"></a></li>
 <li><a href="https://cran.r-project.org/package=kernelshap" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/kernelshap"></a></li>
 <li><a href="https://cran.r-project.org/package=kernelshap" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/kernelshap?color=orange"></a></li>
