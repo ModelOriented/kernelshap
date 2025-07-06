@@ -13,9 +13,9 @@
 #' During each iteration, the algorithm cycles twice through a random permutation:
 #' It starts with all feature components "turned on" (i.e., taking them
 #' from the observation to be explained), then gradually turning off components
-#' given by the permutation (i.e., marginalizing them over the background data).
-#' When all components are off, the algorithm - step by step - turns the components
-#' back on, until all components are on again. This antithetic scheme allows to
+#' according to the permutation (i.e., marginalizing them over the background data).
+#' When all components are turned off, the algorithm - one by one - turns the components
+#' back on, until all components are turned on again. This antithetic scheme allows to
 #' evaluate Shapley's formula 2p times with each permutation.
 #'
 #' For models with interactions up to order two, one can show that
@@ -27,7 +27,7 @@
 #' we would need to set `max_iter = p` in R, and `max_eval = 2p^2` in Python.
 #'
 #' For faster convergence, we use balanced permutations in the sense that
-#' p subsequent permutations start with different features.
+#' p subsequent permutations each start with a different feature.
 #'
 #' @param exact If `TRUE`, the algorithm will produce exact SHAP values
 #'   with respect to the background data.
