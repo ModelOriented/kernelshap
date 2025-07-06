@@ -210,7 +210,8 @@ where the \(\beta_n\) are the SHAP values of a given observation,
 and \(\sigma_n\) their standard errors.
 For multidimensional predictions, the criterion must be satisfied for each
 dimension separately. The stopping criterion uses the fact that standard errors
-and SHAP values are all on the same scale. Ignored if <code>exact = TRUE</code>.</p></dd>
+and SHAP values are all on the same scale. Ignored if <code>exact = TRUE</code>.
+For <code><a href="permshap.html">permshap()</a></code>, the default is 0.01, while for <code>kernelshap()</code> it is set to 0.005.</p></dd>
 
 
 <dt id="arg-max-iter">max_iter<a class="anchor" aria-label="anchor" href="#arg-max-iter"></a></dt>
