@@ -6,19 +6,24 @@
 The algorithm iterates until the resulting values are sufficiently precise.
 Additionally, standard errors are provided ([#152](https://github.com/ModelOriented/kernelshap/pull/152)).
 
-During each iteration, the algorithm runs an antithetic sampling scheme,
-enabling 2p evaluations of Shapley's formula.
+During each iteration, the algorithm cycles twice through a random permutation:
+It starts with all feature components "turned on" (i.e., taking them
+from the observation to be explained), then gradually turning off components
+given by the permutation (i.e., marginalizing them over the background data).
+When all components are off, the algorithm - step by step - turns the components
+back on, until all components are on again. This antithetic scheme allows to
+evaluate Shapley's formula 2p times with each permutation.
+
 For models with interactions up to order two, one can show that
-even a single antithetic scheme provides exact SHAP values (with respect to the
+even a single iteration provides exact SHAP values (with respect to the
 given background dataset).
 
-The Python implementation in "shap" uses a similar approach, but without
+The Python implementation "shap" uses a similar approach, but without
 providing standard errors, and without early stopping. To mimic its behavior,
 we would need to set `max_iter = p` in R, and `max_eval = 2p^2` in Python.
 
-For faster convergence, we use balanced antithetic schemes in the sense that
-p subsequent schemes start at a different feature.
-
+For faster convergence, we use balanced permutations in the sense that
+p subsequent permutations start with different features.
 ### User visible changes
 
 - In exact mode, `kernelshap()` does not return the following elements anymore:

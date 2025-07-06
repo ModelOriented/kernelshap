@@ -80,8 +80,8 @@ If \code{bg_X = NULL}, must be of same length as \code{X}. Set to \code{NULL} fo
 with respect to the background data.
 The default is \code{TRUE} for up to eight features, and \code{FALSE} otherwise.}
 
-\item{low_memory}{If \code{FALSE} (default up to p = 15), the algorithm runs p
-antithetic schemes together, reducing the number of calls to \code{predict()}.}
+\item{low_memory}{If \code{FALSE} (default up to p = 15), the algorithm evaluates p
+predictions together, reducing the number of calls to \code{predict()}.}
 
 \item{tol}{Tolerance determining when to stop. As in CL21, the algorithm keeps
 iterating until \eqn{\textrm{max}(\sigma_n)/(\textrm{max}(\beta_n) - \textrm{min}(\beta_n)) < \textrm{tol}},
@@ -89,7 +89,8 @@ where the \eqn{\beta_n} are the SHAP values of a given observation,
 and \eqn{\sigma_n} their standard errors.
 For multidimensional predictions, the criterion must be satisfied for each
 dimension separately. The stopping criterion uses the fact that standard errors
-and SHAP values are all on the same scale. Ignored if \code{exact = TRUE}.}
+and SHAP values are all on the same scale. Ignored if \code{exact = TRUE}.
+For \code{permshap()}, the default is 0.01, while for \code{kernelshap()} it is set to 0.005.}
 
 \item{max_iter}{If the stopping criterion (see \code{tol}) is not reached after
 \code{max_iter} iterations, the algorithm stops. Ignored if \code{exact = TRUE}.}
@@ -139,18 +140,25 @@ By default, for up to p=8 features, exact SHAP values are returned
 
 Otherwise, the sampling process iterates until the resulting values
 are sufficiently precise, and standard errors are provided.
-During each iteration, the algorithm runs an antithetic sampling scheme,
-enabling 2p evaluations of Shapley's formula.
+
+During each iteration, the algorithm cycles twice through a random permutation:
+It starts with all feature components "turned on" (i.e., taking them
+from the observation to be explained), then gradually turning off components
+given by the permutation (i.e., marginalizing them over the background data).
+When all components are off, the algorithm - step by step - turns the components
+back on, until all components are on again. This antithetic scheme allows to
+evaluate Shapley's formula 2p times with each permutation.
+
 For models with interactions up to order two, one can show that
-even a single antithetic scheme provides exact SHAP values (with respect to the
+even a single iteration provides exact SHAP values (with respect to the
 given background dataset).
 
-The Python implementation in "shap" uses a similar approach, but without
+The Python implementation "shap" uses a similar approach, but without
 providing standard errors, and without early stopping. To mimic its behavior,
 we would need to set \code{max_iter = p} in R, and \verb{max_eval = 2p^2} in Python.
 
-For faster convergence, we use balanced antithetic schemes in the sense that
-p subsequent schemes start at a different feature.
+For faster convergence, we use balanced permutations in the sense that
+p subsequent permutations start with different features.
 }
 \section{Methods (by class)}{
 \itemize{

@@ -115,6 +115,7 @@
 #'   For multidimensional predictions, the criterion must be satisfied for each
 #'   dimension separately. The stopping criterion uses the fact that standard errors
 #'   and SHAP values are all on the same scale. Ignored if `exact = TRUE`.
+#'   For `permshap()`, the default is 0.01, while for `kernelshap()` it is set to 0.005.
 #' @param max_iter If the stopping criterion (see `tol`) is not reached after
 #'   `max_iter` iterations, the algorithm stops. Ignored if `exact = TRUE`.
 #' @param parallel If `TRUE`, use parallel [foreach::foreach()] to loop over rows
