@@ -49,11 +49,12 @@ permshap_one <- function(
 
   # Sampling version
   p <- length(feature_names)
-
-  beta_n <- matrix(
-    data = 0, nrow = p, ncol = ncol(v0), dimnames = list(feature_names, colnames(v0))
+  K <- ncol(v1)
+  K_names <- colnames(v1)
+  beta_n <- matrix(0, nrow = p, ncol = K, dimnames = list(feature_names, K_names))
+  est_m <- array(
+    data = 0, dim = c(max_iter, p, K), dimnames = list(NULL, feature_names, K_names)
   )
-  est_m <- list()
   converged <- FALSE
   n_iter <- 0L
   stride <- 2L * (p - 1L)
@@ -63,7 +64,6 @@ permshap_one <- function(
     # Improvement 2: In low-memory case, we could move everything into an inner iteration,
     #                which would provide a more efficient algo for models with
     #                interactions of order up to 2.
-    n_iter <- n_iter + 1L
     chains <- balanced_chains(p)
     Z <- lapply(chains, sample_Z_from_chain, feature_names = feature_names)
     if (!low_memory) { # predictions for all chains at once
@@ -87,16 +87,17 @@ permshap_one <- function(
       vz <- do.call(rbind, vz)
     }
     for (j in seq_len(p)) {
+      n_iter <- n_iter + 1L
       vzj <- vz[(1L + (j - 1L) * stride):(j * stride), , drop = FALSE]
       vzj <- pad_vz(vzj, v0 = v0, v1 = v1)
       J <- order(chains[[j]])
       forward <- vzj[J, , drop = FALSE] - vzj[J + 1L, , drop = FALSE]
       backward <- vzj[p + J + 1L, , drop = FALSE] - vzj[p + J, , drop = FALSE]
-      est_m[[length(est_m) + 1L]] <- delta <- (forward + backward) / 2
-      beta_n <- beta_n + delta / p # dividing by p to get a mean
+      est_m[n_iter, , ] <- delta <- (forward + backward) / 2
+      beta_n <- beta_n + delta
     }
-    sigma_n <- get_sigma(est_m)
-    converged <- all(conv_crit(sigma_n, beta_n / n_iter) < tol)
+    sigma_n <- get_sigma(est_m[seq_len(n_iter), , , drop = FALSE])
+    converged <- check_convergence(beta = beta_n / n_iter, sigma = sigma_n, tol = tol)
   }
   rownames(sigma_n) <- feature_names
   out <- list(

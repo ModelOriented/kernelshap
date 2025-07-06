@@ -100,29 +100,43 @@ get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
   rowsum(preds * w, group = g, reorder = FALSE) / sum(w)
 }
 
-#' Calculates Standard error
+#' Calculates standard errors over array
 #'
-#' Binds list of matrices along new first axis.
+#' Calculates standard errors over (n x p x K) array
+#' of n estimates of (p x K) matrices.
 #'
 #' @noRd
 #' @keywords internal
 #'
-#' @param est List of n (p x K) matrices with estimates.
+#' @param est Array of dimension (n x p x K) with n (p x K) dimensional estimates.
 #' @returns A (p x K) matrix with standard errors.
 get_sigma <- function(est) {
-  apply(abind1(est), 2L:3L, FUN = stats::sd) / sqrt(length(est))
+  n <- dim(est)[1L]
+  if (n < 2L) {
+    stop("Cannot calculate standard errors from single estimate.")
+  }
+  # No Bessel correction as each value is already an estimate of multiple observations
+  variance_no_bessel <- apply(est, 2L:3L, FUN = stats::var) * (n - 1) / n
+  return(sqrt(variance_no_bessel / n))
 }
 
-# Convergence criterion
-conv_crit <- function(sig, bet) {
-  if (any(dim(sig) != dim(bet))) {
-    stop("sig must have same dimension as bet")
-  }
-  out <- apply(sig, 2L, FUN = max) / apply(bet, 2L, FUN = function(z) diff(range(z)))
-  if (anyNA(out)) { # 0 / 0 -> converged (0)
-    out[is.na(out)] <- 0
-  }
-  return(out)
+#' Convergence criterion
+#'
+#' Checks if the largest standard error (per output-dimension) is not larger than
+#' `tol` times the range of the current SHAP values `beta`.
+#'
+#' @noRd
+#' @keywords internal
+#'
+#' @param beta A (p x K) matrix of SHAP values.
+#' @param beta A (p x K) matrix of standard errors.
+#' @param tol Tolerance, usually around 0.01.
+#' @returns A logical of length 1.
+check_convergence <- function(beta, sigma, tol) {
+  beta_range <- apply(beta, 2L, FUN = function(z) diff(range(z)))
+  max_standard_error <- apply(sigma, 2L, FUN = max)
+  converged <- max_standard_error <= tol * beta_range
+  return(all(converged))
 }
 
 #' Combine Matrices
