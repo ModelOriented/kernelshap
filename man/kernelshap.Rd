@@ -110,7 +110,8 @@ where the \eqn{\beta_n} are the SHAP values of a given observation,
 and \eqn{\sigma_n} their standard errors.
 For multidimensional predictions, the criterion must be satisfied for each
 dimension separately. The stopping criterion uses the fact that standard errors
-and SHAP values are all on the same scale. Ignored if \code{exact = TRUE}.}
+and SHAP values are all on the same scale. Ignored if \code{exact = TRUE}.
+For \code{permshap()}, the default is 0.01, while for \code{kernelshap()} it is set to 0.005.}
 
 \item{max_iter}{If the stopping criterion (see \code{tol}) is not reached after
 \code{max_iter} iterations, the algorithm stops. Ignored if \code{exact = TRUE}.}
