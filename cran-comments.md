@@ -16,7 +16,11 @@ to other implementations, it iterates until convergence, and standard errors are
 Status: 1 NOTE
 R Under development (unstable) (2025-07-05 r88387 ucrt)
 
-### Revdep
+### Revdep OK
 
-OK: 2                                                                           
+survex 1.2.0                           ── E: 0     | W: 0     | N: 0
+XAItest 1.0.1                          ── E: 1     | W: 0     | N: 0
+SEMdeep 1.0.0                          ── E: 1     | W: 1     | N: 0     
+
+OK: 3
 BROKEN: 0
