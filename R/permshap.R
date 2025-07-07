@@ -13,9 +13,9 @@
 #' During each iteration, the algorithm cycles twice through a random permutation:
 #' It starts with all feature components "turned on" (i.e., taking them
 #' from the observation to be explained), then gradually turning off components
-#' given by the permutation (i.e., marginalizing them over the background data).
-#' When all components are off, the algorithm - step by step - turns the components
-#' back on, until all components are on again. This antithetic scheme allows to
+#' according to the permutation (i.e., marginalizing them over the background data).
+#' When all components are turned off, the algorithm - one by one - turns the components
+#' back on, until all components are turned on again. This antithetic scheme allows to
 #' evaluate Shapley's formula 2p times with each permutation.
 #'
 #' For models with interactions up to order two, one can show that
@@ -27,7 +27,7 @@
 #' we would need to set `max_iter = p` in R, and `max_eval = 2p^2` in Python.
 #'
 #' For faster convergence, we use balanced permutations in the sense that
-#' p subsequent permutations start with different features.
+#' p subsequent permutations each start with a different feature.
 #'
 #' @param exact If `TRUE`, the algorithm will produce exact SHAP values
 #'   with respect to the background data.
@@ -112,6 +112,9 @@ permshap.default <- function(
   if (exact && p > 14L) {
     stop("Exact permutation SHAP only supported for up to 14 features")
   }
+  if (!exact && p < 4L) {
+    stop("Sampling version of permutation SHAP only supported for p >= 4 features")
+  }
 
   txt <- paste(if (exact) "Exact" else "Sampling version of", "permutation SHAP")
   if (verbose) {
@@ -140,6 +143,7 @@ permshap.default <- function(
   if (exact) {
     Z <- exact_Z(p, feature_names = feature_names, keep_extremes = TRUE)
     m <- nrow(Z) - 2L # We won't evaluate vz for first and last row
+    m_eval <- m # for consistency with non-exact case
     precalc <- list(
       Z = Z,
       Z_code = rowpaste(Z),
@@ -147,14 +151,18 @@ permshap.default <- function(
     )
   } else {
     max_iter <- as.integer(ceiling(max_iter / p) * p) # should be multiple of p
-    m <- 2L * (p - 1L) * (if (low_memory) 1L else p)
+    m <- 2L * (p - 3L)
+    # Number of on-off vectors evaluated together in the outer loop
+    m_eval <- if (low_memory) m else m * p
     precalc <- list(
-      bg_X_rep = rep_rows(bg_X, rep.int(seq_len(bg_n), m))
+      bg_X_rep = rep_rows(bg_X, rep.int(seq_len(bg_n), m_eval)),
+      bg_X_balanced = rep_rows(bg_X, rep.int(seq_len(bg_n), 2L * p)),
+      Z_balanced = exact_Z_balanced(p, feature_names)
     )
   }
 
-  if (m * bg_n > 2e5) {
-    warning_burden(m, bg_n = bg_n)
+  if (m_eval * bg_n > 2e5) {
+    warning_burden(m_eval, bg_n = bg_n)
   }
 
   # Apply permutation SHAP to each row of X

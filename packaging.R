@@ -107,7 +107,8 @@ if (FALSE) {
   check_rhub()
 
   # Takes long
-  revdepcheck::revdep_check(num_workers = 4L, bioc = FALSE)
+  Sys.setenv("R_BIOC_VERSION" = "3.21") # might need to update number
+  revdepcheck::revdep_check(num_workers = 4L, bioc = TRUE)
 
   # Wait until above checks are passed without relevant notes/warnings
   # then submit to CRAN

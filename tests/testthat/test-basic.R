@@ -1,23 +1,32 @@
 # Model with non-linearities and interactions
 fit <- lm(
-  Sepal.Length ~ poly(Petal.Width, degree = 2L) * Species + Petal.Length,
+  Sepal.Length ~ poly(Petal.Width, degree = 2L) * Species + Petal.Length + Sepal.Width,
   data = iris
 )
-x <- c("Petal.Width", "Species", "Petal.Length")
-preds <- unname(predict(fit, iris))
+x <- c("Petal.Width", "Species", "Petal.Length", "Sepal.Width")
 J <- c(1L, 51L, 101L)
+preds <- unname(predict(fit, iris[J, ]))
+
+test_that("permshap() in sampling mode requires at least 4 features", {
+  expect_error(
+    permshap(
+      fit, iris[1:3, x],
+      bg_X = iris, exact = FALSE, feature_names = x[1:2], verbose = FALSE
+    )
+  )
+})
 
 shap <- list(
   # Exact
-  kernelshap(fit, iris[x], bg_X = iris, verbose = FALSE),
-  permshap(fit, iris[x], bg_X = iris, verbose = FALSE),
+  kernelshap(fit, iris[J, x], bg_X = iris, verbose = FALSE),
+  permshap(fit, iris[J, x], bg_X = iris, verbose = FALSE),
   # Sampling
   kernelshap(
-    fit, iris[x],
+    fit, iris[J, x],
     bg_X = iris, exact = FALSE, hybrid_degree = 0, verbose = FALSE
   ),
-  permshap(fit, iris[x], bg_X = iris, exact = FALSE, verbose = FALSE),
-  permshap(fit, iris[x], bg_X = iris, exact = FALSE, low_memory = TRUE, verbose = FALSE)
+  permshap(fit, iris[J, x], bg_X = iris, exact = FALSE, verbose = FALSE),
+  permshap(fit, iris[J, x], bg_X = iris, exact = FALSE, low_memory = TRUE, verbose = FALSE)
 )
 
 test_that("baseline equals average prediction on background data", {
@@ -42,8 +51,7 @@ test_that("Exact and sampling modes agree with interactions of order 2", {
 })
 
 test_that("low_memory T/F are consistent", {
-  expect_equal(shap[[4L]][-6L], shap[[5L]][-6L])
-  expect_equal(shap[[4L]]$m, shap[[5L]]$m * length(x))
+  expect_equal(shap[[4L]], shap[[5L]])
 })
 
 test_that("auto-selection of background data works", {
@@ -155,7 +163,7 @@ test_that("Matrix input is fine", {
     s <- algo(fit, X[J, x], pred_fun = pred_fun, bg_X = X, verbose = FALSE)
 
     expect_equal(s$baseline, mean(iris$Sepal.Length)) # baseline is mean of bg
-    expect_equal(rowSums(s$S) + s$baseline, preds[J]) # sum shap = centered preds
+    expect_equal(rowSums(s$S) + s$baseline, preds) # sum shap = centered preds
     expect_no_error( # additional cols in bg are ok
       algo(fit, X[J, x], pred_fun = pred_fun, bg_X = cbind(d = 1, X), verbose = FALSE)
     )
@@ -175,7 +183,7 @@ test_that("Special case p = 1 works only for kernelshap()", {
     )
   )
   expect_equal(s$baseline, mean(iris$Sepal.Length))
-  expect_equal(unname(rowSums(s$S)) + s$baseline, preds[J])
+  expect_equal(unname(rowSums(s$S)) + s$baseline, preds)
 
   expect_error( # Not implemented
     permshap(
@@ -190,7 +198,7 @@ test_that("exact hybrid kernelshap() is similar to exact (non-hybrid)", {
     fit, iris[J, x],
     bg_X = iris, exact = FALSE, hybrid_degree = 1L, verbose = FALSE
   )
-  expect_equal(s1$S, shap[[1L]]$S[J, ])
+  expect_equal(s1$S, shap[[1L]]$S)
 })
 
 test_that("kernelshap works for large p (hybrid case)", {

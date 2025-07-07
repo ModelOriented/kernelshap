@@ -27,11 +27,11 @@ permshap_one <- function(
     tol,
     max_iter,
     ...) {
-  bg <- precalc[["bg_X_rep"]]
+  bg <- precalc$bg_X_rep
   X <- rep_rows(x, rep.int(1L, times = nrow(bg)))
 
   if (exact) {
-    Z <- precalc[["Z"]] # ((m_ex+2) x K)
+    Z <- precalc$Z # ((m_ex+2) x K)
     vz <- get_vz( # (m_ex x K)
       X = X,
       bg = bg,
@@ -42,7 +42,7 @@ permshap_one <- function(
       ...
     )
     vz <- rbind(v0, vz, v1) # we add the cheaply calculated v0 and v1
-    rownames(vz) <- precalc[["Z_code"]]
+    rownames(vz) <- precalc$Z_code
     beta <- shapley_formula(Z, vz = vz)
     return(list(beta = beta))
   }
@@ -57,13 +57,27 @@ permshap_one <- function(
   )
   converged <- FALSE
   n_iter <- 0L
-  stride <- 2L * (p - 1L)
+  stride <- 2L * (p - 3L)
+
+  # Pre-calculate part of Z with rowsum 1 or p - 1
+  vz_balanced <- get_vz( # (2p x K)
+    X = rep_rows(x, rep.int(1L, times = nrow(precalc$bg_X_balanced))),
+    bg = precalc$bg_X_balanced,
+    Z = precalc$Z_balanced,
+    object = object,
+    pred_fun = pred_fun,
+    w = bg_w,
+    ...
+  )
+
+  # vzj has constant first, middle, and last row
+  vzj <- init_vzj(p, v0 = v0, v1 = v1)
+
+  # Important positions to be filled in vzj
+  from_balanced <- c(2L, 2L + p, p, 2L * p)
+  from_iter <- c(3L:(p - 1L), (p + 3L):(2L * p - 1L))
 
   while (!converged && n_iter < max_iter) {
-    # Improvement 1: For each iteration, we could reuse vz of the first and last row of Z
-    # Improvement 2: In low-memory case, we could move everything into an inner iteration,
-    #                which would provide a more efficient algo for models with
-    #                interactions of order up to 2.
     chains <- balanced_chains(p)
     Z <- lapply(chains, sample_Z_from_chain, feature_names = feature_names)
     if (!low_memory) { # predictions for all chains at once
@@ -75,22 +89,20 @@ permshap_one <- function(
       vz <- vector("list", length = p)
       for (j in seq_len(p)) {
         vz[[j]] <- get_vz(
-          X = X,
-          bg = bg,
-          Z = Z[[j]],
-          object = object,
-          pred_fun = pred_fun,
-          w = bg_w,
-          ...
+          X = X, bg = bg, Z = Z[[j]], object = object, pred_fun = pred_fun, w = bg_w, ...
         )
       }
       vz <- do.call(rbind, vz)
     }
     for (j in seq_len(p)) {
       n_iter <- n_iter + 1L
-      vzj <- vz[(1L + (j - 1L) * stride):(j * stride), , drop = FALSE]
-      vzj <- pad_vz(vzj, v0 = v0, v1 = v1)
-      J <- order(chains[[j]])
+      chain <- chains[[j]]
+
+      # Fill vzj by pre-calculated masks
+      vzj[from_balanced, ] <- vz_balanced[c(j, j + p, chain[p] + p, chain[p]), ]
+      vzj[from_iter, ] <- vz[(1L + (j - 1L) * stride):(j * stride), , drop = FALSE]
+
+      J <- order(chain)
       forward <- vzj[J, , drop = FALSE] - vzj[J + 1L, , drop = FALSE]
       backward <- vzj[p + J + 1L, , drop = FALSE] - vzj[p + J, , drop = FALSE]
       est_m[n_iter, , ] <- delta <- (forward + backward) / 2
@@ -184,44 +196,64 @@ balanced_chains <- function(p) {
 
 #' Z Matrix for iterative permutation SHAP
 #'
-#' Creates a (2 * (p - 1) x p) on-off-matrix with antithetic rows.
-#' The first and last rows (all `TRUE`) and the middle one (all `FALSE`) are skipped
-#' (because we already know their values).
-#' Only used in iterative permutation SHAP.
+#' Creates a (2 * (p - 2) x p) on-off-matrix with antithetic scheme for the backward
+#' pass. The first and last rows (all `TRUE`) and the middle one (all `FALSE`) are dropped
+#' (because we already know their values). Also rows with rowsum 1 or p-1
+#' are dropped. Only used in iterative permutation SHAP.
 #'
 #' @noRd
 #' @keywords internal
 #'
 #' @param J A permutation vector of length `p`.
 #' @param feature_names A character vector of feature names.
-#' @returns A (2 * (p - 1) x p) on-off-matrix with antithetic rows.
+#' @returns A (2 * (p - 2) x p) on-off-matrix.
 sample_Z_from_chain <- function(J, feature_names) {
   m <- length(J) - 1L
+  if (m < 3L) {
+    stop("J must have at least 3 elements")
+  }
   Z <- matrix(TRUE, nrow = m, ncol = m + 1L, dimnames = list(NULL, feature_names))
   for (i in seq_len(m)) {
     Z[i:m, J[i]] <- FALSE
   }
+  # Drop rows with rowsum 1 or p-1 (could be done more efficiently in advance
+  Z <- Z[2L:(m - 1L), , drop = FALSE]
   return(rbind(Z, !Z))
 }
 
-#' Fills Gaps in vz
+#' Exact Z part for p balanced permutations
 #'
-#' Fills the first and last rows of `vz` with `v1`, and the middle one with `v0`.
-#' Only used in iterative permutation SHAP.
+#' Creates a (2p x p) on-off-matrix with the starting on-off vector for the forward and
+#' backward pass. Rows j and j + p refer to the same starting feature.
 #'
 #' @noRd
 #' @keywords internal
 #'
-#' @param vz A (2 * (p - 1) x K) matrix of vz values.
-#' @param v0 A (1 x K) vector of average predictions on background data.
-#' @param v1 A (1 x K) vector with the prediction for `x`.
+#' @param p An integer number of features.
 #' @param feature_names A character vector of feature names.
-#' @returns A (2 * (p - 1) x K) matrix with vz values.
-pad_vz <- function(vz, v0, v1) {
-  m <- nrow(vz) %/% 2
-  out <- rbind(
-    v1, vz[1L:m, , drop = FALSE], v0, vz[(m + 1L):(2L * m), , drop = FALSE], v1
-  )
-  dimnames(out) <- list(NULL, colnames(v1))
-  return(out)
+#' @returns A (2p x p) on-off-matrix with antithetic rows.
+exact_Z_balanced <- function(p, feature_names) {
+  Z <- diag(p)
+  storage.mode(Z) <- "logical"
+  colnames(Z) <- feature_names
+  return(rbind(!Z, Z))
+}
+
+#' Exact Z part for p balanced permutations
+#'
+#' Creates a (2p x p) on-off-matrix with the starting on-off vector for the forward and
+#' backward pass. Rows j and j + p refer to the same starting feature.
+#'
+#' @noRd
+#' @keywords internal
+#'
+#' @param p An integer number of features.
+#' @param v0 A (1 x K) matrix with the average prediction on background data.
+#' @param v1 A (1 x K) matrix with the prediction on the row to be explained.
+#' @returns A ((2p + 1) x K) matrix with initialized first, middle and last row.
+init_vzj <- function(p, v0, v1) {
+  vzj <- matrix(0, nrow = 2L * p + 1L, ncol = ncol(v1), dimnames = list(NULL, colnames(v1)))
+  vzj[2L * p + 1L, ] <- vzj[1L, ] <- v1
+  vzj[p + 1L, ] <- v0
+  return(vzj)
 }

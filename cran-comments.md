@@ -2,7 +2,8 @@
 
 Dear CRAN team
 
-The package (finally!) contains a sampling version of permutation SHAP.
+The package (finally!) contains a sampling version of permutation SHAP. In contrast 
+to other implementations, it iterates until convergence, and standard errors are provided.
 
 ## Checks
 
@@ -12,10 +13,10 @@ The package (finally!) contains a sampling version of permutation SHAP.
   
 ### `check_win_devel()`
 
-Status: OK
+Status: 1 NOTE
+R Under development (unstable) (2025-07-05 r88387 ucrt)
 
 ### Revdep
 
-survex 1.2.0                                                                             
-- OK: 1
-- BROKEN: 0
+OK: 2                                                                           
+BROKEN: 0
