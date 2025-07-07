@@ -140,6 +140,7 @@ permshap.default <- function(
   if (exact) {
     Z <- exact_Z(p, feature_names = feature_names, keep_extremes = TRUE)
     m <- nrow(Z) - 2L # We won't evaluate vz for first and last row
+    m_outer <- m # For consistency with non-exact case
     precalc <- list(
       Z = Z,
       Z_code = rowpaste(Z),
@@ -147,14 +148,16 @@ permshap.default <- function(
     )
   } else {
     max_iter <- as.integer(ceiling(max_iter / p) * p) # should be multiple of p
-    m <- 2L * (p - 1L) * (if (low_memory) 1L else p)
+    m <- 2L * (p - 1L)
+    # Number of on-off vectors evaluated together in the outer loop
+    m_outer <- if (low_memory) m else m * p
     precalc <- list(
-      bg_X_rep = rep_rows(bg_X, rep.int(seq_len(bg_n), m))
+      bg_X_rep = rep_rows(bg_X, rep.int(seq_len(bg_n), m_outer))
     )
   }
 
-  if (m * bg_n > 2e5) {
-    warning_burden(m, bg_n = bg_n)
+  if (m_outer * bg_n > 2e5) {
+    warning_burden(m_outer, bg_n = bg_n)
   }
 
   # Apply permutation SHAP to each row of X

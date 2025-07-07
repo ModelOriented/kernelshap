@@ -64,6 +64,8 @@ permshap_one <- function(
     # Improvement 2: In low-memory case, we could move everything into an inner iteration,
     #                which would provide a more efficient algo for models with
     #                interactions of order up to 2.
+    # Improvement 3: We could collect all evaluated z and use lookups. Already tested:
+    #                for p > 8 there is not much advantage, but the code is hard to read.
     chains <- balanced_chains(p)
     Z <- lapply(chains, sample_Z_from_chain, feature_names = feature_names)
     if (!low_memory) { # predictions for all chains at once

@@ -42,8 +42,7 @@ test_that("Exact and sampling modes agree with interactions of order 2", {
 })
 
 test_that("low_memory T/F are consistent", {
-  expect_equal(shap[[4L]][-6L], shap[[5L]][-6L])
-  expect_equal(shap[[4L]]$m, shap[[5L]]$m * length(x))
+  expect_equal(shap[[4L]], shap[[5L]])
 })
 
 test_that("auto-selection of background data works", {
