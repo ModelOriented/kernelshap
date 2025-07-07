@@ -8,9 +8,9 @@ are sufficiently precise, and standard errors are provided.
 During each iteration, the algorithm cycles twice through a random permutation:
 It starts with all feature components &quot;turned on&quot; (i.e., taking them
 from the observation to be explained), then gradually turning off components
-given by the permutation (i.e., marginalizing them over the background data).
-When all components are off, the algorithm - step by step - turns the components
-back on, until all components are on again. This antithetic scheme allows to
+according to the permutation (i.e., marginalizing them over the background data).
+When all components are turned off, the algorithm - one by one - turns the components
+back on, until all components are turned on again. This antithetic scheme allows to
 evaluate Shapley's formula 2p times with each permutation.
 For models with interactions up to order two, one can show that
 even a single iteration provides exact SHAP values (with respect to the
@@ -19,7 +19,7 @@ The Python implementation &quot;shap&quot; uses a similar approach, but without
 providing standard errors, and without early stopping. To mimic its behavior,
 we would need to set max_iter = p in R, and max_eval = 2p^2 in Python.
 For faster convergence, we use balanced permutations in the sense that
-p subsequent permutations start with different features."><meta property="og:image" content="/logo.png"><meta name="robots" content="noindex"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
+p subsequent permutations each start with a different feature."><meta property="og:image" content="/logo.png"><meta name="robots" content="noindex"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]--><!-- google analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-5650686-14"></script><script>
@@ -86,9 +86,9 @@ are sufficiently precise, and standard errors are provided.</p>
 <p>During each iteration, the algorithm cycles twice through a random permutation:
 It starts with all feature components "turned on" (i.e., taking them
 from the observation to be explained), then gradually turning off components
-given by the permutation (i.e., marginalizing them over the background data).
-When all components are off, the algorithm - step by step - turns the components
-back on, until all components are on again. This antithetic scheme allows to
+according to the permutation (i.e., marginalizing them over the background data).
+When all components are turned off, the algorithm - one by one - turns the components
+back on, until all components are turned on again. This antithetic scheme allows to
 evaluate Shapley's formula 2p times with each permutation.</p>
 <p>For models with interactions up to order two, one can show that
 even a single iteration provides exact SHAP values (with respect to the
@@ -97,7 +97,7 @@ given background dataset).</p>
 providing standard errors, and without early stopping. To mimic its behavior,
 we would need to set <code>max_iter = p</code> in R, and <code>max_eval = 2p^2</code> in Python.</p>
 <p>For faster convergence, we use balanced permutations in the sense that
-p subsequent permutations start with different features.</p>
+p subsequent permutations each start with a different feature.</p>
     </div>
 
     <div id="ref-usage">
