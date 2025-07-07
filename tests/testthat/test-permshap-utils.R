@@ -15,23 +15,31 @@ test_that("balanced_chains() returns output of correct structure", {
   expect_equal(sapply(result, sort), .row(c(p, p)))
 })
 
+test_that("exact_Z_balanced() returns correct matrix", {
+  expected <- rbind(
+    c(FALSE, TRUE, TRUE),
+    c(TRUE, FALSE, TRUE),
+    c(TRUE, TRUE, FALSE),
+    c(TRUE, FALSE, FALSE),
+    c(FALSE, TRUE, FALSE),
+    c(FALSE, FALSE, TRUE)
+  )
+  colnames(expected) <- 1:3
+  expect_equal(exact_Z_balanced(3, 1:3), expected)
+})
+
 test_that("sample_Z_from_chain() provides correct matrices", {
-  J <- c(1, 3, 2)
-  nms <- c("a", "b", "c")
+  J <- c(1, 3, 2, 4, 5)
+  nms <- letters[seq_along(J)]
 
   result <- sample_Z_from_chain(J, nms)
 
   # Switch off in the order of J
   expected_forward <- rbind(
-    c(FALSE, TRUE, TRUE),
-    c(FALSE, TRUE, FALSE)
+    c(FALSE, TRUE, FALSE, TRUE, TRUE),
+    c(FALSE, FALSE, FALSE, TRUE, TRUE)
   )
-
-  # Swith on in the order of J
-  expected_backward <- rbind(
-    c(TRUE, FALSE, FALSE),
-    c(TRUE, FALSE, TRUE)
-  )
+  expected_backward <- !expected_forward
   expected <- rbind(expected_forward, expected_backward)
   colnames(expected) <- nms
   expect_equal(result, expected)
@@ -40,26 +48,21 @@ test_that("sample_Z_from_chain() provides correct matrices", {
   p <- 10L
   chain <- 1L:p
   result <- sample_Z_from_chain(chain, letters[chain])
-  expect_equal(dim(result), c(2L * (p - 1L), p))
-  expect_equal(result[1L:(p - 1L), ], !result[p:(2L * (p - 1L)), ])
+  expect_equal(dim(result), c(2L * (p - 3L), p))
+  expect_equal(result[1L:(p - 3L), ], !result[(p - 2L):(2L * (p - 3L)), ])
 })
 
-test_that("pad_vz() works", {
-  # One-dimensional output
-  v0 <- matrix(0, dimnames = list("a", "x"))
-  v1 <- matrix(1, dimnames = list(NULL, "x"))
-  vz <- cbind(c(2, 3, 3, 2))
-  expect_equal(pad_vz(vz, v0, v1), expected = cbind(x = c(1, 2, 3, 0, 3, 2, 1)))
+test_that("init_vzj() provides correct matrices", {
+  p <- 4L
+  v0 <- cbind(1, 2)
+  v1 <- cbind(a = 2, b = 5)
+  expected_1 <- c(2, 0, 0, 0, 1, 0, 0, 0, 2)
+  expected_2 <- c(5, 0, 0, 0, 2, 0, 0, 0, 5)
+  expect_equal(init_vzj(p, v0 = v0, v1 = v1), cbind(a = expected_1, b = expected_2))
 
-  # Two-dimensional output
-  v0 <- rbind(c(0, 0))
-  dimnames(v0) <- list("a", c("x", "y"))
-  v1 <- rbind(c(1, 1))
-  colnames(v1) <- c("x", "y")
-  vz <- cbind(x = c(2, 3, 3, 2), y = c(3, 4, 4, 3))
-  expected <- cbind(
-    x = c(1, 2, 3, 0, 3, 2, 1),
-    y = c(1, 3, 4, 0, 4, 3, 1)
+  # One-dim
+  expect_equal(
+    init_vzj(p, v0 = v0[, 1L, drop = FALSE], v1 = v1[, 1L, drop = FALSE]),
+    cbind(a = expected_1)
   )
-  expect_equal(pad_vz(vz, v0, v1), expected = expected)
 })
