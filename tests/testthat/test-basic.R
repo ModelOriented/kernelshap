@@ -7,15 +7,6 @@ x <- c("Petal.Width", "Species", "Petal.Length", "Sepal.Width")
 J <- c(1L, 51L, 101L)
 preds <- unname(predict(fit, iris[J, ]))
 
-test_that("permshap() in sampling mode requires at least 4 features", {
-  expect_error(
-    permshap(
-      fit, iris[1:3, x],
-      bg_X = iris, exact = FALSE, feature_names = x[1:2], verbose = FALSE
-    )
-  )
-})
-
 shap <- list(
   # Exact
   kernelshap(fit, iris[J, x], bg_X = iris, verbose = FALSE),
@@ -41,17 +32,34 @@ test_that("SHAP + baseline = prediction", {
   }
 })
 
-
 test_that("Exact and sampling modes agree with interactions of order 2", {
   expect_equal(shap[[1L]]$S, shap[[2L]]$S) # exact ks vs exact ps
   expect_equal(shap[[1L]]$S, shap[[3L]]$S) # exact ks vs sampling ks
   expect_equal(shap[[2L]]$S, shap[[4L]]$S) # exact ps vs sampling ps
+  expect_equal(shap[[4L]], shap[[5L]]) # low/high-memory
   expect_true(all(shap[[3L]]$n_iter == 2L)) # ks stops after second iteraction
   expect_true(all(shap[[4L]]$n_iter == length(x))) # ps stops after p iteration
 })
 
-test_that("low_memory T/F are consistent", {
-  expect_equal(shap[[4L]], shap[[5L]])
+test_that("permshap() in sampling mode requires at least 4 features", {
+  expect_error(
+    permshap(
+      fit, iris[1:3, x],
+      bg_X = iris, exact = FALSE, feature_names = x[1:2], verbose = FALSE
+    )
+  )
+})
+
+test_that("kernelshap() with max_iter = 1 works", {
+  ks <- kernelshap(
+    fit, iris[J, x],
+    bg_X = iris, exact = FALSE,
+    hybrid_degree = 0L, max_iter = 1L, verbose = FALSE
+  )
+  expect_equal(ks$S, shap[[1L]]$S) # should be the same as exact ks for simple model
+  expect_equal(ks$n_iter, rep(1L, 3L))
+  expect_true(all(is.na(ks$SE)))
+  expect_true(all(!ks$converged))
 })
 
 test_that("auto-selection of background data works", {

@@ -78,6 +78,10 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
       beta_n <- solver(A_sum / n_iter, b_sum / n_iter, constraint = v1 - v0) #  (p x K)
       sigma_n <- get_sigma(est_m[seq_len(n_iter), , , drop = FALSE]) #  (p x K)
       converged <- check_convergence(beta = beta_n, sigma = sigma_n, tol = tol)
+    } else if (max_iter == 1L) { # if n_iter == 1 and max_iter == 1
+      beta_n <- solver(A_sum, b_sum, constraint = v1 - v0) #  (p x K)
+      converged <- FALSE
+      sigma_n <- NA * beta_n #  (p x K)
     }
   }
   list(beta = beta_n, sigma = sigma_n, n_iter = n_iter, converged = converged)

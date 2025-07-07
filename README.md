@@ -2,8 +2,8 @@
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/ModelOriented/kernelshap/actions/workflows/R-CMD-check.yaml/badge.png)](https://github.com/ModelOriented/kernelshap/actions/workflows/R-CMD-check.yaml)
-[![Codecov test coverage](https://codecov.io/gh/ModelOriented/kernelshap/graph/badge.png)](https://app.codecov.io/gh/ModelOriented/kernelshap)
+[![R-CMD-check](https://github.com/ModelOriented/kernelshap/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ModelOriented/kernelshap/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/ModelOriented/kernelshap/graph/badge.svg)](https://app.codecov.io/gh/ModelOriented/kernelshap)
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/kernelshap)](https://cran.r-project.org/package=kernelshap)
 
 [![](https://cranlogs.r-pkg.org/badges/kernelshap)](https://cran.r-project.org/package=kernelshap) 
