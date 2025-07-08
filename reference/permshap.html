@@ -11,15 +11,18 @@ from the observation to be explained), then gradually turning off components
 according to the permutation (i.e., marginalizing them over the background data).
 When all components are turned off, the algorithm - one by one - turns the components
 back on, until all components are turned on again. This antithetic scheme allows to
-evaluate Shapley's formula 2p times with each permutation.
+evaluate Shapley's formula 2p times with each permutation, using a total of
+2p + 1 evaluations of marginal means.
 For models with interactions up to order two, one can show that
 even a single iteration provides exact SHAP values (with respect to the
 given background dataset).
 The Python implementation &quot;shap&quot; uses a similar approach, but without
 providing standard errors, and without early stopping. To mimic its behavior,
-we would need to set max_iter = p in R, and max_eval = 2p^2 in Python.
+we would need to set max_iter = p in R, and max_eval = (2*p+1)*p in Python.
 For faster convergence, we use balanced permutations in the sense that
-p subsequent permutations each start with a different feature."><meta property="og:image" content="/logo.png"><meta name="robots" content="noindex"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
+p subsequent permutations each start with a different feature.
+Furthermore, the 2p on-off vectors with sum &amp;lt;=1 or &amp;gt;=p-1 are evaluated only once,
+similar to the degree 1 hybrid in kernelshap() (but covering less weight)."><meta property="og:image" content="/logo.png"><meta name="robots" content="noindex"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]--><!-- google analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-5650686-14"></script><script>
@@ -89,15 +92,18 @@ from the observation to be explained), then gradually turning off components
 according to the permutation (i.e., marginalizing them over the background data).
 When all components are turned off, the algorithm - one by one - turns the components
 back on, until all components are turned on again. This antithetic scheme allows to
-evaluate Shapley's formula 2p times with each permutation.</p>
+evaluate Shapley's formula 2p times with each permutation, using a total of
+2p + 1 evaluations of marginal means.</p>
 <p>For models with interactions up to order two, one can show that
 even a single iteration provides exact SHAP values (with respect to the
 given background dataset).</p>
 <p>The Python implementation "shap" uses a similar approach, but without
 providing standard errors, and without early stopping. To mimic its behavior,
-we would need to set <code>max_iter = p</code> in R, and <code>max_eval = 2p^2</code> in Python.</p>
+we would need to set <code>max_iter = p</code> in R, and <code>max_eval = (2*p+1)*p</code> in Python.</p>
 <p>For faster convergence, we use balanced permutations in the sense that
-p subsequent permutations each start with a different feature.</p>
+p subsequent permutations each start with a different feature.
+Furthermore, the 2p on-off vectors with sum &lt;=1 or &gt;=p-1 are evaluated only once,
+similar to the degree 1 hybrid in <code><a href="kernelshap.html">kernelshap()</a></code> (but covering less weight).</p>
     </div>
 
     <div id="ref-usage">
@@ -251,16 +257,17 @@ dimension \(K &gt; 1\), a list of \(K\) such matrices.</p></li>
 background data.</p></li>
 <li><p><code>bg_X</code>: The background data.</p></li>
 <li><p><code>bg_w</code>: The background case weights.</p></li>
-<li><p><code>m</code>: Number of on-off vectors evaluated (if sampling needed: per iteration).</p></li>
+<li><p><code>m_exact</code>: Number of on-off vectors evaluated once per row of <code>X</code>.</p></li>
 <li><p><code>exact</code>: Logical flag indicating whether calculations are exact or not.</p></li>
 <li><p><code>txt</code>: Summary text.</p></li>
 <li><p><code>predictions</code>: \((n \times K)\) matrix with predictions of <code>X</code>.</p></li>
 <li><p><code>algorithm</code>: "permshap".</p></li>
-<li><p><code>SE</code>: Standard errors corresponding to <code>S</code> (if sampling needed).</p></li>
+<li><p><code>m</code>: Number of sampled on-off vectors evaluated per iteration (if not exact).</p></li>
+<li><p><code>SE</code>: Standard errors corresponding to <code>S</code> (if not exact).</p></li>
 <li><p><code>n_iter</code>: Integer vector of length n providing the number of iterations
-per row of <code>X</code> (if sampling needed).</p></li>
+per row of <code>X</code> (if not exact).</p></li>
 <li><p><code>converged</code>: Logical vector of length n indicating convergence per row of <code>X</code>
-(if sampling needed).</p></li>
+(if not exact).</p></li>
 </ul></div>
     <div id="methods-by-class-">
     <h2>Methods (by class)</h2>

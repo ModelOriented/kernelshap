@@ -250,19 +250,19 @@ dimension \(K &gt; 1\), a list of \(K\) such matrices.</p></li>
 background data.</p></li>
 <li><p><code>bg_X</code>: The background data.</p></li>
 <li><p><code>bg_w</code>: The background case weights.</p></li>
-<li><p><code>m_exact</code>: Number of on-off vectors for exact calculations.</p></li>
+<li><p><code>m_exact</code>: Number of on-off vectors evaluated for exact calculations.</p></li>
 <li><p><code>prop_exact</code>: Proportion of the Kernel SHAP weight distribution covered by
 exact calculations.</p></li>
 <li><p><code>exact</code>: Logical flag indicating whether calculations are exact or not.</p></li>
 <li><p><code>txt</code>: Summary text.</p></li>
 <li><p><code>predictions</code>: \((n \times K)\) matrix with predictions of <code>X</code>.</p></li>
 <li><p><code>algorithm</code>: "kernelshap".</p></li>
-<li><p><code>m</code>: Number of sampled on-off vectors used per iteration (if sampling needed).</p></li>
-<li><p><code>SE</code>: Standard errors corresponding to <code>S</code> (if sampling needed).</p></li>
+<li><p><code>m</code>: Number of sampled on-off vectors evaluated per iteration (if not exact).</p></li>
+<li><p><code>SE</code>: Standard errors corresponding to <code>S</code> (if not exact).</p></li>
 <li><p><code>n_iter</code>: Integer vector of length n providing the number of iterations
-per row of <code>X</code> (if sampling needed).</p></li>
+per row of <code>X</code> (if not exact).</p></li>
 <li><p><code>converged</code>: Logical vector of length n indicating convergence per row of <code>X</code>
-(if sampling needed).</p></li>
+(if not exact).</p></li>
 </ul></div>
     <div id="details">
     <h2>Details</h2>
