@@ -119,16 +119,17 @@ dimension \eqn{K > 1}, a list of \eqn{K} such matrices.
 background data.
 \item \code{bg_X}: The background data.
 \item \code{bg_w}: The background case weights.
-\item \code{m}: Number of on-off vectors evaluated (if sampling needed: per iteration).
+\item \code{m_exact}: Number of on-off vectors evaluated once per row of \code{X}.
 \item \code{exact}: Logical flag indicating whether calculations are exact or not.
 \item \code{txt}: Summary text.
 \item \code{predictions}: \eqn{(n \times K)} matrix with predictions of \code{X}.
 \item \code{algorithm}: "permshap".
-\item \code{SE}: Standard errors corresponding to \code{S} (if sampling needed).
+\item \code{m}: Number of sampled on-off vectors evaluated per iteration (if not exact).
+\item \code{SE}: Standard errors corresponding to \code{S} (if not exact).
 \item \code{n_iter}: Integer vector of length n providing the number of iterations
-per row of \code{X} (if sampling needed).
+per row of \code{X} (if not exact).
 \item \code{converged}: Logical vector of length n indicating convergence per row of \code{X}
-(if sampling needed).
+(if not exact).
 }
 }
 \description{
@@ -147,7 +148,8 @@ from the observation to be explained), then gradually turning off components
 according to the permutation (i.e., marginalizing them over the background data).
 When all components are turned off, the algorithm - one by one - turns the components
 back on, until all components are turned on again. This antithetic scheme allows to
-evaluate Shapley's formula 2p times with each permutation.
+evaluate Shapley's formula 2p times with each permutation, using a total of
+2p + 1 evaluations of marginal means.
 
 For models with interactions up to order two, one can show that
 even a single iteration provides exact SHAP values (with respect to the
@@ -155,10 +157,12 @@ given background dataset).
 
 The Python implementation "shap" uses a similar approach, but without
 providing standard errors, and without early stopping. To mimic its behavior,
-we would need to set \code{max_iter = p} in R, and \verb{max_eval = 2p^2} in Python.
+we would need to set \code{max_iter = p} in R, and \code{max_eval = (2*p+1)*p} in Python.
 
 For faster convergence, we use balanced permutations in the sense that
 p subsequent permutations each start with a different feature.
+Furthermore, the 2p on-off vectors with sum <=1 or >=p-1 are evaluated only once,
+similar to the degree 1 hybrid in \code{\link[=kernelshap]{kernelshap()}} (but covering less weight).
 }
 \section{Methods (by class)}{
 \itemize{

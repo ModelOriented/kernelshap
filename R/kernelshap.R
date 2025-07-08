@@ -138,19 +138,19 @@
 #'     background data.
 #'   - `bg_X`: The background data.
 #'   - `bg_w`: The background case weights.
-#'   - `m_exact`: Number of on-off vectors for exact calculations.
+#'   - `m_exact`: Number of on-off vectors evaluated for exact calculations.
 #'   - `prop_exact`: Proportion of the Kernel SHAP weight distribution covered by
 #'     exact calculations.
 #'   - `exact`: Logical flag indicating whether calculations are exact or not.
 #'   - `txt`: Summary text.
 #'   - `predictions`: \eqn{(n \times K)} matrix with predictions of `X`.
 #'   - `algorithm`: "kernelshap".
-#'   - `m`: Number of sampled on-off vectors used per iteration (if sampling needed).
-#'   - `SE`: Standard errors corresponding to `S` (if sampling needed).
+#'   - `m`: Number of sampled on-off vectors evaluated per iteration (if not exact).
+#'   - `SE`: Standard errors corresponding to `S` (if not exact).
 #'   - `n_iter`: Integer vector of length n providing the number of iterations
-#'     per row of `X` (if sampling needed).
+#'     per row of `X` (if not exact).
 #'   - `converged`: Logical vector of length n indicating convergence per row of `X`
-#'     (if sampling needed).
+#'     (if not exact).
 #' @references
 #'   1. Scott M. Lundberg and Su-In Lee. A unified approach to interpreting model
 #'     predictions. Proceedings of the 31st International Conference on Neural

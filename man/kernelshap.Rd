@@ -140,19 +140,19 @@ dimension \eqn{K > 1}, a list of \eqn{K} such matrices.
 background data.
 \item \code{bg_X}: The background data.
 \item \code{bg_w}: The background case weights.
-\item \code{m_exact}: Number of on-off vectors for exact calculations.
+\item \code{m_exact}: Number of on-off vectors evaluated for exact calculations.
 \item \code{prop_exact}: Proportion of the Kernel SHAP weight distribution covered by
 exact calculations.
 \item \code{exact}: Logical flag indicating whether calculations are exact or not.
 \item \code{txt}: Summary text.
 \item \code{predictions}: \eqn{(n \times K)} matrix with predictions of \code{X}.
 \item \code{algorithm}: "kernelshap".
-\item \code{m}: Number of sampled on-off vectors used per iteration (if sampling needed).
-\item \code{SE}: Standard errors corresponding to \code{S} (if sampling needed).
+\item \code{m}: Number of sampled on-off vectors evaluated per iteration (if not exact).
+\item \code{SE}: Standard errors corresponding to \code{S} (if not exact).
 \item \code{n_iter}: Integer vector of length n providing the number of iterations
-per row of \code{X} (if sampling needed).
+per row of \code{X} (if not exact).
 \item \code{converged}: Logical vector of length n indicating convergence per row of \code{X}
-(if sampling needed).
+(if not exact).
 }
 }
 \description{
