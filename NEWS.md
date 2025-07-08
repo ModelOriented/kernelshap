@@ -13,7 +13,7 @@ according to the permutation (i.e., marginalizing them over the background data)
 When all components are turned off, the algorithm - one by one - turns the components
 back on, until all components are turned on again. This antithetic scheme allows to
 evaluate Shapley's formula 2p times with each permutation, using a total of
-2p + 1 evaluations.
+2p + 1 evaluations of marginal means.
 
 For models with interactions up to order two, one can show that
 even a single iteration provides exact SHAP values (with respect to the
@@ -25,7 +25,7 @@ we would need to set `max_iter = p` in R, and `max_eval = (2*p+1)*p` in Python.
 
 For faster convergence, we use balanced permutations in the sense that
 p subsequent permutations each start with a different feature.
-Furthermore, the 2p on-off vectors with sum 1 or p-1 are evaluated only once,
+Furthermore, the 2p on-off vectors with sum <=1 or >=p-1 are evaluated only once,
 similar to the degree 1 hybrid in [kernelshap()] (but covering less weight).
 
 ### User visible changes

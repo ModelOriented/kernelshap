@@ -17,7 +17,7 @@
 #' When all components are turned off, the algorithm - one by one - turns the components
 #' back on, until all components are turned on again. This antithetic scheme allows to
 #' evaluate Shapley's formula 2p times with each permutation, using a total of
-#' 2p + 1 evaluations.
+#' 2p + 1 evaluations of marginal means.
 #'
 #' For models with interactions up to order two, one can show that
 #' even a single iteration provides exact SHAP values (with respect to the
@@ -29,7 +29,7 @@
 #'
 #' For faster convergence, we use balanced permutations in the sense that
 #' p subsequent permutations each start with a different feature.
-#' Furthermore, the 2p on-off vectors with sum 1 or p-1 are evaluated only once,
+#' Furthermore, the 2p on-off vectors with sum <=1 or >=p-1 are evaluated only once,
 #' similar to the degree 1 hybrid in [kernelshap()] (but covering less weight).
 #'
 #' @param exact If `TRUE`, the algorithm will produce exact SHAP values
@@ -47,7 +47,7 @@
 #'     background data.
 #'   - `bg_X`: The background data.
 #'   - `bg_w`: The background case weights.
-#'   - `m_exact`: Number of on-off vectors evaluated for exact calculations.
+#'   - `m_exact`: Number of on-off vectors evaluated once per row of `X`.
 #'   - `exact`: Logical flag indicating whether calculations are exact or not.
 #'   - `txt`: Summary text.
 #'   - `predictions`: \eqn{(n \times K)} matrix with predictions of `X`.
