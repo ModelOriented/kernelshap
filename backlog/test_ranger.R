@@ -23,3 +23,11 @@ permshap(fit2, head(veteran), feature_names = xvars, bg_X = veteran)
 permshap(fit3, head(veteran), feature_names = xvars, bg_X = veteran, type = "quantiles")
 permshap(fit4, head(veteran), feature_names = xvars, bg_X = veteran)
 
+# Sampling
+permshap(fit, head(veteran), feature_names = xvars, bg_X = veteran, exact = FALSE)
+permshap(fit, head(veteran), feature_names = xvars, bg_X = veteran, exact = FALSE, low_memory = TRUE)
+permshap(fit, head(veteran), feature_names = xvars, bg_X = veteran, survival = "prob", exact = FALSE)
+permshap(fit2, head(veteran), feature_names = xvars, bg_X = veteran, exact = FALSE)
+permshap(fit3, head(veteran), feature_names = xvars, bg_X = veteran, type = "quantiles", exact = FALSE)
+permshap(fit4, head(veteran), feature_names = xvars, bg_X = veteran, exact = FALSE)
+permshap(fit4, head(veteran), feature_names = xvars, bg_X = veteran, exact = FALSE, low_memory = TRUE)
