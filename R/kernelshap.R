@@ -125,6 +125,8 @@
 #'   Ideally, this is `NULL` (default). Only relevant if `parallel = TRUE`.
 #'   Example on Windows: if `object` is a GAM fitted with package 'mgcv',
 #'   then one might need to set `parallel_args = list(.packages = "mgcv")`.
+#'   The warning "unexpectedly generated random numbers" can be ignored because
+#'   sharing seeds across rows of `X` it is not a problem.
 #' @param verbose Set to `FALSE` to suppress messages and the progress bar.
 #' @param survival Should cumulative hazards ("chf", default) or survival
 #'   probabilities ("prob") per time be predicted? Only in `ranger()` survival models.
