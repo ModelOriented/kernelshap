@@ -48,7 +48,7 @@ similar to the degree 1 hybrid in kernelshap() (but covering less weight)."><met
         <div class="info">
           <span class="partof">part of the <a href="https://github.com/ModelOriented/DrWhy" class="external-link">DrWhy.AI</a>
            developed by the <a href="https://mi2.ai/" class="external-link">MI².AI</a> </span>
-          <span class="version version-default">0.8.0</span>
+          <span class="version version-default">0.8.1</span>
         </div>
       </div>
     </div>
@@ -75,7 +75,7 @@ similar to the degree 1 hybrid in kernelshap() (but covering less weight)."><met
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Permutation SHAP</h1>
-    <small class="dont-index">Source: <a href="https://github.com/ModelOriented/kernelshap/blob/0.8.0/R/permshap.R" class="external-link"><code>R/permshap.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/ModelOriented/kernelshap/blob/main/R/permshap.R" class="external-link"><code>R/permshap.R</code></a></small>
     <div class="hidden name"><code>permshap.Rd</code></div>
     </div>
 
@@ -236,7 +236,9 @@ see README for an example. Parallelization automatically disables the progress b
 <dd><p>Named list of arguments passed to <code><a href="https://rdrr.io/pkg/foreach/man/foreach.html" class="external-link">foreach::foreach()</a></code>.
 Ideally, this is <code>NULL</code> (default). Only relevant if <code>parallel = TRUE</code>.
 Example on Windows: if <code>object</code> is a GAM fitted with package 'mgcv',
-then one might need to set <code>parallel_args = list(.packages = "mgcv")</code>.</p></dd>
+then one might need to set <code>parallel_args = list(.packages = "mgcv")</code>.
+The warning "unexpectedly generated random numbers" can be ignored because
+sharing seeds across rows of <code>X</code> it is not a problem.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
