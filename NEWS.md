@@ -1,3 +1,12 @@
+# kernelshap 0.8.1
+
+### Documentation
+
+- `kernelshap()` and `permshap()` currently yield a warning on random seed handling in
+  parallel mode, thanks [#152](https://github.com/ModelOriented/kernelshap/issues/163)
+  for reporting. We have added a note in the function documentation that this warning
+  can be ignored.
+
 # kernelshap 0.8.0
 
 ### Major improvement

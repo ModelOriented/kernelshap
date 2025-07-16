@@ -102,7 +102,9 @@ see README for an example. Parallelization automatically disables the progress b
 \item{parallel_args}{Named list of arguments passed to \code{\link[foreach:foreach]{foreach::foreach()}}.
 Ideally, this is \code{NULL} (default). Only relevant if \code{parallel = TRUE}.
 Example on Windows: if \code{object} is a GAM fitted with package 'mgcv',
-then one might need to set \code{parallel_args = list(.packages = "mgcv")}.}
+then one might need to set \code{parallel_args = list(.packages = "mgcv")}.
+The warning "unexpectedly generated random numbers" can be ignored because
+sharing seeds across rows of \code{X} it is not a problem.}
 
 \item{verbose}{Set to \code{FALSE} to suppress messages and the progress bar.}
 

@@ -15,7 +15,7 @@ library(usethis)
 use_description(
   fields = list(
     Title = "Kernel SHAP",
-    Version = "0.8.0",
+    Version = "0.8.1",
     Description = "Efficient implementation of Kernel SHAP
     (Lundberg and Lee, 2017, <doi:10.48550/arXiv.1705.07874>)
     permutation SHAP, and additive SHAP for model interpretability.
