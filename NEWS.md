@@ -1,9 +1,13 @@
 # kernelshap 0.8.1
 
+### Performance improvements
+
+- `permshap(, exact = TRUE)` is slightly faster by pre-calculating more elements used across rows [#165](https://github.com/ModelOriented/kernelshap/pull/165)
+
 ### Documentation
 
 - `kernelshap()` and `permshap()` currently yield a warning on random seed handling in
-  parallel mode, thanks [#152](https://github.com/ModelOriented/kernelshap/issues/163)
+  parallel mode, thanks [#163](https://github.com/ModelOriented/kernelshap/issues/163)
   for reporting. We have added a note in the function documentation that this warning
   can be ignored.
 

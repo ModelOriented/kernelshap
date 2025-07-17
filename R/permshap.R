@@ -150,8 +150,9 @@ permshap.default <- function(
     m_eval <- 0L # for consistency with sampling case
     precalc <- list(
       Z = Z,
-      Z_code = rowpaste(Z),
-      bg_X_rep = rep_rows(bg_X, rep.int(seq_len(bg_n), m_exact))
+      bg_X_rep = rep_rows(bg_X, rep.int(seq_len(bg_n), m_exact)),
+      positions = positions_for_exact(Z),
+      shapley_w = shapley_weights(p, ell = rowSums(Z) - 1) # how many other players?
     )
   } else {
     max_iter <- as.integer(ceiling(max_iter / p) * p) # should be multiple of p

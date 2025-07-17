@@ -40,6 +40,9 @@ wcolMeans <- function(x, w = NULL, ...) {
 #' All on-off Vectors
 #'
 #' Internal function that creates matrix of all on-off vectors of length `p`.
+#' Faster than as.matrix(do.call(expand.grid, replicate(p, 0:1, simplify = FALSE)))[, p:1]
+#' Note that we currently do not return a logical matrix because it goes into
+#' matrix multiplications in `kernelshap()`.
 #'
 #' @noRd
 #' @keywords internal
@@ -49,9 +52,21 @@ wcolMeans <- function(x, w = NULL, ...) {
 #' @param keep_extremes Should extremes be kept? Defaults to `FALSE` (for kernelshap).
 #' @returns An integer matrix of all on-off vectors of length `p`.
 exact_Z <- function(p, feature_names, keep_extremes = FALSE) {
-  Z <- as.matrix(do.call(expand.grid, replicate(p, 0:1, simplify = FALSE)))
+  if (p < 2L) {
+    stop("p must be at least 2 if exact = TRUE.")
+  }
+  m <- 2^p
+  if (keep_extremes) {
+    M <- seq_len(m) - 1L
+  } else {
+    M <- seq_len(m - 2L)
+    m <- m - 2L
+  }
+  encoded <- as.integer(intToBits(M))
+  dim(encoded) <- c(32L, m)
+  Z <- t(encoded[p:1L, , drop = FALSE])
   colnames(Z) <- feature_names
-  if (keep_extremes) Z else Z[2:(nrow(Z) - 1L), , drop = FALSE]
+  return(Z)
 }
 
 #' Masker
