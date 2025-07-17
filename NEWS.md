@@ -2,7 +2,8 @@
 
 ### Performance improvements
 
-- `permshap(, exact = TRUE)` is slightly faster by pre-calculating more elements used across rows [#165](https://github.com/ModelOriented/kernelshap/pull/165)
+- `permshap(, exact = TRUE)` is slightly faster by pre-calculating more 
+  elements used across rows [#165](https://github.com/ModelOriented/kernelshap/pull/165)
 
 ### Documentation
 
