@@ -137,15 +137,9 @@ permshap.default <- function(
   v0 <- wcolMeans(bg_preds, w = bg_w) # Average pred of bg data: 1 x K
   v1 <- align_pred(pred_fun(object, X, ...)) # Predictions on X:        n x K
 
-  # Drop unnecessary columns in bg_X. If X is matrix, also column order is relevant
-  # Predictions will never be applied directly to bg_X anymore
-  if (!identical(colnames(bg_X), feature_names)) {
-    bg_X <- bg_X[, feature_names, drop = FALSE]
-  }
-
   # Pre-calculations that are identical for each row to be explained
   if (exact) {
-    Z <- exact_Z(p, feature_names = feature_names, keep_extremes = TRUE)
+    Z <- exact_Z(p, feature_names = feature_names)
     m_exact <- nrow(Z) - 2L # We won't evaluate vz for first and last row
     m_eval <- 0L # for consistency with sampling case
     precalc <- list(

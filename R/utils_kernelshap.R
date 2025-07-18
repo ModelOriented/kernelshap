@@ -1,8 +1,21 @@
 # Kernel SHAP algorithm for a single row x
 # If exact, a single call to predict() is necessary.
 # If sampling is involved, we need at least two additional calls to predict().
-kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, deg,
-                           m, tol, max_iter, v0, precalc, ...) {
+kernelshap_one <- function(
+    x,
+    v1,
+    object,
+    pred_fun,
+    feature_names,
+    bg_w,
+    exact,
+    deg,
+    m,
+    tol,
+    max_iter,
+    v0,
+    precalc,
+    ...) {
   p <- length(feature_names)
   K <- ncol(v1)
   K_names <- colnames(v1)
@@ -16,14 +29,8 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
     v0_m_exact <- v0[rep.int(1L, m_exact), , drop = FALSE] #  (m_ex x K)
 
     # Most expensive part
-    vz <- get_vz( #  (m_ex x K)
-      X = rep_rows(x, rep.int(1L, nrow(bg_X_exact))), #  (m_ex*n_bg x p)
-      bg = bg_X_exact, #  (m_ex*n_bg x p)
-      Z = Z, #  (m_ex x p)
-      object = object,
-      pred_fun = pred_fun,
-      w = bg_w,
-      ...
+    vz <- get_vz(
+      x = x, bg = bg_X_exact, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
     )
     # Note: w is correctly replicated along columns of (vz - v0_m_exact)
     b_exact <- crossprod(Z, precalc[["w"]] * (vz - v0_m_exact)) #  (p x K)
@@ -37,7 +44,6 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
 
   # Iterative sampling part, always using A_exact and b_exact to fill up the weights
   bg_X_m <- precalc[["bg_X_m"]] #  (m*n_bg x p)
-  X <- rep_rows(x, rep.int(1L, nrow(bg_X_m))) #  (m*n_bg x p)
   v0_m <- v0[rep.int(1L, m), , drop = FALSE] #  (m x K)
   est_m <- array(
     data = 0, dim = c(max_iter, p, K), dimnames = list(NULL, feature_names, K_names)
@@ -60,7 +66,7 @@ kernelshap_one <- function(x, v1, object, pred_fun, feature_names, bg_w, exact, 
 
     # Expensive                                                              #  (m x K)
     vz <- get_vz(
-      X = X, bg = bg_X_m, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
+      x = x, bg = bg_X_m, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
     )
 
     # The sum of weights of A_exact and input[["A"]] is 1, same for b
@@ -151,7 +157,8 @@ input_sampling <- function(p, m, deg, feature_names) {
 #      the SHAP kernel distribution
 # - A: Exact matrix A = Z'wZ
 input_exact <- function(p, feature_names) {
-  Z <- exact_Z(p, feature_names = feature_names, keep_extremes = FALSE)
+  Z <- exact_Z(p, feature_names = feature_names)
+  Z <- Z[2L:(nrow(Z) - 1L), , drop = FALSE]
   # Each Kernel weight(j) is divided by the number of vectors z having sum(z) = j
   w <- kernel_weights(p) / choose(p, 1:(p - 1L))
   list(Z = Z, w = w[rowSums(Z)], A = exact_A(p, feature_names = feature_names))

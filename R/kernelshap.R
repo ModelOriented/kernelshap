@@ -82,8 +82,7 @@
 #'   Additional (named) arguments are passed via `...`.
 #'   The default, [stats::predict()], will work in most cases.
 #' @param feature_names Optional vector of column names in `X` used to calculate
-#'   SHAP values. By default, this equals `colnames(X)`. Not supported if `X`
-#'   is a matrix.
+#'   SHAP values. By default, this equals `colnames(X)`.
 #' @param bg_w Optional vector of case weights for each row of `bg_X`.
 #'   If `bg_X = NULL`, must be of same length as `X`. Set to `NULL` for no weights.
 #' @param bg_n If `bg_X = NULL`: Size of background data to be sampled from `X`.
@@ -238,12 +237,6 @@ kernelshap.default <- function(
   txt <- summarize_strategy(p, exact = exact, deg = hybrid_degree)
   if (verbose) {
     message(txt)
-  }
-
-  # Drop unnecessary columns in bg_X. If X is matrix, also column order is relevant
-  # In what follows, predictions will never be applied directly to bg_X anymore
-  if (!identical(colnames(bg_X), feature_names)) {
-    bg_X <- bg_X[, feature_names, drop = FALSE]
   }
 
   # Pre-calculations that are identical for each row to be explained

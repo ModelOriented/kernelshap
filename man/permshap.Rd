@@ -68,8 +68,7 @@ Additional (named) arguments are passed via \code{...}.
 The default, \code{\link[stats:predict]{stats::predict()}}, will work in most cases.}
 
 \item{feature_names}{Optional vector of column names in \code{X} used to calculate
-SHAP values. By default, this equals \code{colnames(X)}. Not supported if \code{X}
-is a matrix.}
+SHAP values. By default, this equals \code{colnames(X)}.}
 
 \item{bg_w}{Optional vector of case weights for each row of \code{bg_X}.
 If \code{bg_X = NULL}, must be of same length as \code{X}. Set to \code{NULL} for no weights.}

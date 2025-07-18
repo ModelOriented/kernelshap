@@ -43,14 +43,19 @@ test_that("wcolMeans() gives the same as colMeans() in unweighted case", {
   expect_equal(c(wcolMeans(X, w = c(2, 2, 2))), colMeans(X))
 })
 
-test_that("exact_Z() works for both kernel- and permshap", {
-  p <- 5
-  nm <- LETTERS[1:p]
-  r1 <- exact_Z(p, feature_names = nm, keep_extremes = TRUE)
-  r2 <- exact_Z(p, feature_names = nm, keep_extremes = FALSE)
-  expect_equal(r1[2:(nrow(r1) - 1L), ], r2)
-  expect_equal(colnames(r1), nm)
-  expect_equal(dim(r1), c(2^p, p))
+test_that("exact_Z() works", {
+  for (p in 2:8) {
+    nm <- LETTERS[1:p]
+    r <- exact_Z(p, feature_names = nm)
+    row_sum <- 0
+    for (j in p:1) {
+      row_sum <- row_sum + r[, j] * 2^(p - j)
+    }
+    expect_equal(colnames(r), nm)
+    expect_equal(dim(r), c(2^p, p))
+    expect_equal(row_sum, 0:(2^p - 1))
+  }
+  expect_error(exact_Z(1, "1"))
 })
 
 test_that("rep_rows() gives the same as usual subsetting (except rownames)", {

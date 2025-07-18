@@ -1,8 +1,15 @@
 # kernelshap 0.8.1
 
-### Performance improvements
+### API
 
-- `permshap(, exact = TRUE)` is slightly faster by pre-calculating more 
+- The argument `feature_names` can now also be used with matrix input ([#166](https://github.com/ModelOriented/kernelshap/pull/166)).
+
+### Speed and memory improvements
+
+- `permshap()` and `kernelshap()` require about 10% less memory ([#166](https://github.com/ModelOriented/kernelshap/pull/166)).
+- `permshap()` and `kernelshap()` are faster for data.frame input, 
+  and slightly slower for matrix input ([#166](https://github.com/ModelOriented/kernelshap/pull/166)).
+- Additionally, `permshap(, exact = TRUE)` is faster by pre-calculating more 
   elements used across rows [#165](https://github.com/ModelOriented/kernelshap/pull/165)
 
 ### Documentation
