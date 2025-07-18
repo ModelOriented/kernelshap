@@ -58,9 +58,16 @@
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.8.1" id="kernelshap-081">kernelshap 0.8.1<a class="anchor" aria-label="anchor" href="#kernelshap-081"></a></h2>
 <div class="section level4">
-<h4 id="performance-improvements-0-8-1">Performance improvements<a class="anchor" aria-label="anchor" href="#performance-improvements-0-8-1"></a></h4>
+<h4 id="api-0-8-1">API<a class="anchor" aria-label="anchor" href="#api-0-8-1"></a></h4>
+<ul><li>The argument <code>feature_names</code> can now also be used with matrix input (<a href="https://github.com/ModelOriented/kernelshap/pull/166" class="external-link">#166</a>).</li>
+</ul></div>
+<div class="section level4">
+<h4 id="speed-and-memory-improvements-0-8-1">Speed and memory improvements<a class="anchor" aria-label="anchor" href="#speed-and-memory-improvements-0-8-1"></a></h4>
 <ul><li>
-<code>permshap(, exact = TRUE)</code> is slightly faster by pre-calculating more elements used across rows <a href="https://github.com/ModelOriented/kernelshap/pull/165" class="external-link">#165</a>
+<code><a href="../reference/permshap.html">permshap()</a></code> and <code><a href="../reference/kernelshap.html">kernelshap()</a></code> require about 10% less memory (<a href="https://github.com/ModelOriented/kernelshap/pull/166" class="external-link">#166</a>).</li>
+<li>
+<code><a href="../reference/permshap.html">permshap()</a></code> and <code><a href="../reference/kernelshap.html">kernelshap()</a></code> are faster for data.frame input, and slightly slower for matrix input (<a href="https://github.com/ModelOriented/kernelshap/pull/166" class="external-link">#166</a>).</li>
+<li>Additionally, <code>permshap(, exact = TRUE)</code> is faster by pre-calculating more elements used across rows <a href="https://github.com/ModelOriented/kernelshap/pull/165" class="external-link">#165</a>
 </li>
 </ul></div>
 <div class="section level4">
