@@ -240,7 +240,7 @@ init_vzj <- function(p, v0, v1) {
 #' @noRd
 #' @keywords internal
 #'
-#' @param mask The output of `exact_Z(p, feature_names)`.
+#' @param mask Logical matrix. The output of `exact_Z(p, feature_names)`.
 #' @returns List with p elements, each containing an `on` and `off` vector.
 positions_for_exact <- function(mask) {
   p <- ncol(mask)
@@ -248,7 +248,7 @@ positions_for_exact <- function(mask) {
 
   positions <- vector("list", p)
   for (j in seq_len(p)) {
-    on <- codes[as.logical(mask[, j])]
+    on <- codes[mask[, j]]
     off <- on - 2^(p - j) # trick to turn "bit" off
     positions[[j]] <- list(on = on, off = off)
   }

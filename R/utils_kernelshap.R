@@ -121,7 +121,7 @@ sample_Z <- function(p, m, feature_names, S = 1:(p - 1L)) {
   # t(out)
 
   # Vectorized by Mathias Ambuehl
-  out <- rep(rep.int(0:1, m), as.vector(rbind(p - N, N)))
+  out <- rep(rep.int(c(FALSE, TRUE), m), as.vector(rbind(p - N, N)))
   dim(out) <- c(p, m)
   ord <- order(col(out), sample.int(m * p))
   out[] <- out[ord]
@@ -143,7 +143,7 @@ input_sampling <- function(p, m, deg, feature_names) {
   }
   S <- (deg + 1L):(p - deg - 1L)
   Z <- sample_Z(p = p, m = m / 2, feature_names = feature_names, S = S)
-  Z <- rbind(Z, 1 - Z)
+  Z <- rbind(Z, !Z)
   w_total <- if (deg == 0L) 1 else 1 - 2 * sum(kernel_weights(p)[seq_len(deg)])
   w <- w_total / m
   list(Z = Z, w = rep.int(w, m), A = crossprod(Z) * w)
@@ -198,17 +198,18 @@ partly_exact_Z <- function(p, k, feature_names) {
   }
   if (k == 1L) {
     Z <- diag(p)
+    storage.mode(Z) <- "logical"
   } else {
     Z <- t(
       utils::combn(seq_len(p), k, FUN = function(z) {
-        x <- numeric(p)
-        x[z] <- 1
+        x <- logical(p)
+        x[z] <- TRUE
         x
       })
     )
   }
   if (p != 2L * k) {
-    Z <- rbind(Z, 1 - Z)
+    Z <- rbind(Z, !Z)
   }
   colnames(Z) <- feature_names
   Z

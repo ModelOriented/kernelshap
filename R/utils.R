@@ -49,14 +49,14 @@ wcolMeans <- function(x, w = NULL, ...) {
 #'
 #' @param p Number of features.
 #' @param feature_names Feature names.
-#' @returns An integer matrix of all on-off vectors of length `p`.
+#' @returns An logical matrix of all on-off vectors of length `p`.
 exact_Z <- function(p, feature_names) {
   if (p < 2L) {
     stop("p must be at least 2 if exact = TRUE.")
   }
   m <- 2^p
   M <- seq_len(m) - 1L
-  encoded <- as.integer(intToBits(M))
+  encoded <- as.logical(intToBits(M))
   dim(encoded) <- c(32L, m)
   Z <- t(encoded[p:1L, , drop = FALSE])
   colnames(Z) <- feature_names
@@ -74,15 +74,12 @@ exact_Z <- function(p, feature_names) {
 #' @inheritParams kernelshap
 #' @param x Row to be explained.
 #' @param bg Background data stacked m times.
-#' @param Z A (m x p) matrix with on-off values (logical or integer).
+#' @param Z A logical (m x p) matrix with on-off values.
 #' @param w A vector with case weights (of the same length as the unstacked
 #'   background data).
 #' @returns A (m x K) matrix with vz values.
 get_vz <- function(x, bg, Z, object, pred_fun, w, ...) {
   m <- nrow(Z)
-  if (!is.logical(Z)) {
-    storage.mode(Z) <- "logical"
-  }
   n_bg <- nrow(bg) / m # because bg was replicated m times
 
   # Replicate Z, so that bg and Z are of dimension (m*n_bg x p)
