@@ -145,7 +145,7 @@ permshap.default <- function(
 
   # Pre-calculations that are identical for each row to be explained
   if (exact) {
-    Z <- exact_Z(p, feature_names = feature_names, keep_extremes = TRUE)
+    Z <- exact_Z(p, feature_names = feature_names)
     m_exact <- nrow(Z) - 2L # We won't evaluate vz for first and last row
     m_eval <- 0L # for consistency with sampling case
     precalc <- list(

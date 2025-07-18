@@ -49,19 +49,13 @@ wcolMeans <- function(x, w = NULL, ...) {
 #'
 #' @param p Number of features.
 #' @param feature_names Feature names.
-#' @param keep_extremes Should extremes be kept? Defaults to `FALSE` (for kernelshap).
 #' @returns An integer matrix of all on-off vectors of length `p`.
-exact_Z <- function(p, feature_names, keep_extremes = FALSE) {
+exact_Z <- function(p, feature_names) {
   if (p < 2L) {
     stop("p must be at least 2 if exact = TRUE.")
   }
   m <- 2^p
-  if (keep_extremes) {
-    M <- seq_len(m) - 1L
-  } else {
-    M <- seq_len(m - 2L)
-    m <- m - 2L
-  }
+  M <- seq_len(m) - 1L
   encoded <- as.integer(intToBits(M))
   dim(encoded) <- c(32L, m)
   Z <- t(encoded[p:1L, , drop = FALSE])

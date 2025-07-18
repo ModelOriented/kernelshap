@@ -151,7 +151,8 @@ input_sampling <- function(p, m, deg, feature_names) {
 #      the SHAP kernel distribution
 # - A: Exact matrix A = Z'wZ
 input_exact <- function(p, feature_names) {
-  Z <- exact_Z(p, feature_names = feature_names, keep_extremes = FALSE)
+  Z <- exact_Z(p, feature_names = feature_names)
+  Z <- Z[2L:nrow(Z) - 1L, , drop = FALSE]
   # Each Kernel weight(j) is divided by the number of vectors z having sum(z) = j
   w <- kernel_weights(p) / choose(p, 1:(p - 1L))
   list(Z = Z, w = w[rowSums(Z)], A = exact_A(p, feature_names = feature_names))
