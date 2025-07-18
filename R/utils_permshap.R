@@ -142,20 +142,6 @@ shapley_weights <- function(p, ell) {
   1 / choose(p, ell) / (p - ell)
 }
 
-#' Rowwise Paste
-#'
-#' Fast version of `apply(Z, 1L, FUN = paste0, collapse = "")`.
-#' Required for exact permutation SHAP only.
-#'
-#' @noRd
-#' @keywords internal
-#'
-#' @param Z A (n x p) matrix.
-#' @returns A length n vector.
-rowpaste <- function(Z) {
-  do.call(paste0, asplit(Z, 2L))
-}
-
 #' Balanced Chains
 #'
 #' Creates `p` permutations of the numbers `1:p` such that each number appears once
@@ -249,7 +235,7 @@ init_vzj <- function(p, v0, v1) {
 #' @noRd
 #' @keywords internal
 #'
-#' @param mask The output of `exact_Z(p, feature_names, keep_extremes = TRUE)`.
+#' @param mask The output of `exact_Z(p, feature_names)`.
 #' @returns List with p elements, each containing an `on` and `off` vector.
 positions_for_exact <- function(mask) {
   p <- ncol(mask)
