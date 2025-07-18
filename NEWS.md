@@ -18,6 +18,10 @@
   parallel mode, thanks [#163](https://github.com/ModelOriented/kernelshap/issues/163)
   for reporting. We have added a note in the function documentation that this warning
   can be ignored.
+  
+### Internal changes
+
+- Matrices holding on-off vectors are now consistently of type logical ([#167](https://github.com/ModelOriented/kernelshap/pull/167)).
 
 # kernelshap 0.8.0
 

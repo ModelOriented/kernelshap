@@ -14,7 +14,7 @@ bg_X <- diamonds[seq(1, nrow(diamonds), 450), ]
 # Subset of 1018 diamonds to explain
 X_small <- diamonds[seq(1, nrow(diamonds), 53), c("carat", ord)]
 
-# Exact KernelSHAP (2s)
+# Exact KernelSHAP (1.8s)
 system.time(
   ks <- kernelshap(fit, X_small, bg_X = bg_X)
 )
@@ -25,23 +25,23 @@ ks
 # [1,] -2.050074 -0.28048747 0.1281222 0.01587382
 # [2,] -2.085838  0.04050415 0.1283010 0.03731644
 
-# Pure sampling version takes a bit longer (7 seconds)
+# Pure sampling version takes a bit longer (6.6 seconds)
 system.time(
   ks2 <- kernelshap(fit, X_small, bg_X = bg_X, exact = FALSE, hybrid_degree = 0)
 )
 ks2
 
 bench::mark(kernelshap(fit, X_small, bg_X = bg_X, verbose=F))
-# 2.17s 1.64GB -> 1.72s 1.44GB
+# 2.17s 1.64GB -> 1.79s 1.43GB
 
 bench::mark(kernelshap(fit, X_small, bg_X = bg_X, verbose=F, exact=F, hybrid_degree = 1))
 # 4.88s  2.79GB ->  4.38s 2.48GB
 
 bench::mark(permshap(fit, X_small, bg_X = bg_X, verbose=F))
-# 1.97s 1.64GB -> 1.8s 1.43GB
+# 1.97s 1.64GB -> 1.9s 1.43GB
 
 bench::mark(permshap(fit, X_small, bg_X = bg_X, verbose=F, exact=F))
-# 3.04s  1.88GB ->  2.9s 1.64GB
+# 3.04s  1.88GB ->  2.8s 1.64GB
 
 # SHAP values of first 2 observations:
 #          carat     clarity     color        cut
