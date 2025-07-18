@@ -175,12 +175,6 @@ test_that("Matrix input is fine", {
     expect_no_error( # additional cols in bg are ok
       algo(fit, X[J, x], pred_fun = pred_fun, bg_X = cbind(d = 1, X), verbose = FALSE)
     )
-    expect_error( # feature_names are less flexible
-      algo(fit, X[J, ],
-        pred_fun = pred_fun, bg_X = X,
-        verbose = FALSE, feature_names = "Sepal.Width"
-      )
-    )
   }
 })
 

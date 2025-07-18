@@ -63,41 +63,42 @@ exact_Z <- function(p, feature_names) {
   return(Z)
 }
 
-#' Masker
+#' Masked Predict
 #'
 #' Internal function.
 #' For each on-off vector (rows in `Z`), the (weighted) average prediction is returned.
-#' In Python, this function is called "masker", and Z is the "mask".
 #'
 #' @noRd
 #' @keywords internal
 #'
 #' @inheritParams kernelshap
-#' @param X Row to be explained stacked m*n_bg times.
+#' @param x Row to be explained.
 #' @param bg Background data stacked m times.
-#' @param Z A (m x p) matrix with on-off values.
+#' @param Z A (m x p) matrix with on-off values (logical or integer).
 #' @param w A vector with case weights (of the same length as the unstacked
 #'   background data).
 #' @returns A (m x K) matrix with vz values.
-get_vz <- function(X, bg, Z, object, pred_fun, w, ...) {
+get_vz <- function(x, bg, Z, object, pred_fun, w, ...) {
   m <- nrow(Z)
-  not_Z <- !Z
+  if (!is.logical(Z)) {
+    storage.mode(Z) <- "logical"
+  }
   n_bg <- nrow(bg) / m # because bg was replicated m times
 
-  # Replicate not_Z, so that X, bg, not_Z are all of dimension (m*n_bg x p)
+  # Replicate Z, so that bg and Z are of dimension (m*n_bg x p)
   g <- rep_each(m, each = n_bg)
-  not_Z <- not_Z[g, , drop = FALSE]
+  Z_rep <- Z[g, , drop = FALSE]
 
-  if (is.matrix(X)) {
-    # Remember that columns of X and bg are perfectly aligned in this case
-    X[not_Z] <- bg[not_Z]
-  } else {
-    for (v in colnames(Z)) {
-      s <- not_Z[, v]
-      X[[v]][s] <- bg[[v]][s]
+  for (v in colnames(Z)) {
+    s <- Z_rep[, v]
+    if (is.matrix(x)) {
+      bg[s, v] <- x[, v]
+    } else {
+      bg[[v]][s] <- x[[v]]
     }
   }
-  preds <- align_pred(pred_fun(object, X, ...))
+
+  preds <- align_pred(pred_fun(object, bg, ...))
 
   # Aggregate (distinguishing fast 1-dim case)
   if (ncol(preds) == 1L) {
@@ -331,8 +332,6 @@ basic_checks <- function(X, feature_names, pred_fun) {
     dim(X) >= 1L,
     length(feature_names) >= 1L,
     all(feature_names %in% colnames(X)),
-    "If X is a matrix, feature_names must equal colnames(X)" =
-      !is.matrix(X) || identical(colnames(X), feature_names),
     is.function(pred_fun)
   )
   TRUE

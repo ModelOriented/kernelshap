@@ -28,7 +28,6 @@ permshap_one <- function(
     max_iter,
     ...) {
   bg <- precalc$bg_X_rep
-  X <- rep_rows(x, rep.int(1L, times = nrow(bg)))
 
   p <- length(feature_names)
   K <- ncol(v1)
@@ -38,7 +37,7 @@ permshap_one <- function(
   if (exact) {
     Z <- precalc$Z # ((m_ex+2) x K)
     vz <- get_vz( # (m_ex x K)
-      X = X,
+      x = x,
       bg = bg,
       Z = Z[2L:(nrow(Z) - 1L), , drop = FALSE], # (m_ex x p)
       object = object,
@@ -52,7 +51,7 @@ permshap_one <- function(
       pos <- precalc$positions[[j]]
       beta_n[j, ] <- wcolMeans(
         vz[pos$on, , drop = FALSE] - vz[pos$off, , drop = FALSE],
-        weights = precalc["shapley_w"][pos$on]
+        w = precalc$shapley_w[pos$on]
       )
     }
     return(list(beta = beta_n))
@@ -68,7 +67,7 @@ permshap_one <- function(
 
   # Pre-calculate part of Z with rowsum 1 or p - 1
   vz_balanced <- get_vz( # (2p x K)
-    X = rep_rows(x, rep.int(1L, times = nrow(precalc$bg_X_balanced))),
+    x = x,
     bg = precalc$bg_X_balanced,
     Z = precalc$Z_balanced,
     object = object,
@@ -90,13 +89,19 @@ permshap_one <- function(
     if (!low_memory) { # predictions for all chains at once
       Z <- do.call(rbind, Z)
       vz <- get_vz(
-        X = X, bg = bg, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
+        x = x, bg = bg, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
       )
     } else { # predictions for each chain separately
       vz <- vector("list", length = p)
       for (j in seq_len(p)) {
         vz[[j]] <- get_vz(
-          X = X, bg = bg, Z = Z[[j]], object = object, pred_fun = pred_fun, w = bg_w, ...
+          x = x,
+          bg = bg,
+          Z = Z[[j]],
+          object = object,
+          pred_fun = pred_fun,
+          w = bg_w,
+          ...
         )
       }
       vz <- do.call(rbind, vz)
