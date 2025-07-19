@@ -8,17 +8,11 @@
 #' Otherwise, an almost exact hybrid algorithm combining exact calculations and
 #' iterative paired sampling is used, see Details.
 #'
-#' Note that (exact) Kernel SHAP is only an approximation of (exact) permutation SHAP.
-#' Thus, for up to eight features, we recommend [permshap()]. For more features,
-#' [permshap()] tends to be inefficient compared the optimized hybrid strategy
-#' of Kernel SHAP.
-#'
 #' @details
 #' The pure iterative Kernel SHAP sampling as in Covert and Lee (2021) works like this:
 #'
-#' 1. A binary "on-off" vector \eqn{z} is drawn from \eqn{\{0, 1\}^p}
-#'   such that its sum follows the SHAP Kernel weight distribution
-#'   (normalized to the range \eqn{\{1, \dots, p-1\}}).
+#' 1. A binary "on-off" vector \eqn{z} is drawn from \eqn{\{0, 1\}^p} according to
+#'   a special weighting logic.
 #' 2. For each \eqn{j} with \eqn{z_j = 1}, the \eqn{j}-th column of the
 #'   original background data is replaced by the corresponding feature value \eqn{x_j}
 #'   of the observation to be explained.
@@ -33,17 +27,14 @@
 #'
 #' This is repeated multiple times until convergence, see CL21 for details.
 #'
-#' A drawback of this strategy is that many (at least 75%) of the \eqn{z} vectors will
-#' have \eqn{\sum z \in \{1, p-1\}}, producing many duplicates. Similarly, at least 92%
-#' of the mass will be used for the \eqn{p(p+1)} possible vectors with
-#' \eqn{\sum z \in \{1, 2, p-2, p-1\}}.
+#' To avoid the evaluation of
 #' This inefficiency can be fixed by a hybrid strategy, combining exact calculations
 #' with sampling.
 #'
 #' The hybrid algorithm has two steps:
 #' 1. Step 1 (exact part): There are \eqn{2p} different on-off vectors \eqn{z} with
-#'   \eqn{\sum z \in \{1, p-1\}}, covering a large proportion of the Kernel SHAP
-#'   distribution. The degree 1 hybrid will list those vectors and use them according
+#'   \eqn{\sum z \in \{1, p-1\}}.
+#'   The degree 1 hybrid will list those vectors and use them according
 #'   to their weights in the upcoming calculations. Depending on \eqn{p}, we can also go
 #'   a step further to a degree 2 hybrid by adding all \eqn{p(p-1)} vectors with
 #'   \eqn{\sum z \in \{2, p-2\}} to the process etc. The necessary predictions are
@@ -96,12 +87,10 @@
 #'     worse than the hybrid strategy and should therefore only be used for
 #'     studying properties of the Kernel SHAP algorithm.
 #'   - `1`: Uses all \eqn{2p} on-off vectors \eqn{z} with \eqn{\sum z \in \{1, p-1\}}
-#'     for the exact part, which covers at least 75% of the mass of the Kernel weight
-#'     distribution. The remaining mass is covered by random sampling.
+#'     for the exact part. The remaining mass is covered by random sampling.
 #'   - `2`: Uses all \eqn{p(p+1)} on-off vectors \eqn{z} with
-#'     \eqn{\sum z \in \{1, 2, p-2, p-1\}}. This covers at least 92% of the mass of the
-#'     Kernel weight distribution. The remaining mass is covered by sampling.
-#'     Convergence usually happens in the minimal possible number of iterations of two.
+#'     \eqn{\sum z \in \{1, 2, p-2, p-1\}}. The remaining mass is covered by sampling.
+#'     Convergence usually happens very fast.
 #'   - `k>2`: Uses all on-off vectors with
 #'     \eqn{\sum z \in \{1, \dots, k, p-k, \dots, p-1\}}.
 #' @param m Even number of on-off vectors sampled during one iteration.

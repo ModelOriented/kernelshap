@@ -75,7 +75,7 @@ If \code{bg_X = NULL}, must be of same length as \code{X}. Set to \code{NULL} fo
 
 \item{bg_n}{If \code{bg_X = NULL}: Size of background data to be sampled from \code{X}.}
 
-\item{exact}{If \code{TRUE}, the algorithm will produce exact SHAP values
+\item{exact}{If \code{TRUE}, the algorithm produces exact SHAP values
 with respect to the background data.
 The default is \code{TRUE} for up to eight features, and \code{FALSE} otherwise.}
 

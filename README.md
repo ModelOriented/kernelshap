@@ -15,20 +15,18 @@
 
 The package contains three functions to crunch SHAP values:
 
-- **`permshap()`**: Permutation SHAP algorithm of [1]. Recommended for models with up to 8 features, or if you don't trust Kernel SHAP. Both exact and sampling versions are available.
-- **`kernelshap()`**: Kernel SHAP algorithm of [2] and [3]. Recommended for models with more than 8 features. Both exact and (pseudo-exact) sampling versions are available.
+- **`permshap()`**: Permutation SHAP algorithm of [1]. Both exact and sampling versions are available.
+- **`kernelshap()`**: Kernel SHAP algorithm of [2] and [3]. Both exact and (pseudo-exact) sampling versions are available.
 - **`additive_shap()`**: For *additive models* fitted via `lm()`, `glm()`, `mgcv::gam()`, `mgcv::bam()`, `gam::gam()`, `survival::coxph()`, or `survival::survreg()`. Exponentially faster than the model-agnostic options above, and recommended if possible.
 
-To explain your model, select an explanation dataset `X` (up to 1000 rows from the training data, feature columns only) and apply the recommended function. Use {shapviz} to visualize the resulting SHAP values. 
+To explain your model, select an explanation dataset `X` (up to 1000 rows from the training data, feature columns only). Use {shapviz} to visualize the resulting SHAP values. 
 
 **Remarks to `permshap()` and `kernelshap()`**
 
 - Both algorithms need a representative background data `bg_X` to calculate marginal means (up to 500 rows from the training data). In cases with a natural "off" value (like MNIST digits), this can also be a single row with all values set to the off value. If unspecified, 200 rows are randomly sampled from `X`.
-- Exact Kernel SHAP is an approximation to exact permutation SHAP. Since exact calculations are usually sufficiently fast for up to eight features, we recommend `permshap()` in this case. With more features, `kernelshap()` switches to a comparably fast, almost exact algorithm with faster convergence than the sampling version of permutation SHAP.
-  That is why we recommend `kernelshap()` in this case.
-- For models with interactions of order up to two, SHAP values of permutation SHAP and Kernel SHAP agree, 
-and the implemented sampling versions provide the same results as the exact versions.
-In the presence of interactions of order three or higher, this is no longer the case.
+- Exact Kernel SHAP gives identical results as exact permutation SHAP. Both algorithms are fast up to 8 features.
+  With more features, `kernelshap()` switches to an almost exact algorithm with faster convergence than the sampling version of permutation SHAP.
+- For models with interactions of order up to two, the sampling versions provide the same results as the exact versions.
 - For additive models, `permshap()` and `kernelshap()` give the same results as `additive_shap` 
 as long as the full training data would be used as background data.
 
@@ -89,13 +87,12 @@ ps
 [1,]  1.1913247  0.09005467 -0.13430720 0.000682593
 [2,] -0.4931989 -0.11724773  0.09868921 0.028563613
 
-# Kernel SHAP gives very slightly different values because the model contains
-# interations of order > 2:
+# Indeed, Kernel SHAP gives the same:
 ks <- kernelshap(fit, X, bg_X = bg_X)
 ks
-#       log_carat     clarity       color        cut
-# [1,]  1.1911791  0.0900462 -0.13531648 0.001845958
-# [2,] -0.4927482 -0.1168517  0.09815062 0.028255442
+      log_carat     clarity       color         cut
+[1,]  1.1913247  0.09005467 -0.13430720 0.000682593
+[2,] -0.4931989 -0.11724773  0.09868921 0.028563613
 
 # 4) Analyze with {shapviz}
 ps <- shapviz(ps)
