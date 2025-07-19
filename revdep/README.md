@@ -10,7 +10,7 @@
 |collate  |English_Switzerland.utf8                |
 |ctype    |English_Switzerland.utf8                |
 |tz       |Europe/Zurich                           |
-|date     |2025-07-07                              |
+|date     |2025-07-19                              |
 |rstudio  |2025.05.0+496 Mariposa Orchid (desktop) |
 |pandoc   |NA                                      |
 
@@ -18,7 +18,7 @@
 
 |package    |old    |new    |Δ  |
 |:----------|:------|:------|:--|
-|kernelshap |0.7.0  |0.8.0  |*  |
+|kernelshap |0.8.0  |0.9.0  |*  |
 |foreach    |1.5.2  |1.5.2  |   |
 |iterators  |1.0.14 |1.0.14 |   |
 

@@ -1,9 +1,14 @@
-# kernelshap 0.8.0
+# kernelshap 0.9.0 (MAJOR BUG FIX)
 
-Dear CRAN team
+We have figured out a major bug in the weighting logic of Kernel SHAP.
 
-The package (finally!) contains a sampling version of permutation SHAP. In contrast 
-to other implementations, it iterates until convergence, and standard errors are provided.
+This update comes with a fix which has been tested also against different
+Python algorithms.
+
+I know that summer holidays are ahead, and the last release is not long ago, 
+but I would love to see this change on CRAN very soon.
+
+Michael
 
 ## Checks
 
@@ -18,9 +23,8 @@ R Under development (unstable) (2025-07-05 r88387 ucrt)
 
 ### Revdep OK
 
-survex 1.2.0                           ── E: 0     | W: 0     | N: 0
-XAItest 1.0.1                          ── E: 1     | W: 0     | N: 0
-SEMdeep 1.0.0                          ── E: 1     | W: 1     | N: 0     
+✔ survex 1.2.0                           ── E: 0     | W: 0     | N: 0        
+✔ XAItest 1.0.1                          ── E: 1     | W: 0     | N: 0        
+✔ SEMdeep 1.0.0                          ── E: 1     | W: 1     | N: 0  
 
-OK: 3
-BROKEN: 0
+OK: 3     

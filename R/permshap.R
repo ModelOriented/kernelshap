@@ -32,7 +32,7 @@
 #' Furthermore, the 2p on-off vectors with sum <=1 or >=p-1 are evaluated only once,
 #' similar to the degree 1 hybrid in [kernelshap()] (but covering less weight).
 #'
-#' @param exact If `TRUE`, the algorithm will produce exact SHAP values
+#' @param exact If `TRUE`, the algorithm produces exact SHAP values
 #'   with respect to the background data.
 #'   The default is `TRUE` for up to eight features, and `FALSE` otherwise.
 #' @param low_memory If `FALSE` (default up to p = 15), the algorithm evaluates p
