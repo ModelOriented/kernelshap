@@ -217,7 +217,7 @@ test_that("kernelshap works for large p (hybrid case)", {
 test_that("kernelshap and permshap work for models with high-order interactions", {
   # Expected: Python output
   # import numpy as np
-  # import shap 0.47.2
+  # import shap # 0.47.2
   #
   # X = np.array(
   #   [
