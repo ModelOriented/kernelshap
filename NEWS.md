@@ -1,4 +1,13 @@
-# kernelshap 0.8.1
+# kernelshap 0.9.0
+
+### Major bug fix
+
+`kernelshap()` used a wrong weighting logic, leading to values slightly off. This has
+  been fixed with the help of Prof Mario Wuethrich of ETHZ and 
+  [Ian Covert's wonderful Github repo](https://github.com/iancovert/shapley-regression).
+  Now, exact Kernel SHAP returns identical values than exact permutation SHAP.
+
+Fixed in [#167](https://github.com/ModelOriented/kernelshap/pull/167).
 
 ### API
 
