@@ -284,7 +284,7 @@ test_that("kernelshap and permshap work for models with high-order interactions"
     hybrid_degree = 2,
     exact = FALSE,
     m = 1000,
-    max_iter = 100, ,
+    max_iter = 100,
     tol = 0.001,
     verbose = FALSE
   )

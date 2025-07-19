@@ -27,9 +27,8 @@
 #'
 #' This is repeated multiple times until convergence, see CL21 for details.
 #'
-#' To avoid the evaluation of
-#' This inefficiency can be fixed by a hybrid strategy, combining exact calculations
-#' with sampling.
+#' To avoid the re-evaluation of identical coalition vectors, we have implemented
+#' a hybrid strategy, combining exact calculations with sampling.
 #'
 #' The hybrid algorithm has two steps:
 #' 1. Step 1 (exact part): There are \eqn{2p} different on-off vectors \eqn{z} with
