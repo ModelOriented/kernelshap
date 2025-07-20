@@ -1,14 +1,13 @@
-# kernelshap 0.9.0 (MAJOR BUG FIX)
+# kernelshap 0.9.0
 
-We have figured out a major bug in the weighting logic of Kernel SHAP.
+We have figured out a bug in the weighting logic of Kernel SHAP.
 
-This update comes with a fix which has been tested also against different
-Python algorithms.
+This update comes with a fix which has been tested against two other implementations.
 
-I know that summer holidays are ahead, and the last release is not long ago, 
-but I would love to see this change on CRAN very soon.
+I am aware that the last release of {kernelshap} is not too long ago, but I still would love to see
+this fixed before the (well-deserved) summer break.
 
-Michael
+Thanks a lot!
 
 ## Checks
 

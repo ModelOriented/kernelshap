@@ -1,16 +1,16 @@
 # kernelshap 0.9.0
 
-### Major bug fix
+### Bug fix
 
-`kernelshap()` used a wrong weighting logic, leading to values slightly off. This has
-been fixed with the help of Prof Mario Wuethrich of ETHZ and Ian Covert and his
-[wonderful Github repo](https://github.com/iancovert/shapley-regression).
-Now, exact Kernel SHAP returns identical values as exact permutation SHAP.
-All variants of `kernelshap()` had been affected by this (exact, sampling, hybrid).
-For models with interactions up to two, the bug had no consequences - which is why
-it went unnoticed.
+With input from Mario Wuethrich and Ian Covert and his [repo](https://github.com/iancovert/shapley-regression), 
+we have fixed a bug in how `kernelshap()` calculates Kernel weights. 
 
-Fixed in [#168](https://github.com/ModelOriented/kernelshap/pull/168).
+- The differences caused by this are typically very small.
+- Models with interactions of order up to two have been unaffected.
+- Exact Kernel SHAP now provides identical results to exact permutation SHAP.
+
+Fixed in [#168](https://github.com/ModelOriented/kernelshap/pull/168), which also has received
+unit tests against Python's "shap".
 
 ### API
 
