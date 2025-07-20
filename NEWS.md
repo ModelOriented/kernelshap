@@ -3,9 +3,12 @@
 ### Major bug fix
 
 `kernelshap()` used a wrong weighting logic, leading to values slightly off. This has
-  been fixed with the help of Prof Mario Wuethrich of ETHZ and 
-  [Ian Covert's wonderful Github repo](https://github.com/iancovert/shapley-regression).
-  Now, exact Kernel SHAP returns identical values as exact permutation SHAP.
+been fixed with the help of Prof Mario Wuethrich of ETHZ and Ian Covert and his
+[wonderful Github repo](https://github.com/iancovert/shapley-regression).
+Now, exact Kernel SHAP returns identical values as exact permutation SHAP.
+All variants of `kernelshap()` had been affected by this (exact, sampling, hybrid).
+For models with interactions up to two, the bug had no consequences - which is why
+it went unnoticed.
 
 Fixed in [#168](https://github.com/ModelOriented/kernelshap/pull/168).
 
