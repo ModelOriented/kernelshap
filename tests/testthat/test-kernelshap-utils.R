@@ -1,11 +1,13 @@
 test_that("sum of kernel weights is 1", {
   for (p in 2:10) {
-    expect_equal(sum(kernel_weights(p)), 1.0)
+    expect_equal(sum(kernel_weights(p, per_coalition_size = FALSE)), 1.0)
+    expect_equal(sum(kernel_weights(p, per_coalition_size = TRUE)), 1.0)
   }
 })
 
 test_that("Sum of kernel weights is 1, even for subset of domain", {
-  expect_equal(sum(kernel_weights(10L, S = 2:5)), 1.0)
+  expect_equal(sum(kernel_weights(10L, S = 2:5, per_coalition_size = FALSE)), 1.0)
+  expect_equal(sum(kernel_weights(10L, S = 2:5, per_coalition_size = TRUE)), 1.0)
 })
 
 p <- 10L
@@ -102,6 +104,17 @@ test_that("hybrid weights sum to 1 for different p and degree 2", {
       m = 100L, deg = deg, feature_names = LETTERS[1:p]
     )
     expect_equal(sum(pa$w) + sum(sa$w), 1L)
+  }
+})
+
+test_that("sampling input A is comparable from exact input", {
+  set.seed(1)
+
+  for (p in 2:6) {
+    feature_names <- LETTERS[1:p]
+    pa <- input_exact(p, feature_names)
+    sa <- input_sampling(p, m = 100000L, deg = 0, feature_names = feature_names)
+    expect_true(all(abs(pa$A - sa$A) < 0.01))
   }
 })
 
