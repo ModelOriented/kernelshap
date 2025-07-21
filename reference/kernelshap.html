@@ -4,11 +4,7 @@ Covert and Lee (2021), abbreviated by CL21.
 By default, for up to p=8 features, exact Kernel SHAP values are returned
 (with respect to the selected background data).
 Otherwise, an almost exact hybrid algorithm combining exact calculations and
-iterative paired sampling is used, see Details.
-Note that (exact) Kernel SHAP is only an approximation of (exact) permutation SHAP.
-Thus, for up to eight features, we recommend permshap(). For more features,
-permshap() tends to be inefficient compared the optimized hybrid strategy
-of Kernel SHAP."><meta property="og:image" content="/logo.png"><meta name="robots" content="noindex"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
+iterative paired sampling is used, see Details."><meta property="og:image" content="/logo.png"><meta name="robots" content="noindex"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]--><!-- google analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-5650686-14"></script><script>
@@ -34,7 +30,7 @@ of Kernel SHAP."><meta property="og:image" content="/logo.png"><meta name="robot
         <div class="info">
           <span class="partof">part of the <a href="https://github.com/ModelOriented/DrWhy" class="external-link">DrWhy.AI</a>
            developed by the <a href="https://mi2.ai/" class="external-link">MI².AI</a> </span>
-          <span class="version version-default">0.8.1</span>
+          <span class="version version-default">0.9.0</span>
         </div>
       </div>
     </div>
@@ -72,10 +68,6 @@ By default, for up to p=8 features, exact Kernel SHAP values are returned
 (with respect to the selected background data).
 Otherwise, an almost exact hybrid algorithm combining exact calculations and
 iterative paired sampling is used, see Details.</p>
-<p>Note that (exact) Kernel SHAP is only an approximation of (exact) permutation SHAP.
-Thus, for up to eight features, we recommend <code><a href="permshap.html">permshap()</a></code>. For more features,
-<code><a href="permshap.html">permshap()</a></code> tends to be inefficient compared the optimized hybrid strategy
-of Kernel SHAP.</p>
     </div>
 
     <div id="ref-usage">
@@ -185,12 +177,10 @@ Ignored if <code>exact = TRUE</code>.</p><ul><li><p><code>0</code>: Pure samplin
 worse than the hybrid strategy and should therefore only be used for
 studying properties of the Kernel SHAP algorithm.</p></li>
 <li><p><code>1</code>: Uses all \(2p\) on-off vectors \(z\) with \(\sum z \in \{1, p-1\}\)
-for the exact part, which covers at least 75% of the mass of the Kernel weight
-distribution. The remaining mass is covered by random sampling.</p></li>
+for the exact part. The remaining mass is covered by random sampling.</p></li>
 <li><p><code>2</code>: Uses all \(p(p+1)\) on-off vectors \(z\) with
-\(\sum z \in \{1, 2, p-2, p-1\}\). This covers at least 92% of the mass of the
-Kernel weight distribution. The remaining mass is covered by sampling.
-Convergence usually happens in the minimal possible number of iterations of two.</p></li>
+\(\sum z \in \{1, 2, p-2, p-1\}\). The remaining mass is covered by sampling.
+Convergence usually happens very fast.</p></li>
 <li><p><code>k&gt;2</code>: Uses all on-off vectors with
 \(\sum z \in \{1, \dots, k, p-k, \dots, p-1\}\).</p></li>
 </ul></dd>
@@ -267,9 +257,8 @@ per row of <code>X</code> (if not exact).</p></li>
 </ul></div>
     <div id="details">
     <h2>Details</h2>
-    <p>The pure iterative Kernel SHAP sampling as in Covert and Lee (2021) works like this:</p><ol><li><p>A binary "on-off" vector \(z\) is drawn from \(\{0, 1\}^p\)
-such that its sum follows the SHAP Kernel weight distribution
-(normalized to the range \(\{1, \dots, p-1\}\)).</p></li>
+    <p>The pure iterative Kernel SHAP sampling as in Covert and Lee (2021) works like this:</p><ol><li><p>A binary "on-off" vector \(z\) is drawn from \(\{0, 1\}^p\) according to
+a special weighting logic.</p></li>
 <li><p>For each \(j\) with \(z_j = 1\), the \(j\)-th column of the
 original background data is replaced by the corresponding feature value \(x_j\)
 of the observation to be explained.</p></li>
@@ -282,15 +271,11 @@ shifted predictions.</p></li>
 coefficients equals \(v_1 - v_0\), where \(v_1\) is the prediction of the
 observation to be explained. The resulting coefficients are the Kernel SHAP values.</p></li>
 </ol><p>This is repeated multiple times until convergence, see CL21 for details.</p>
-<p>A drawback of this strategy is that many (at least 75%) of the \(z\) vectors will
-have \(\sum z \in \{1, p-1\}\), producing many duplicates. Similarly, at least 92%
-of the mass will be used for the \(p(p+1)\) possible vectors with
-\(\sum z \in \{1, 2, p-2, p-1\}\).
-This inefficiency can be fixed by a hybrid strategy, combining exact calculations
-with sampling.</p>
+<p>To avoid the re-evaluation of identical coalition vectors, we have implemented
+a hybrid strategy, combining exact calculations with sampling.</p>
 <p>The hybrid algorithm has two steps:</p><ol><li><p>Step 1 (exact part): There are \(2p\) different on-off vectors \(z\) with
-\(\sum z \in \{1, p-1\}\), covering a large proportion of the Kernel SHAP
-distribution. The degree 1 hybrid will list those vectors and use them according
+\(\sum z \in \{1, p-1\}\).
+The degree 1 hybrid will list those vectors and use them according
 to their weights in the upcoming calculations. Depending on \(p\), we can also go
 a step further to a degree 2 hybrid by adding all \(p(p-1)\) vectors with
 \(\sum z \in \{2, p-2\}\) to the process etc. The necessary predictions are

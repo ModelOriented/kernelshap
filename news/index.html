@@ -25,7 +25,7 @@
         <div class="info">
           <span class="partof">part of the <a href="https://github.com/ModelOriented/DrWhy" class="external-link">DrWhy.AI</a>
            developed by the <a href="https://mi2.ai/" class="external-link">MI².AI</a> </span>
-          <span class="version version-default">0.8.1</span>
+          <span class="version version-default">0.9.0</span>
         </div>
       </div>
     </div>
@@ -56,13 +56,21 @@
     </div>
 
     <div class="section level2">
-<h2 class="page-header" data-toc-text="0.8.1" id="kernelshap-081">kernelshap 0.8.1<a class="anchor" aria-label="anchor" href="#kernelshap-081"></a></h2>
+<h2 class="page-header" data-toc-text="0.9.0" id="kernelshap-090">kernelshap 0.9.0<a class="anchor" aria-label="anchor" href="#kernelshap-090"></a></h2>
 <div class="section level4">
-<h4 id="api-0-8-1">API<a class="anchor" aria-label="anchor" href="#api-0-8-1"></a></h4>
+<h4 id="bug-fix-0-9-0">Bug fix<a class="anchor" aria-label="anchor" href="#bug-fix-0-9-0"></a></h4>
+<p>With input from Mario Wuethrich and Ian Covert and his <a href="https://github.com/iancovert/shapley-regression" class="external-link">repo</a>, we have fixed a bug in how <code><a href="../reference/kernelshap.html">kernelshap()</a></code> calculates Kernel weights.</p>
+<ul><li>The differences caused by this are typically very small.</li>
+<li>Models with interactions of order up to two have been unaffected.</li>
+<li>Exact Kernel SHAP now provides identical results to exact permutation SHAP.</li>
+</ul><p>Fixed in <a href="https://github.com/ModelOriented/kernelshap/pull/168" class="external-link">#168</a>, which also has received unit tests against Python’s “shap”.</p>
+</div>
+<div class="section level4">
+<h4 id="api-0-9-0">API<a class="anchor" aria-label="anchor" href="#api-0-9-0"></a></h4>
 <ul><li>The argument <code>feature_names</code> can now also be used with matrix input (<a href="https://github.com/ModelOriented/kernelshap/pull/166" class="external-link">#166</a>).</li>
 </ul></div>
 <div class="section level4">
-<h4 id="speed-and-memory-improvements-0-8-1">Speed and memory improvements<a class="anchor" aria-label="anchor" href="#speed-and-memory-improvements-0-8-1"></a></h4>
+<h4 id="speed-and-memory-improvements-0-9-0">Speed and memory improvements<a class="anchor" aria-label="anchor" href="#speed-and-memory-improvements-0-9-0"></a></h4>
 <ul><li>
 <code><a href="../reference/permshap.html">permshap()</a></code> and <code><a href="../reference/kernelshap.html">kernelshap()</a></code> require about 10% less memory (<a href="https://github.com/ModelOriented/kernelshap/pull/166" class="external-link">#166</a>).</li>
 <li>
@@ -71,12 +79,12 @@
 </li>
 </ul></div>
 <div class="section level4">
-<h4 id="documentation-0-8-1">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-8-1"></a></h4>
+<h4 id="documentation-0-9-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-9-0"></a></h4>
 <ul><li>
 <code><a href="../reference/kernelshap.html">kernelshap()</a></code> and <code><a href="../reference/permshap.html">permshap()</a></code> currently yield a warning on random seed handling in parallel mode, thanks <a href="https://github.com/ModelOriented/kernelshap/issues/163" class="external-link">#163</a> for reporting. We have added a note in the function documentation that this warning can be ignored.</li>
 </ul></div>
 <div class="section level4">
-<h4 id="internal-changes-0-8-1">Internal changes<a class="anchor" aria-label="anchor" href="#internal-changes-0-8-1"></a></h4>
+<h4 id="internal-changes-0-9-0">Internal changes<a class="anchor" aria-label="anchor" href="#internal-changes-0-9-0"></a></h4>
 <ul><li>Matrices holding on-off vectors are now consistently of type logical (<a href="https://github.com/ModelOriented/kernelshap/pull/167" class="external-link">#167</a>).</li>
 </ul></div>
 </div>

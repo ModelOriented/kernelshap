@@ -51,7 +51,7 @@
         <div class="info">
           <span class="partof">part of the <a href="https://github.com/ModelOriented/DrWhy" class="external-link">DrWhy.AI</a>
            developed by the <a href="https://mi2.ai/" class="external-link">MI².AI</a> </span>
-          <span class="version version-default">0.8.1</span>
+          <span class="version version-default">0.9.0</span>
         </div>
       </div>
     </div>
@@ -95,18 +95,18 @@
 <p>The package contains three functions to crunch SHAP values:</p>
 <ul>
 <li>
-<strong><code><a href="reference/permshap.html">permshap()</a></code></strong>: Permutation SHAP algorithm of [1]. Recommended for models with up to 8 features, or if you don’t trust Kernel SHAP. Both exact and sampling versions are available.</li>
+<strong><code><a href="reference/permshap.html">permshap()</a></code></strong>: Permutation SHAP algorithm of [1]. Both exact and sampling versions are available.</li>
 <li>
-<strong><code><a href="reference/kernelshap.html">kernelshap()</a></code></strong>: Kernel SHAP algorithm of [2] and [3]. Recommended for models with more than 8 features. Both exact and (pseudo-exact) sampling versions are available.</li>
+<strong><code><a href="reference/kernelshap.html">kernelshap()</a></code></strong>: Kernel SHAP algorithm of [2] and [3]. Both exact and (pseudo-exact) sampling versions are available.</li>
 <li>
 <strong><code><a href="reference/additive_shap.html">additive_shap()</a></code></strong>: For <em>additive models</em> fitted via <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>, <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code>, <code><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">mgcv::gam()</a></code>, <code><a href="https://rdrr.io/pkg/mgcv/man/bam.html" class="external-link">mgcv::bam()</a></code>, <code>gam::gam()</code>, <code><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">survival::coxph()</a></code>, or <code><a href="https://rdrr.io/pkg/survival/man/survreg.html" class="external-link">survival::survreg()</a></code>. Exponentially faster than the model-agnostic options above, and recommended if possible.</li>
 </ul>
-<p>To explain your model, select an explanation dataset <code>X</code> (up to 1000 rows from the training data, feature columns only) and apply the recommended function. Use {shapviz} to visualize the resulting SHAP values.</p>
+<p>To explain your model, select an explanation dataset <code>X</code> (up to 1000 rows from the training data, feature columns only). Use {shapviz} to visualize the resulting SHAP values.</p>
 <p><strong>Remarks to <code><a href="reference/permshap.html">permshap()</a></code> and <code><a href="reference/kernelshap.html">kernelshap()</a></code></strong></p>
 <ul>
 <li>Both algorithms need a representative background data <code>bg_X</code> to calculate marginal means (up to 500 rows from the training data). In cases with a natural “off” value (like MNIST digits), this can also be a single row with all values set to the off value. If unspecified, 200 rows are randomly sampled from <code>X</code>.</li>
-<li>Exact Kernel SHAP is an approximation to exact permutation SHAP. Since exact calculations are usually sufficiently fast for up to eight features, we recommend <code><a href="reference/permshap.html">permshap()</a></code> in this case. With more features, <code><a href="reference/kernelshap.html">kernelshap()</a></code> switches to a comparably fast, almost exact algorithm with faster convergence than the sampling version of permutation SHAP. That is why we recommend <code><a href="reference/kernelshap.html">kernelshap()</a></code> in this case.</li>
-<li>For models with interactions of order up to two, SHAP values of permutation SHAP and Kernel SHAP agree, and the implemented sampling versions provide the same results as the exact versions. In the presence of interactions of order three or higher, this is no longer the case.</li>
+<li>Exact Kernel SHAP gives identical results as exact permutation SHAP. Both algorithms are fast up to 8 features. With more features, <code><a href="reference/kernelshap.html">kernelshap()</a></code> switches to an almost exact algorithm with faster convergence than the sampling version of permutation SHAP.</li>
+<li>For models with interactions of order up to two, the sampling versions provide the same results as the exact versions.</li>
 <li>For additive models, <code><a href="reference/permshap.html">permshap()</a></code> and <code><a href="reference/kernelshap.html">kernelshap()</a></code> give the same results as <code>additive_shap</code> as long as the full training data would be used as background data.</li>
 </ul>
 </div>
@@ -166,18 +166,17 @@
 <span id="cb2-40"><a href="#cb2-40" tabindex="-1"></a>[<span class="dv">1</span>,]  <span class="fl">1.1913247</span>  <span class="fl">0.09005467</span> <span class="sc">-</span><span class="fl">0.13430720</span> <span class="fl">0.000682593</span></span>
 <span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a>[<span class="dv">2</span>,] <span class="sc">-</span><span class="fl">0.4931989</span> <span class="sc">-</span><span class="fl">0.11724773</span>  <span class="fl">0.09868921</span> <span class="fl">0.028563613</span></span>
 <span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a></span>
-<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a><span class="co"># Kernel SHAP gives very slightly different values because the model contains</span></span>
-<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a><span class="co"># interations of order &gt; 2:</span></span>
-<span id="cb2-45"><a href="#cb2-45" tabindex="-1"></a>ks <span class="ot">&lt;-</span> <span class="fu">kernelshap</span>(fit, X, <span class="at">bg_X =</span> bg_X)</span>
-<span id="cb2-46"><a href="#cb2-46" tabindex="-1"></a>ks</span>
-<span id="cb2-47"><a href="#cb2-47" tabindex="-1"></a><span class="co">#       log_carat     clarity       color        cut</span></span>
-<span id="cb2-48"><a href="#cb2-48" tabindex="-1"></a><span class="co"># [1,]  1.1911791  0.0900462 -0.13531648 0.001845958</span></span>
-<span id="cb2-49"><a href="#cb2-49" tabindex="-1"></a><span class="co"># [2,] -0.4927482 -0.1168517  0.09815062 0.028255442</span></span>
-<span id="cb2-50"><a href="#cb2-50" tabindex="-1"></a></span>
-<span id="cb2-51"><a href="#cb2-51" tabindex="-1"></a><span class="co"># 4) Analyze with {shapviz}</span></span>
-<span id="cb2-52"><a href="#cb2-52" tabindex="-1"></a>ps <span class="ot">&lt;-</span> <span class="fu">shapviz</span>(ps)</span>
-<span id="cb2-53"><a href="#cb2-53" tabindex="-1"></a><span class="fu">sv_importance</span>(ps)</span>
-<span id="cb2-54"><a href="#cb2-54" tabindex="-1"></a><span class="fu">sv_dependence</span>(ps, xvars)</span></code></pre></div>
+<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a><span class="co"># Indeed, Kernel SHAP gives the same:</span></span>
+<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a>ks <span class="ot">&lt;-</span> <span class="fu">kernelshap</span>(fit, X, <span class="at">bg_X =</span> bg_X)</span>
+<span id="cb2-45"><a href="#cb2-45" tabindex="-1"></a>ks</span>
+<span id="cb2-46"><a href="#cb2-46" tabindex="-1"></a>      log_carat     clarity       color         cut</span>
+<span id="cb2-47"><a href="#cb2-47" tabindex="-1"></a>[<span class="dv">1</span>,]  <span class="fl">1.1913247</span>  <span class="fl">0.09005467</span> <span class="sc">-</span><span class="fl">0.13430720</span> <span class="fl">0.000682593</span></span>
+<span id="cb2-48"><a href="#cb2-48" tabindex="-1"></a>[<span class="dv">2</span>,] <span class="sc">-</span><span class="fl">0.4931989</span> <span class="sc">-</span><span class="fl">0.11724773</span>  <span class="fl">0.09868921</span> <span class="fl">0.028563613</span></span>
+<span id="cb2-49"><a href="#cb2-49" tabindex="-1"></a></span>
+<span id="cb2-50"><a href="#cb2-50" tabindex="-1"></a><span class="co"># 4) Analyze with {shapviz}</span></span>
+<span id="cb2-51"><a href="#cb2-51" tabindex="-1"></a>ps <span class="ot">&lt;-</span> <span class="fu">shapviz</span>(ps)</span>
+<span id="cb2-52"><a href="#cb2-52" tabindex="-1"></a><span class="fu">sv_importance</span>(ps)</span>
+<span id="cb2-53"><a href="#cb2-53" tabindex="-1"></a><span class="fu">sv_dependence</span>(ps, xvars)</span></code></pre></div>
 <p><img src="reference/figures/README-rf-imp.svg"></p>
 <p><img src="reference/figures/README-rf-dep.png"></p>
 </div>
