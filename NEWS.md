@@ -15,7 +15,7 @@ unit tests against Python's "shap".
 ### API
 
 - The argument `feature_names` can now also be used with matrix input ([#166](https://github.com/ModelOriented/kernelshap/pull/166)).
-- `kernelshap()` and `permshap()` have received a `seed = NULL` argument ([#169](https://github.com/ModelOriented/kernelshap/pull/169)).
+- `kernelshap()` and `permshap()` have received a `seed = NULL` argument ([#170](https://github.com/ModelOriented/kernelshap/pull/170)).
 - Parallel mode: If missing packages or globals have to be specified, this now has to be done through `parallel_args = list(packages = ..., globals = ...)` 
 instead of `parallel_args = list(.packages = ..., .globals = ...)`, see section on parallelism below. 
 The list is passed to `[foreach::foreach(.options.future = ...)]`.
@@ -26,7 +26,7 @@ The list is passed to `[foreach::foreach(.options.future = ...)]`.
 - `permshap()` and `kernelshap()` are faster for data.frame input, 
   and slightly slower for matrix input ([#166](https://github.com/ModelOriented/kernelshap/pull/166)).
 - Additionally, `permshap(, exact = TRUE)` is faster by pre-calculating more 
-  elements used across rows [#165](https://github.com/ModelOriented/kernelshap/pull/165)
+  elements used across rows ([#165](https://github.com/ModelOriented/kernelshap/pull/165)).
 
 ### Internal changes
 
@@ -34,7 +34,7 @@ The list is passed to `[foreach::foreach(.options.future = ...)]`.
 
 ### Changes in parallelism
 
-We have switched from `%dopar%` to `doFuture` ([#169](https://github.com/ModelOriented/kernelshap/pull/169)) with the following impact:
+We have switched from `%dopar%` to `doFuture` ([#170](https://github.com/ModelOriented/kernelshap/pull/170)) with the following impact:
 
 - No need for calling `registerDoFuture()` anymore.
 - Random seeding is properly handled, and respects `seed`, thanks [#163](https://github.com/ModelOriented/kernelshap/issues/163) for reporting.
