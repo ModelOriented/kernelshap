@@ -110,15 +110,17 @@ The {kernelshap} package can deal with almost any situation. We will show some o
 
 ### Parallel computing
 
-Parallel computing for `permshap()` and `kernelshap()` is supported via {foreach}. Note that this does not work for all models. 
+Parallel computing for `permshap()` and `kernelshap()` is supported via {doFuture} and {foreach}.
+Note that this does not work for all models. 
 
-On Windows, sometimes not all packages or global objects are passed to the parallel sessions. Often, this can be fixed via `parallel_args`, see this example: 
+On Windows, sometimes not all packages or global objects are passed to the parallel sessions.
+Often, this can be fixed via `parallel_args` using the arguments "packages" and "globals" passed
+to `foreach(.options.future = ...)`, see this example:
 
 ```r
 library(doFuture)
 library(mgcv)
 
-registerDoFuture()
 plan(multisession, workers = 4)  # Windows
 # plan(multicore, workers = 4)   # Linux, macOS, Solaris
 
@@ -127,7 +129,7 @@ fit <- gam(log_price ~ s(log_carat) + clarity * color + cut, data = diamonds)
 
 system.time(  # 4 seconds in parallel
   ps <- permshap(
-    fit, X, bg_X = bg_X, parallel = TRUE, parallel_args = list(.packages = "mgcv")
+    fit, X, bg_X = bg_X, parallel = TRUE, parallel_args = list(packages = "mgcv")
   )
 )
 ps

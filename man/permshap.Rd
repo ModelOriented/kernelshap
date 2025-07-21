@@ -23,6 +23,7 @@ permshap(object, ...)
   parallel = FALSE,
   parallel_args = NULL,
   verbose = TRUE,
+  seed = NULL,
   ...
 )
 
@@ -41,6 +42,7 @@ permshap(object, ...)
   parallel = FALSE,
   parallel_args = NULL,
   verbose = TRUE,
+  seed = NULL,
   survival = c("chf", "prob"),
   ...
 )
@@ -94,18 +96,21 @@ For \code{permshap()}, the default is 0.01, while for \code{kernelshap()} it is 
 \item{max_iter}{If the stopping criterion (see \code{tol}) is not reached after
 \code{max_iter} iterations, the algorithm stops. Ignored if \code{exact = TRUE}.}
 
-\item{parallel}{If \code{TRUE}, use parallel \code{\link[foreach:foreach]{foreach::foreach()}} to loop over rows
-to be explained. Must register backend beforehand, e.g., via 'doFuture' package,
-see README for an example. Parallelization automatically disables the progress bar.}
+\item{parallel}{If \code{TRUE}, use \code{\link[foreach:foreach]{foreach::foreach()}} and \verb{\%dofuture\%} to loop over rows
+to be explained. Must register backend beforehand, e.g., \code{plan(multisession)},
+see README for an example. Currently disables the progress bar.}
 
-\item{parallel_args}{Named list of arguments passed to \code{\link[foreach:foreach]{foreach::foreach()}}.
-Ideally, this is \code{NULL} (default). Only relevant if \code{parallel = TRUE}.
+\item{parallel_args}{Named list of arguments passed to
+\code{foreach::foreach(.options.future = ...)}, ideally \code{NULL} (default).
+Only relevant if \code{parallel = TRUE}.
 Example on Windows: if \code{object} is a GAM fitted with package 'mgcv',
-then one might need to set \code{parallel_args = list(.packages = "mgcv")}.
-The warning "unexpectedly generated random numbers" can be ignored because
-sharing seeds across rows of \code{X} it is not a problem.}
+then one might need to set \code{parallel_args = list(packages = "mgcv")}.
+Similarly, if the model has been fitted with \code{ranger()}, then it might be necessary
+to pass \code{parallel_args = list(packages = "ranger")}.}
 
 \item{verbose}{Set to \code{FALSE} to suppress messages and the progress bar.}
+
+\item{seed}{Optional integer random seed. Note that it changes the global seed.}
 
 \item{survival}{Should cumulative hazards ("chf", default) or survival
 probabilities ("prob") per time be predicted? Only in \code{ranger()} survival models.}

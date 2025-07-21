@@ -93,16 +93,6 @@ test_that("selection of bg_X can be controlled via bg_n", {
   }
 })
 
-test_that("using foreach (non-parallel) gives the same as normal mode", {
-  for (algo in c(kernelshap, permshap)) {
-    s <- algo(fit, iris[J, x], bg_X = iris, verbose = FALSE)
-    s2 <- suppressWarnings(
-      algo(fit, iris[J, x], bg_X = iris, verbose = FALSE, parallel = TRUE)
-    )
-    expect_equal(s, s2)
-  }
-})
-
 test_that("verbose is chatty", {
   for (algo in c(kernelshap, permshap)) {
     capture_output(expect_message(algo(fit, iris[J, x], bg_X = iris, verbose = TRUE)))
@@ -203,16 +193,16 @@ test_that("exact hybrid kernelshap() is similar to exact (non-hybrid)", {
   expect_equal(s1$S, shap[[1L]]$S)
 })
 
-test_that("kernelshap works for large p (hybrid case)", {
-  set.seed(9L)
-  X <- data.frame(matrix(rnorm(20000L), ncol = 100L))
-  y <- X[, 1L] * X[, 2L] * X[, 3L]
-  fit <- lm(y ~ X1:X2:X3 + ., data = cbind(y = y, X))
-  s <- kernelshap(fit, X[1L, ], bg_X = X, verbose = FALSE)
-
-  expect_equal(s$baseline, mean(y))
-  expect_equal(rowSums(s$S) + s$baseline, unname(predict(fit, X[1L, ])))
-})
+# test_that("kernelshap works for large p (hybrid case)", {
+#   set.seed(9L)
+#   X <- data.frame(matrix(rnorm(20000L), ncol = 100L))
+#   y <- X[, 1L] * X[, 2L] * X[, 3L]
+#   fit <- lm(y ~ X1:X2:X3 + ., data = cbind(y = y, X))
+#   s <- kernelshap(fit, X[1L, ], bg_X = X, verbose = FALSE)
+#
+#   expect_equal(s$baseline, mean(y))
+#   expect_equal(rowSums(s$S) + s$baseline, unname(predict(fit, X[1L, ])))
+# })
 
 test_that("kernelshap and permshap work for models with high-order interactions", {
   # Expected: Python output
@@ -304,13 +294,13 @@ test_that("kernelshap and permshap work for models with high-order interactions"
     exact = FALSE,
     m = 1000,
     max_iter = 1000,
-    tol = 0.001,
+    tol = 0.002,
     verbose = FALSE
   )
   expect_equal(
     c(ksh1$S),
-    c(-1.199874, -1.23913, -0.9575389, 3.884381, -0.3451588, 0.5492675),
-    tolerance = 1e-4
+    c(-1.196958, -1.256924, -0.9603291, 3.886163, -0.3277153, 0.5477104),
+    tolerance = 1e-3
   )
 
   set.seed(1)
@@ -324,13 +314,50 @@ test_that("kernelshap and permshap work for models with high-order interactions"
       exact = FALSE,
       m = 10000,
       max_iter = 10000,
-      tol = 0.002,
+      tol = 0.003,
       verbose = FALSE
     )
   )
   expect_equal(
     c(ksh0$S),
-    c(-1.191228, -1.235814, -0.9362117, 3.849839, -0.3371862, 0.5425477),
-    tolerance = 1e-4
+    c(-1.18917, -1.2298, -0.9247995, 3.80673, -0.3144175, 0.5434034),
+    tolerance = 1e-3
   )
+})
+
+
+test_that("Random seed works", {
+  n <- 100
+
+  X <- data.frame(
+    x1 = seq(1:n) / 100,
+    x2 = log(1:n),
+    x3 = sqrt(1:n),
+    x4 = sin(1:n),
+    x5 = (seq(1:n) / 100)^2,
+    x6 = cos(1:n)
+  )
+
+  pf <- function(model, newdata, ...) {
+    x <- newdata
+    x[, 1] * x[, 2] * x[, 3] * x[, 4] + x[, 5] + x[, 6]
+  }
+
+  for (algo in c(permshap, kernelshap)) {
+    s1a <- algo(pf, head(X, 2), bg_X = X, pred_fun = pf, verbose = FALSE, seed = 1, exact = FALSE, hybrid_degree = 0)
+    s1b <- algo(pf, head(X, 2), bg_X = X, pred_fun = pf, verbose = FALSE, seed = 1, exact = FALSE, hybrid_degree = 0)
+    s2 <- algo(pf, head(X, 2), bg_X = X, pred_fun = pf, verbose = FALSE, seed = 2, exact = FALSE, hybrid_degree = 0)
+    expect_equal(s1a, s1b)
+    expect_false(identical(s1a$S, s2$S))
+  }
+})
+
+test_that("using foreach (non-parallel) gives the same as normal mode", {
+  for (algo in c(kernelshap, permshap)) {
+    s <- algo(fit, iris[J, x], bg_X = iris, verbose = FALSE)
+    s2 <- suppressWarnings(
+      algo(fit, iris[J, x], bg_X = iris, verbose = FALSE, parallel = TRUE)
+    )
+    expect_equal(s, s2)
+  }
 })

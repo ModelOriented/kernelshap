@@ -54,7 +54,7 @@
 #' should not be higher than 10 for exact calculations.
 #' For similar reasons, degree 2 hybrids should not use \eqn{p} larger than 40.
 #'
-#' @importFrom foreach %dopar%
+#' @importFrom doFuture %dofuture%
 #'
 #' @param object Fitted model object.
 #' @param X \eqn{(n \times p)} matrix or `data.frame` with rows to be explained.
@@ -105,16 +105,18 @@
 #'   For `permshap()`, the default is 0.01, while for `kernelshap()` it is set to 0.005.
 #' @param max_iter If the stopping criterion (see `tol`) is not reached after
 #'   `max_iter` iterations, the algorithm stops. Ignored if `exact = TRUE`.
-#' @param parallel If `TRUE`, use parallel [foreach::foreach()] to loop over rows
-#'   to be explained. Must register backend beforehand, e.g., via 'doFuture' package,
-#'   see README for an example. Parallelization automatically disables the progress bar.
-#' @param parallel_args Named list of arguments passed to [foreach::foreach()].
-#'   Ideally, this is `NULL` (default). Only relevant if `parallel = TRUE`.
+#' @param parallel If `TRUE`, use [foreach::foreach()] and `%dofuture%` to loop over rows
+#'   to be explained. Must register backend beforehand, e.g., `plan(multisession)`,
+#'   see README for an example. Currently disables the progress bar.
+#' @param parallel_args Named list of arguments passed to
+#'   `foreach::foreach(.options.future = ...)`, ideally `NULL` (default).
+#'   Only relevant if `parallel = TRUE`.
 #'   Example on Windows: if `object` is a GAM fitted with package 'mgcv',
-#'   then one might need to set `parallel_args = list(.packages = "mgcv")`.
-#'   The warning "unexpectedly generated random numbers" can be ignored because
-#'   sharing seeds across rows of `X` it is not a problem.
+#'   then one might need to set `parallel_args = list(packages = "mgcv")`.
+#'   Similarly, if the model has been fitted with `ranger()`, then it might be necessary
+#'   to pass `parallel_args = list(packages = "ranger")`.
 #' @param verbose Set to `FALSE` to suppress messages and the progress bar.
+#' @param seed Optional integer random seed. Note that it changes the global seed.
 #' @param survival Should cumulative hazards ("chf", default) or survival
 #'   probabilities ("prob") per time be predicted? Only in `ranger()` survival models.
 #' @param ... Additional arguments passed to `pred_fun(object, X, ...)`.
@@ -195,6 +197,7 @@ kernelshap.default <- function(
     parallel = FALSE,
     parallel_args = NULL,
     verbose = TRUE,
+    seed = NULL,
     ...) {
   p <- length(feature_names)
   basic_checks(X = X, feature_names = feature_names, pred_fun = pred_fun)
@@ -208,6 +211,10 @@ kernelshap.default <- function(
   bg_w <- prep_bg$bg_w
   bg_n <- nrow(bg_X)
   n <- nrow(X)
+
+  if (!is.null(seed)) {
+    set.seed(seed)
+  }
 
   # Calculate v1 and v0
   bg_preds <- align_pred(pred_fun(object, bg_X, ...))
@@ -254,8 +261,9 @@ kernelshap.default <- function(
 
   # Apply Kernel SHAP to each row of X
   if (isTRUE(parallel)) {
-    parallel_args <- c(list(i = seq_len(n)), parallel_args)
-    res <- do.call(foreach::foreach, parallel_args) %dopar% kernelshap_one(
+    future_args <- c(list(seed = TRUE), parallel_args)
+    parallel_args <- c(list(i = seq_len(n)), list(.options.future = future_args))
+    res <- do.call(foreach::foreach, parallel_args) %dofuture% kernelshap_one(
       x = X[i, , drop = FALSE],
       v1 = v1[i, , drop = FALSE],
       object = object,
@@ -350,6 +358,7 @@ kernelshap.ranger <- function(
     parallel = FALSE,
     parallel_args = NULL,
     verbose = TRUE,
+    seed = NULL,
     survival = c("chf", "prob"),
     ...) {
   if (is.null(pred_fun)) {
@@ -372,6 +381,7 @@ kernelshap.ranger <- function(
     parallel = parallel,
     parallel_args = parallel_args,
     verbose = verbose,
+    seed = seed,
     ...
   )
 }
