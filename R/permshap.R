@@ -108,6 +108,7 @@ permshap.default <- function(
     parallel = FALSE,
     parallel_args = NULL,
     verbose = TRUE,
+    seed = NULL,
     ...) {
   p <- length(feature_names)
   if (p <= 1L) {
@@ -131,6 +132,10 @@ permshap.default <- function(
   bg_w <- prep_bg$bg_w
   bg_n <- nrow(bg_X)
   n <- nrow(X)
+
+  if (!is.null(seed)) {
+    set.seed(seed)
+  }
 
   # Baseline and predictions on explanation data
   bg_preds <- align_pred(pred_fun(object, bg_X, ...))
@@ -166,8 +171,9 @@ permshap.default <- function(
 
   # Apply permutation SHAP to each row of X
   if (isTRUE(parallel)) {
-    parallel_args <- c(list(i = seq_len(n)), parallel_args)
-    res <- do.call(foreach::foreach, parallel_args) %dopar% permshap_one(
+    future_args <- c(list(seed = TRUE), parallel_args)
+    parallel_args <- c(list(i = seq_len(n)), list(.options.future = future_args))
+    res <- do.call(foreach::foreach, parallel_args) %dofuture% permshap_one(
       x = X[i, , drop = FALSE],
       v1 = v1[i, , drop = FALSE],
       object = object,
@@ -257,6 +263,7 @@ permshap.ranger <- function(
     parallel = FALSE,
     parallel_args = NULL,
     verbose = TRUE,
+    seed = NULL,
     survival = c("chf", "prob"),
     ...) {
   if (is.null(pred_fun)) {
@@ -278,6 +285,7 @@ permshap.ranger <- function(
     parallel = parallel,
     parallel_args = parallel_args,
     verbose = verbose,
+    seed = seed,
     ...
   )
 }

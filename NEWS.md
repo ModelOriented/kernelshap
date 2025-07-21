@@ -15,6 +15,10 @@ unit tests against Python's "shap".
 ### API
 
 - The argument `feature_names` can now also be used with matrix input ([#166](https://github.com/ModelOriented/kernelshap/pull/166)).
+- `kernelshap()` and `permshap()` have received a `seed = NULL` argument ([#169](https://github.com/ModelOriented/kernelshap/pull/169)).
+- Parallel mode: If missing packages or globals have to be specified, this now has to be done through `parallel_args = list(packages = ..., globals = ...)` 
+instead of `parallel_args = list(.packages = ..., .globals = ...)`, see section on parallelism below. 
+The list is passed to `[foreach::foreach(.options.future = ...)]`.
 
 ### Speed and memory improvements
 
@@ -24,16 +28,19 @@ unit tests against Python's "shap".
 - Additionally, `permshap(, exact = TRUE)` is faster by pre-calculating more 
   elements used across rows [#165](https://github.com/ModelOriented/kernelshap/pull/165)
 
-### Documentation
-
-- `kernelshap()` and `permshap()` currently yield a warning on random seed handling in
-  parallel mode, thanks [#163](https://github.com/ModelOriented/kernelshap/issues/163)
-  for reporting. We have added a note in the function documentation that this warning
-  can be ignored.
-  
 ### Internal changes
 
 - Matrices holding on-off vectors are now consistently of type logical ([#167](https://github.com/ModelOriented/kernelshap/pull/167)).
+
+### Changes in parallelism
+
+We have switched from `%dopar%` to `doFuture` ([#169](https://github.com/ModelOriented/kernelshap/pull/169)) with the following impact:
+
+- No need for calling `registerDoFuture()` anymore.
+- Random seeding is properly handled, and respects `seed`, thanks [#163](https://github.com/ModelOriented/kernelshap/issues/163) for reporting.
+- {doFuture} is listed under "imports", not as "suggested".
+- If missing packages or globals have to be specified, this now has to be done through `parallel_args = list(packages = ..., globals = ...)` 
+instead of `parallel_args = list(.packages = ..., .globals = ...)`. The list is passed to `[foreach::foreach(.options.future = ...)]`.
 
 # kernelshap 0.8.0
 

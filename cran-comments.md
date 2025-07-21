@@ -17,8 +17,7 @@ Thanks a lot!
   
 ### `check_win_devel()`
 
-Status: 1 NOTE
-R Under development (unstable) (2025-07-05 r88387 ucrt)
+Status: OK
 
 ### Revdep OK
 
