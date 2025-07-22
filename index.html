@@ -97,7 +97,7 @@
 <li>
 <strong><code><a href="reference/permshap.html">permshap()</a></code></strong>: Permutation SHAP algorithm of [1]. Both exact and sampling versions are available.</li>
 <li>
-<strong><code><a href="reference/kernelshap.html">kernelshap()</a></code></strong>: Kernel SHAP algorithm of [2] and [3]. Both exact and (pseudo-exact) sampling versions are available.</li>
+<strong><code><a href="reference/kernelshap.html">kernelshap()</a></code></strong>: Kernel SHAP algorithm of [2] and [3]. Both exact and (partly exact) sampling versions are available.</li>
 <li>
 <strong><code><a href="reference/additive_shap.html">additive_shap()</a></code></strong>: For <em>additive models</em> fitted via <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>, <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code>, <code><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">mgcv::gam()</a></code>, <code><a href="https://rdrr.io/pkg/mgcv/man/bam.html" class="external-link">mgcv::bam()</a></code>, <code>gam::gam()</code>, <code><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">survival::coxph()</a></code>, or <code><a href="https://rdrr.io/pkg/survival/man/survreg.html" class="external-link">survival::survreg()</a></code>. Exponentially faster than the model-agnostic options above, and recommended if possible.</li>
 </ul>
@@ -105,8 +105,9 @@
 <p><strong>Remarks to <code><a href="reference/permshap.html">permshap()</a></code> and <code><a href="reference/kernelshap.html">kernelshap()</a></code></strong></p>
 <ul>
 <li>Both algorithms need a representative background data <code>bg_X</code> to calculate marginal means (up to 500 rows from the training data). In cases with a natural “off” value (like MNIST digits), this can also be a single row with all values set to the off value. If unspecified, 200 rows are randomly sampled from <code>X</code>.</li>
-<li>Exact Kernel SHAP gives identical results as exact permutation SHAP. Both algorithms are fast up to 8 features. With more features, <code><a href="reference/kernelshap.html">kernelshap()</a></code> switches to an almost exact algorithm with faster convergence than the sampling version of permutation SHAP.</li>
+<li>Exact Kernel SHAP gives identical results as exact permutation SHAP. Both algorithms are fast up to 8 features. With more features, <code><a href="reference/kernelshap.html">kernelshap()</a></code> switches to a partly exact algorithm with faster convergence than the sampling version of permutation SHAP.</li>
 <li>For models with interactions of order up to two, the sampling versions provide the same results as the exact versions.</li>
+<li>Sampling versions iterate until standard errors of SHAP values are sufficiently small.</li>
 <li>For additive models, <code><a href="reference/permshap.html">permshap()</a></code> and <code><a href="reference/kernelshap.html">kernelshap()</a></code> give the same results as <code>additive_shap</code> as long as the full training data would be used as background data.</li>
 </ul>
 </div>

@@ -4,25 +4,7 @@ see Strumbelj and Kononenko (2014) for the basic idea.
 By default, for up to p=8 features, exact SHAP values are returned
 (exact with respect to the selected background data).
 Otherwise, the sampling process iterates until the resulting values
-are sufficiently precise, and standard errors are provided.
-During each iteration, the algorithm cycles twice through a random permutation:
-It starts with all feature components &quot;turned on&quot; (i.e., taking them
-from the observation to be explained), then gradually turning off components
-according to the permutation (i.e., marginalizing them over the background data).
-When all components are turned off, the algorithm - one by one - turns the components
-back on, until all components are turned on again. This antithetic scheme allows to
-evaluate Shapley's formula 2p times with each permutation, using a total of
-2p + 1 evaluations of marginal means.
-For models with interactions up to order two, one can show that
-even a single iteration provides exact SHAP values (with respect to the
-given background dataset).
-The Python implementation &quot;shap&quot; uses a similar approach, but without
-providing standard errors, and without early stopping. To mimic its behavior,
-we would need to set max_iter = p in R, and max_eval = (2*p+1)*p in Python.
-For faster convergence, we use balanced permutations in the sense that
-p subsequent permutations each start with a different feature.
-Furthermore, the 2p on-off vectors with sum &amp;lt;=1 or &amp;gt;=p-1 are evaluated only once,
-similar to the degree 1 hybrid in kernelshap() (but covering less weight)."><meta property="og:image" content="/logo.png"><meta name="robots" content="noindex"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
+are sufficiently precise, and standard errors are provided."><meta property="og:image" content="/logo.png"><meta name="robots" content="noindex"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]--><!-- google analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-5650686-14"></script><script>
@@ -83,27 +65,9 @@ similar to the degree 1 hybrid in kernelshap() (but covering less weight)."><met
     <p>Permutation SHAP algorithm with respect to a background dataset,
 see Strumbelj and Kononenko (2014) for the basic idea.</p>
 <p>By default, for up to p=8 features, exact SHAP values are returned
-(exact with respect to the selected background data).</p>
-<p>Otherwise, the sampling process iterates until the resulting values
+(exact with respect to the selected background data).
+Otherwise, the sampling process iterates until the resulting values
 are sufficiently precise, and standard errors are provided.</p>
-<p>During each iteration, the algorithm cycles twice through a random permutation:
-It starts with all feature components "turned on" (i.e., taking them
-from the observation to be explained), then gradually turning off components
-according to the permutation (i.e., marginalizing them over the background data).
-When all components are turned off, the algorithm - one by one - turns the components
-back on, until all components are turned on again. This antithetic scheme allows to
-evaluate Shapley's formula 2p times with each permutation, using a total of
-2p + 1 evaluations of marginal means.</p>
-<p>For models with interactions up to order two, one can show that
-even a single iteration provides exact SHAP values (with respect to the
-given background dataset).</p>
-<p>The Python implementation "shap" uses a similar approach, but without
-providing standard errors, and without early stopping. To mimic its behavior,
-we would need to set <code>max_iter = p</code> in R, and <code>max_eval = (2*p+1)*p</code> in Python.</p>
-<p>For faster convergence, we use balanced permutations in the sense that
-p subsequent permutations each start with a different feature.
-Furthermore, the 2p on-off vectors with sum &lt;=1 or &gt;=p-1 are evaluated only once,
-similar to the degree 1 hybrid in <code><a href="kernelshap.html">kernelshap()</a></code> (but covering less weight).</p>
     </div>
 
     <div id="ref-usage">
@@ -201,14 +165,16 @@ If <code>bg_X = NULL</code>, must be of same length as <code>X</code>. Set to <c
 
 
 <dt id="arg-exact">exact<a class="anchor" aria-label="anchor" href="#arg-exact"></a></dt>
-<dd><p>If <code>TRUE</code>, the algorithm produces exact SHAP values
+<dd><p>If <code>TRUE</code>, the algorithm will produce exact SHAP values
 with respect to the background data.
 The default is <code>TRUE</code> for up to eight features, and <code>FALSE</code> otherwise.</p></dd>
 
 
 <dt id="arg-low-memory">low_memory<a class="anchor" aria-label="anchor" href="#arg-low-memory"></a></dt>
-<dd><p>If <code>FALSE</code> (default up to p = 15), the algorithm evaluates p
-predictions together, reducing the number of calls to <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>.</p></dd>
+<dd><p>If <code>FALSE</code> (default up to p = 15), the algorithm does p
+iterations in one chunk, evaluating Shapley's formula 2p^2 times.
+For models with interactions up to order two, you can set this to <code>TRUE</code>
+to save time.</p></dd>
 
 
 <dt id="arg-tol">tol<a class="anchor" aria-label="anchor" href="#arg-tol"></a></dt>
@@ -277,6 +243,26 @@ per row of <code>X</code> (if not exact).</p></li>
 <li><p><code>converged</code>: Logical vector of length n indicating convergence per row of <code>X</code>
 (if not exact).</p></li>
 </ul></div>
+    <div id="details">
+    <h2>Details</h2>
+    <p>During each iteration, the algorithm cycles twice through a random permutation:
+It starts with all feature components "turned on" (i.e., taking them
+from the observation to be explained), then gradually turning off components
+according to the permutation.
+When all components are turned off, the algorithm - one by one - turns the components
+back on, until all components are turned on again. This antithetic scheme allows to
+evaluate Shapley's formula twice per feature using a single permutation and a total
+of 2p disjoint evaluations of the contribution function.</p>
+<p>For models with interactions up to order two, one can show that
+even a single iteration provides exact SHAP values for all features
+(with respect to the given background dataset).</p>
+<p>The Python implementation "shap" uses a similar approach, but without
+providing standard errors, and without early stopping.</p>
+<p>For faster convergence, we use balanced permutations in the sense that
+p subsequent permutations each start with a different feature.
+Furthermore, the 2p on-off vectors with sum &lt;=1 or &gt;=p-1 are evaluated only once,
+similar to the degree 1 hybrid in <code><a href="kernelshap.html">kernelshap()</a></code>.</p>
+    </div>
     <div id="methods-by-class-">
     <h2>Methods (by class)</h2>
 

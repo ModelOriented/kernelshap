@@ -83,14 +83,20 @@
 <div class="section level4">
 <h4 id="internal-changes-0-9-0">Internal changes<a class="anchor" aria-label="anchor" href="#internal-changes-0-9-0"></a></h4>
 <ul><li>Matrices holding on-off vectors are now consistently of type logical (<a href="https://github.com/ModelOriented/kernelshap/pull/167" class="external-link">#167</a>).</li>
+<li>
+<code><a href="../reference/kernelshap.html">kernelshap()</a></code> solver: Replacing the Moore-Penrose pseudo-inverse by two direct solves, a trick of <a href="https://github.com/iancovert/shapley-regression/blob/master/shapreg/shapley.py" class="external-link">Ian Covert</a>, and ported to R in (<a href="https://github.com/ModelOriented/kernelshap/pull/171" class="external-link">#171</a>).</li>
 </ul></div>
 <div class="section level4">
 <h4 id="changes-in-parallelism-0-9-0">Changes in parallelism<a class="anchor" aria-label="anchor" href="#changes-in-parallelism-0-9-0"></a></h4>
 <p>We have switched from <code>%dopar%</code> to <code>doFuture</code> (<a href="https://github.com/ModelOriented/kernelshap/pull/170" class="external-link">#170</a>) with the following impact:</p>
 <ul><li>No need for calling <code><a href="https://doFuture.futureverse.org/reference/registerDoFuture.html" class="external-link">registerDoFuture()</a></code> anymore.</li>
 <li>Random seeding is properly handled, and respects <code>seed</code>, thanks <a href="https://github.com/ModelOriented/kernelshap/issues/163" class="external-link">#163</a> for reporting.</li>
-<li>{doFuture} is listed under “imports”, not as “suggested”.</li>
 <li>If missing packages or globals have to be specified, this now has to be done through <code>parallel_args = list(packages = ..., globals = ...)</code> instead of <code>parallel_args = list(.packages = ..., .globals = ...)</code>. The list is passed to <code>[foreach::foreach(.options.future = ...)]</code>.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="dependencies-0-9-0">Dependencies<a class="anchor" aria-label="anchor" href="#dependencies-0-9-0"></a></h4>
+<ul><li>{MASS}: Dropped from imports</li>
+<li>{doFuture}: suggests -&gt; imports</li>
 </ul></div>
 </div>
     <div class="section level2">
