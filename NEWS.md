@@ -31,6 +31,8 @@ The list is passed to `[foreach::foreach(.options.future = ...)]`.
 ### Internal changes
 
 - Matrices holding on-off vectors are now consistently of type logical ([#167](https://github.com/ModelOriented/kernelshap/pull/167)).
+- `kernelshap()` solver: Replacing the Moore-Penrose pseudo-inverse by two direct solves, a trick of [Ian Covert](https://github.com/iancovert/shapley-regression/blob/master/shapreg/shapley.py),
+  and ported to R in ([#171](https://github.com/ModelOriented/kernelshap/pull/171)).
 
 ### Changes in parallelism
 
@@ -38,9 +40,13 @@ We have switched from `%dopar%` to `doFuture` ([#170](https://github.com/ModelOr
 
 - No need for calling `registerDoFuture()` anymore.
 - Random seeding is properly handled, and respects `seed`, thanks [#163](https://github.com/ModelOriented/kernelshap/issues/163) for reporting.
-- {doFuture} is listed under "imports", not as "suggested".
 - If missing packages or globals have to be specified, this now has to be done through `parallel_args = list(packages = ..., globals = ...)` 
 instead of `parallel_args = list(.packages = ..., .globals = ...)`. The list is passed to `[foreach::foreach(.options.future = ...)]`.
+
+### Dependencies
+
+- {MASS}: Dropped from imports
+- {doFuture}: suggests -> imports
 
 # kernelshap 0.8.0
 

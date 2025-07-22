@@ -39,7 +39,6 @@ use_description(
 
 use_package("doFuture", "Imports")
 use_package("foreach", "Imports")
-use_package("MASS", "Imports")
 use_package("stats", "Imports")
 use_package("utils", "Imports")
 

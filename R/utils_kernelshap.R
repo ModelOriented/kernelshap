@@ -95,13 +95,14 @@ kernelshap_one <- function(
 
 # Regression coefficients given sum(beta) = constraint
 # A: (p x p), b: (p x k), constraint: (1 x K)
+# Full credits: https://github.com/iancovert/shapley-regression/blob/master/shapreg/shapley.py
 solver <- function(A, b, constraint) {
-  p <- ncol(A)
-  Ainv <- MASS::ginv(A)
-  dimnames(Ainv) <- dimnames(A)
-  s <- (matrix(colSums(Ainv %*% b), nrow = 1L) - constraint) / sum(Ainv) #  (1 x K)
-  Ainv %*% (b - s[rep.int(1L, p), , drop = FALSE]) #  (p x K)
+  Ainv1 <- solve(A, matrix(1, nrow = nrow(A)))
+  Ainvb <- solve(A, b)
+  num <- rbind(colSums(Ainvb)) - constraint
+  return(Ainvb - Ainv1 %*% num / sum(Ainv1))
 }
+
 
 # Draw m binary vectors z of length p with sum(z) distributed according
 # to Kernel SHAP weights -> (m x p) matrix.
