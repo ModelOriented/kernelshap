@@ -128,3 +128,23 @@ test_that("input_partly_exact(p, deg) fails for bad p or deg", {
   expect_error(input_partly_exact(2L, deg = 0L, feature_names = LETTERS[1:p]))
   expect_error(input_partly_exact(5L, deg = 3L, feature_names = LETTERS[1:p]))
 })
+
+test_that("new solver gives same results as original one", {
+  solver_old <- function(A, b, constraint) {
+    p <- ncol(A)
+    Ainv <- solve(A) # was actually: Ainv <- MASS::ginv(A)
+    dimnames(Ainv) <- dimnames(A)
+    s <- (matrix(colSums(Ainv %*% b), nrow = 1L) - constraint) / sum(Ainv) #  (1 x K)
+    Ainv %*% (b - s[rep.int(1L, p), , drop = FALSE]) #  (p x K)
+  }
+
+  A <- matrix(seq(0.1, 0.20, length.out = 25), ncol = 5)
+  diag(A) <- 0.5
+  b <- cbind(1:5)
+  constraint <- rbind(8)
+  expect_equal(solver_old(A, b, constraint), solver(A, b, constraint))
+
+  b <- cbind(1:5, seq(2, 10, by = 2))
+  constraint <- rbind(1:2)
+  expect_equal(solver_old(A, b, constraint), solver(A, b, constraint))
+})

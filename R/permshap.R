@@ -6,37 +6,35 @@
 #'
 #' By default, for up to p=8 features, exact SHAP values are returned
 #' (exact with respect to the selected background data).
-#'
 #' Otherwise, the sampling process iterates until the resulting values
 #' are sufficiently precise, and standard errors are provided.
 #'
+#' @details
 #' During each iteration, the algorithm cycles twice through a random permutation:
 #' It starts with all feature components "turned on" (i.e., taking them
 #' from the observation to be explained), then gradually turning off components
-#' according to the permutation (i.e., marginalizing them over the background data).
+#' according to the permutation.
 #' When all components are turned off, the algorithm - one by one - turns the components
 #' back on, until all components are turned on again. This antithetic scheme allows to
-#' evaluate Shapley's formula 2p times with each permutation, using a total of
-#' 2p + 1 evaluations of marginal means.
+#' evaluate Shapley's formula twice per feature using a single permutation and a total
+#' of 2p disjoint evaluations of the contribution function.
 #'
 #' For models with interactions up to order two, one can show that
-#' even a single iteration provides exact SHAP values (with respect to the
-#' given background dataset).
+#' even a single iteration provides exact SHAP values for all features
+#' (with respect to the given background dataset).
 #'
 #' The Python implementation "shap" uses a similar approach, but without
-#' providing standard errors, and without early stopping. To mimic its behavior,
-#' we would need to set `max_iter = p` in R, and `max_eval = (2*p+1)*p` in Python.
+#' providing standard errors, and without early stopping.
 #'
 #' For faster convergence, we use balanced permutations in the sense that
 #' p subsequent permutations each start with a different feature.
 #' Furthermore, the 2p on-off vectors with sum <=1 or >=p-1 are evaluated only once,
-#' similar to the degree 1 hybrid in [kernelshap()] (but covering less weight).
+#' similar to the degree 1 hybrid in [kernelshap()].
 #'
-#' @param exact If `TRUE`, the algorithm produces exact SHAP values
-#'   with respect to the background data.
-#'   The default is `TRUE` for up to eight features, and `FALSE` otherwise.
-#' @param low_memory If `FALSE` (default up to p = 15), the algorithm evaluates p
-#'   predictions together, reducing the number of calls to `predict()`.
+#' @param low_memory If `FALSE` (default up to p = 15), the algorithm does p
+#'   iterations in one chunk, evaluating Shapley's formula 2p^2 times.
+#'   For models with interactions up to order two, you can set this to `TRUE`
+#'   to save time.
 #' @inheritParams kernelshap
 #' @returns
 #'   An object of class "kernelshap" with the following components:

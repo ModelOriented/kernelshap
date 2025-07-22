@@ -28,7 +28,6 @@ RoxygenNote: 7.3.2
 Imports: 
     doFuture,
     foreach,
-    MASS,
     stats,
     utils
 Suggests: 
