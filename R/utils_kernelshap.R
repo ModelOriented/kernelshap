@@ -108,7 +108,7 @@ solver <- function(A, b, constraint) {
 # to Kernel SHAP weights -> (m x p) matrix.
 # The argument S can be used to restrict the range of sum(z).
 sample_Z <- function(p, m, feature_names, S = 1:(p - 1L)) {
-  probs <- kernel_weights(p, per_coalition_size = TRUE, S = S)
+  probs <- kernel_weights_per_coalition_size(p, S = S)
   N <- S[sample.int(length(S), m, replace = TRUE, prob = probs)]
 
   # Then, conditional on that number, set random positions of z to 1
@@ -159,7 +159,7 @@ input_sampling <- function(p, m, deg, feature_names) {
 input_exact <- function(p, feature_names) {
   Z <- exact_Z(p, feature_names = feature_names)
   Z <- Z[2L:(nrow(Z) - 1L), , drop = FALSE]
-  kw <- kernel_weights(p, per_coalition_size = FALSE) # Kernel weights for all subsets
+  kw <- kernel_weights(p) # Kernel weights for all subsets
   w <- kw[rowSums(Z)] # Corresponding weight for each row in Z
   w <- w / sum(w)
   list(Z = Z, w = w, A = crossprod(Z, w * Z))
@@ -204,7 +204,7 @@ input_partly_exact <- function(p, deg, feature_names) {
     stop("p must be >=2*deg")
   }
 
-  kw <- kernel_weights(p, per_coalition_size = FALSE)
+  kw <- kernel_weights(p)
 
   Z <- vector("list", deg)
   for (k in seq_len(deg)) {
@@ -217,16 +217,17 @@ input_partly_exact <- function(p, deg, feature_names) {
   list(Z = Z, w = w, A = crossprod(Z, w * Z))
 }
 
-# Kernel weight distribution
-#
-# `per_coalition_size = TRUE` is required, e.g., when one wants to sample random masks
-# according to the Kernel SHAP distribution: Pick a coalition size as per
-# these weights, then randomly place "on" positions. `FALSE` refer to weights
-# if all masks has been calculated and one wants to calculate their weights based
-# on the number of "on" positions.
-kernel_weights <- function(p, per_coalition_size, S = seq_len(p - 1L)) {
-  const <- if (per_coalition_size) 1 else choose(p, S)
-  probs <- (p - 1) / (const * S * (p - S)) # could drop the numerator
+# Kernel weight distribution. Gives the weight of each coalition vector of sum k
+kernel_weights <- function(p) {
+  S <- seq_len(p - 1L)
+  probs <- 1 / (choose(p, S) * S * (p - S))
+  return(probs / sum(probs))
+}
+
+# Kernel weights per coalition size. Sums the kernel_weights over the number of
+# coalitions with same sum.
+kernel_weights_per_coalition_size <- function(p, S = seq_len(p - 1L)) {
+  probs <- 1 / (S * (p - S))
   return(probs / sum(probs))
 }
 
@@ -236,7 +237,7 @@ prop_exact <- function(p, deg) {
   if (deg == 0) {
     return(0)
   }
-  w <- kernel_weights(p, per_coalition_size = TRUE)
+  w <- kernel_weights_per_coalition_size(p)
   w_total <- 2 * sum(w[seq_len(deg)]) - w[deg] * (p == 2 * deg)
   return(w_total)
 }
