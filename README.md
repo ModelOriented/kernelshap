@@ -16,7 +16,7 @@
 The package contains three functions to crunch SHAP values:
 
 - **`permshap()`**: Permutation SHAP algorithm of [1]. Both exact and sampling versions are available.
-- **`kernelshap()`**: Kernel SHAP algorithm of [2] and [3]. Both exact and (pseudo-exact) sampling versions are available.
+- **`kernelshap()`**: Kernel SHAP algorithm of [2] and [3]. Both exact and (partly exact) sampling versions are available.
 - **`additive_shap()`**: For *additive models* fitted via `lm()`, `glm()`, `mgcv::gam()`, `mgcv::bam()`, `gam::gam()`, `survival::coxph()`, or `survival::survreg()`. Exponentially faster than the model-agnostic options above, and recommended if possible.
 
 To explain your model, select an explanation dataset `X` (up to 1000 rows from the training data, feature columns only). Use {shapviz} to visualize the resulting SHAP values. 
@@ -25,8 +25,9 @@ To explain your model, select an explanation dataset `X` (up to 1000 rows from t
 
 - Both algorithms need a representative background data `bg_X` to calculate marginal means (up to 500 rows from the training data). In cases with a natural "off" value (like MNIST digits), this can also be a single row with all values set to the off value. If unspecified, 200 rows are randomly sampled from `X`.
 - Exact Kernel SHAP gives identical results as exact permutation SHAP. Both algorithms are fast up to 8 features.
-  With more features, `kernelshap()` switches to an almost exact algorithm with faster convergence than the sampling version of permutation SHAP.
+  With more features, `kernelshap()` switches to a partly exact algorithm with faster convergence than the sampling version of permutation SHAP.
 - For models with interactions of order up to two, the sampling versions provide the same results as the exact versions.
+- Sampling versions iterate until standard errors of SHAP values are sufficiently small.
 - For additive models, `permshap()` and `kernelshap()` give the same results as `additive_shap` 
 as long as the full training data would be used as background data.
 

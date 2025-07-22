@@ -79,7 +79,7 @@ If \code{bg_X = NULL}, must be of same length as \code{X}. Set to \code{NULL} fo
 
 \item{bg_n}{If \code{bg_X = NULL}: Size of background data to be sampled from \code{X}.}
 
-\item{exact}{If \code{TRUE}, the algorithm will produce exact Kernel SHAP values
+\item{exact}{If \code{TRUE}, the algorithm will produce exact SHAP values
 with respect to the background data.
 The default is \code{TRUE} for up to eight features, and \code{FALSE} otherwise.}
 
@@ -94,7 +94,7 @@ studying properties of the Kernel SHAP algorithm.
 for the exact part. The remaining mass is covered by random sampling.
 \item \code{2}: Uses all \eqn{p(p+1)} on-off vectors \eqn{z} with
 \eqn{\sum z \in \{1, 2, p-2, p-1\}}. The remaining mass is covered by sampling.
-Convergence usually happens very fast.
+Usually converges fast.
 \item \code{k>2}: Uses all on-off vectors with
 \eqn{\sum z \in \{1, \dots, k, p-k, \dots, p-1\}}.
 }}
@@ -162,9 +162,9 @@ per row of \code{X} (if not exact).
 \description{
 Efficient implementation of Kernel SHAP, see Lundberg and Lee (2017), and
 Covert and Lee (2021), abbreviated by CL21.
-By default, for up to p=8 features, exact Kernel SHAP values are returned
+By default, for up to p=8 features, exact SHAP values are returned
 (with respect to the selected background data).
-Otherwise, an almost exact hybrid algorithm combining exact calculations and
+Otherwise, a partly exact hybrid algorithm combining exact calculations and
 iterative paired sampling is used, see Details.
 }
 \details{
@@ -202,10 +202,9 @@ obtained along with other calculations similar to those described in CL21.
 \item Step 2 (sampling part): The remaining weight is filled by sampling vectors z
 according to Kernel SHAP weights normalized to the values not yet covered by Step 1.
 Together with the results from Step 1 - correctly weighted - this now forms a
-complete iteration as in CL21. The difference is that most mass is covered by exact
-calculations. Afterwards, the algorithm iterates until convergence.
-The output of Step 1 is reused in every iteration, leading to an extremely
-efficient strategy.
+complete iteration as in CL21. The difference is that a significant part of the mass
+is covered by exact calculations. Afterwards, the algorithm iterates until
+convergence. The output of Step 1 is reused in every iteration.
 }
 
 If \eqn{p} is sufficiently small, all possible \eqn{2^p-2} on-off vectors \eqn{z} can be
