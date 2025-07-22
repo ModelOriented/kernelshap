@@ -1,13 +1,12 @@
 test_that("sum of kernel weights is 1", {
   for (p in 2:10) {
-    expect_equal(sum(kernel_weights(p, per_coalition_size = FALSE)), 1.0)
-    expect_equal(sum(kernel_weights(p, per_coalition_size = TRUE)), 1.0)
+    expect_equal(sum(kernel_weights(p)), 1.0)
+    expect_equal(sum(kernel_weights_per_coalition_size(p)), 1.0)
   }
 })
 
 test_that("Sum of kernel weights is 1, even for subset of domain", {
-  expect_equal(sum(kernel_weights(10L, S = 2:5, per_coalition_size = FALSE)), 1.0)
-  expect_equal(sum(kernel_weights(10L, S = 2:5, per_coalition_size = TRUE)), 1.0)
+  expect_equal(sum(kernel_weights_per_coalition_size(10L, S = 2:5)), 1.0)
 })
 
 p <- 10L
