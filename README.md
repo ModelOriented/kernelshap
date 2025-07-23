@@ -113,7 +113,7 @@ The {kernelshap} package can deal with almost any situation. We will show some o
 
 ### Parallel computing
 
-Parallel computing for `permshap()` and `kernelshap()` is supported via {future.apply}.
+Parallel computing for `permshap()` and `kernelshap()` is supported via {future.apply}. It works for most, but not all models (e.g., keras).
 
 ```r
 library(mgcv)
