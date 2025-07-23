@@ -182,8 +182,9 @@ permshap.default <- function(
     warning_burden(max(m_eval, m_exact), bg_n = bg_n)
   }
 
+  pbar_step <- max(1L, n %/% 20L)
   pbar <- if (verbose && n >= 2L && requireNamespace("progressr", quietly = TRUE)) {
-    progressr::progressor(n)
+    progressr::progressor(ceiling(n / pbar_step))
   }
 
   # Apply permutation SHAP to each row of X
@@ -205,6 +206,7 @@ permshap.default <- function(
     tol = tol,
     max_iter = max_iter,
     pbar = pbar,
+    pbar_step = pbar_step,
     ...
   )
 

@@ -1,6 +1,8 @@
 library(ggplot2)
 library(kernelshap)
 
+progressr::handlers(global = TRUE)
+
 # Turn ordinal factors into unordered
 ord <- c("clarity", "color", "cut")
 diamonds[, ord] <- lapply(diamonds[ord], factor, ordered = FALSE)

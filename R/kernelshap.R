@@ -265,8 +265,9 @@ kernelshap.default <- function(
     warning_burden(max(m, m_exact), bg_n = bg_n)
   }
 
+  pbar_step <- max(1L, n %/% 20L)
   pbar <- if (verbose && n >= 2L && requireNamespace("progressr", quietly = TRUE)) {
-    progressr::progressor(n)
+    progressr::progressor(ceiling(n / pbar_step))
   }
 
   # Apply Kernel SHAP to each row of X
@@ -289,6 +290,7 @@ kernelshap.default <- function(
     v0 = v0,
     precalc = precalc,
     pbar = pbar,
+    pbar_step = pbar_step,
     ...
   )
 

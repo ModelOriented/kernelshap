@@ -17,6 +17,7 @@ kernelshap_one <- function(
     v0,
     precalc,
     pbar,
+    pbar_step,
     ...) {
   x <- x[i, , drop = FALSE]
   v1 <- v1[i, , drop = FALSE]
@@ -42,9 +43,11 @@ kernelshap_one <- function(
     # Some of the hybrid cases are exact as well
     if (exact || trunc(p / 2) == deg) {
       beta <- solver(A_exact, b_exact, constraint = v1 - v0) #  (p x K)
-      if (!is.null(pbar)) {
+
+      if (!is.null(pbar) && (i %% pbar_step == 0L)) {
         pbar()
       }
+
       return(list(beta = beta))
     }
   }
@@ -98,9 +101,11 @@ kernelshap_one <- function(
     }
   }
   out <- list(beta = beta_n, sigma = sigma_n, n_iter = n_iter, converged = converged)
-  if (!is.null(pbar)) {
+
+  if (!is.null(pbar) && (i %% pbar_step == 0L)) {
     pbar()
   }
+
   return(out)
 }
 

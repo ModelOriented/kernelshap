@@ -29,6 +29,7 @@ permshap_one <- function(
     tol,
     max_iter,
     pbar,
+    pbar_step,
     ...) {
   x <- x[i, , drop = FALSE]
   v1 <- v1[i, , drop = FALSE]
@@ -58,9 +59,11 @@ permshap_one <- function(
         w = precalc$shapley_w[pos$on]
       )
     }
-    if (!is.null(pbar)) {
+
+    if (!is.null(pbar) && (i %% pbar_step == 0L)) {
       pbar()
     }
+
     return(list(beta = beta_n))
   }
 
@@ -135,9 +138,11 @@ permshap_one <- function(
   out <- list(
     beta = beta_n / n_iter, sigma = sigma_n, n_iter = n_iter, converged = converged
   )
-  if (!is.null(pbar)) {
+
+  if (!is.null(pbar) && (i %% pbar_step == 0L)) {
     pbar()
   }
+
   return(out)
 }
 
