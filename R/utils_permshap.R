@@ -6,6 +6,7 @@
 #' @keywords internal
 #'
 #' @inheritParams permshap
+#' @param i Row ID to be explained.
 #' @param v1 Prediction of `x`.
 #' @param v0 Average prediction on background data.
 #' @param x A single row to be explained.
@@ -14,6 +15,7 @@
 #'   a (p x K) matrix of standard errors, number of iterations,
 #'   and convergence status.
 permshap_one <- function(
+    i,
     x,
     v1,
     object,
@@ -28,6 +30,8 @@ permshap_one <- function(
     max_iter,
     pbar,
     ...) {
+  x <- x[i, , drop = FALSE]
+  v1 <- v1[i, , drop = FALSE]
   bg <- precalc$bg_X_rep
   p <- length(feature_names)
   K <- ncol(v1)

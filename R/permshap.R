@@ -9,7 +9,10 @@
 #' Otherwise, the sampling process iterates until the resulting values
 #' are sufficiently precise, and standard errors are provided.
 #'
-#' To activate the progress bar, run `progressr::handlers(global = TRUE)` first.
+#' To activate the progress bar, e.g., run `progressr::handlers(global = TRUE)` first.
+#'
+#' To activate parallel processing, run `future::plan(multisession)` or similar.
+#' To deactivate later, run `plan("sequential")`.
 #'
 #' @details
 #' During each iteration, the algorithm cycles twice through a random permutation:
@@ -107,11 +110,18 @@ permshap.default <- function(
     max_iter = 10L * length(feature_names),
     parallel = FALSE,
     parallel_args = NULL,
+    future.packages = NULL,
     verbose = TRUE,
     seed = NULL,
     ...) {
   if (parallel) {
     warning("The 'parallel' argument has been deprecated. Simply set plan(...) to activate parallel computing.")
+  }
+  if (!is.null(parallel_args)) {
+    warning(
+      "The 'parallel_args' argument has been deprecated.
+     If your parallel sessions lack a package, use argument `future.packages`."
+    )
   }
   p <- length(feature_names)
   if (p <= 1L) {
@@ -177,12 +187,13 @@ permshap.default <- function(
   }
 
   # Apply permutation SHAP to each row of X
-  future_args <- c(list(seed = TRUE), parallel_args)
-  parallel_args <- c(list(i = seq_len(n)), list(.options.future = future_args))
-
-  res <- do.call(foreach::foreach, parallel_args) %dofuture% permshap_one(
-    x = X[i, , drop = FALSE],
-    v1 = v1[i, , drop = FALSE],
+  res <- future.apply::future_lapply(
+    seq_len(n),
+    FUN = permshap_one,
+    future.packages = future.packages,
+    future.seed = TRUE,
+    x = X,
+    v1 = v1,
     object = object,
     pred_fun = pred_fun,
     bg_w = bg_w,

@@ -1,11 +1,10 @@
-# kernelshap 0.9.0
+# kernelshap 1.0.0
 
-We have figured out a bug in the weighting logic of Kernel SHAP.
-
-This update comes with a fix which has been tested against two other implementations.
+- We have fixed a problematic bug in the weighting logic of Kernel SHAP.
+- Much better parallel processing via {future.apply}.
 
 I am aware that the last release of {kernelshap} is not too long ago, but I still would love to see
-this fixed before the (well-deserved) summer break.
+this fixed before your (well-deserved) summer break.
 
 Thanks a lot!
 

@@ -24,7 +24,7 @@ To explain your model, select an explanation dataset `X` (up to 1000 rows from t
 **Remarks to `permshap()` and `kernelshap()`**
 
 - Both algorithms need a representative background data `bg_X` to calculate marginal means (up to 500 rows from the training data). In cases with a natural "off" value (like MNIST digits), this can also be a single row with all values set to the off value. If unspecified, 200 rows are randomly sampled from `X`.
-- Exact Kernel SHAP gives identical results as exact permutation SHAP. Both algorithms are fast up to 8 features.
+- Exact Kernel SHAP gives identical results as exact permutation SHAP. The algorithms are fast for up to 8 features.
   With more features, `kernelshap()` switches to a partly exact algorithm with faster convergence than the sampling version of permutation SHAP.
 - For models with interactions of order up to two, the sampling versions provide the same results as the exact versions.
 - Sampling versions iterate until standard errors of SHAP values are sufficiently small.
@@ -113,25 +113,19 @@ The {kernelshap} package can deal with almost any situation. We will show some o
 
 ### Parallel computing
 
-Parallel computing for `permshap()` and `kernelshap()` is supported via {doFuture} and {foreach}.
-Note that this does not work for all models. 
-
-On Windows, sometimes not all packages or global objects are passed to the parallel sessions.
-Often, this can be fixed via `parallel_args` using the arguments "packages" and "globals" passed
-to `foreach(.options.future = ...)`, see this example:
+Parallel computing for `permshap()` and `kernelshap()` is supported via {future.apply}.
 
 ```r
-library(doFuture)
 library(mgcv)
 
-plan(multisession, workers = 4)  # Windows
-# plan(multicore, workers = 4)   # Linux, macOS, Solaris
+future::plan(multisession, workers = 4)  # Windows
+# future::plan(multicore, workers = 4)   # Linux, macOS, Solaris
 
 # GAM with interactions - we cannot use additive_shap()
 fit <- gam(log_price ~ s(log_carat) + clarity * color + cut, data = diamonds)
 
 system.time(  # 4 seconds in parallel
-  ps <- permshap(fit, X, bg_X = bg_X, parallel_args = list(packages = "mgcv"))
+  ps <- permshap(fit, X, bg_X = bg_X)
 )
 ps
 
@@ -141,7 +135,7 @@ ps
 # [2,]  -0.51546 -0.1174766  0.11122775 0.030243973
 
 # Because there are no interactions of order above 2, Kernel SHAP gives the same:
-plan("sequential") 
+future::plan("sequential") 
 system.time(  # 12 s non-parallel
   ks <- kernelshap(fit, X, bg_X = bg_X)
 )

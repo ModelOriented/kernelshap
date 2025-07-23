@@ -2,6 +2,7 @@
 # If exact, a single call to predict() is necessary.
 # If sampling is involved, we need at least two additional calls to predict().
 kernelshap_one <- function(
+    i,
     x,
     v1,
     object,
@@ -17,6 +18,8 @@ kernelshap_one <- function(
     precalc,
     pbar,
     ...) {
+  x <- x[i, , drop = FALSE]
+  v1 <- v1[i, , drop = FALSE]
   p <- length(feature_names)
   K <- ncol(v1)
   K_names <- colnames(v1)
