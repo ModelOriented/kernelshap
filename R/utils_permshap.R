@@ -26,9 +26,9 @@ permshap_one <- function(
     low_memory,
     tol,
     max_iter,
+    pbar,
     ...) {
   bg <- precalc$bg_X_rep
-
   p <- length(feature_names)
   K <- ncol(v1)
   K_names <- colnames(v1)
@@ -53,6 +53,9 @@ permshap_one <- function(
         vz[pos$on, , drop = FALSE] - vz[pos$off, , drop = FALSE],
         w = precalc$shapley_w[pos$on]
       )
+    }
+    if (!is.null(pbar)) {
+      pbar()
     }
     return(list(beta = beta_n))
   }
@@ -128,6 +131,9 @@ permshap_one <- function(
   out <- list(
     beta = beta_n / n_iter, sigma = sigma_n, n_iter = n_iter, converged = converged
   )
+  if (!is.null(pbar)) {
+    pbar()
+  }
   return(out)
 }
 

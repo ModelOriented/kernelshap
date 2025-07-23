@@ -9,6 +9,8 @@
 #' Otherwise, the sampling process iterates until the resulting values
 #' are sufficiently precise, and standard errors are provided.
 #'
+#' To activate the progress bar, run `progressr::handlers(global = TRUE)` first.
+#'
 #' @details
 #' During each iteration, the algorithm cycles twice through a random permutation:
 #' It starts with all feature components "turned on" (i.e., taking them
@@ -108,6 +110,9 @@ permshap.default <- function(
     verbose = TRUE,
     seed = NULL,
     ...) {
+  if (parallel) {
+    warning("The 'parallel' argument has been deprecated. Simply set plan(...) to activate parallel computing.")
+  }
   p <- length(feature_names)
   if (p <= 1L) {
     stop("Case p = 1 not implemented. Use kernelshap() instead.")
@@ -167,51 +172,30 @@ permshap.default <- function(
     warning_burden(max(m_eval, m_exact), bg_n = bg_n)
   }
 
-  # Apply permutation SHAP to each row of X
-  if (isTRUE(parallel)) {
-    future_args <- c(list(seed = TRUE), parallel_args)
-    parallel_args <- c(list(i = seq_len(n)), list(.options.future = future_args))
-    res <- do.call(foreach::foreach, parallel_args) %dofuture% permshap_one(
-      x = X[i, , drop = FALSE],
-      v1 = v1[i, , drop = FALSE],
-      object = object,
-      pred_fun = pred_fun,
-      bg_w = bg_w,
-      v0 = v0,
-      precalc = precalc,
-      feature_names = feature_names,
-      exact = exact,
-      low_memory = low_memory,
-      tol = tol,
-      max_iter = max_iter,
-      ...
-    )
-  } else {
-    if (verbose && n >= 2L) {
-      pb <- utils::txtProgressBar(max = n, style = 3)
-    }
-    res <- vector("list", n)
-    for (i in seq_len(n)) {
-      res[[i]] <- permshap_one(
-        x = X[i, , drop = FALSE],
-        v1 = v1[i, , drop = FALSE],
-        object = object,
-        pred_fun = pred_fun,
-        bg_w = bg_w,
-        v0 = v0,
-        precalc = precalc,
-        feature_names = feature_names,
-        exact = exact,
-        low_memory = low_memory,
-        tol = tol,
-        max_iter = max_iter,
-        ...
-      )
-      if (verbose && n >= 2L) {
-        utils::setTxtProgressBar(pb, i)
-      }
-    }
+  pbar <- if (verbose && n >= 2L && requireNamespace("progressr", quietly = TRUE)) {
+    progressr::progressor(n)
   }
+
+  # Apply permutation SHAP to each row of X
+  future_args <- c(list(seed = TRUE), parallel_args)
+  parallel_args <- c(list(i = seq_len(n)), list(.options.future = future_args))
+
+  res <- do.call(foreach::foreach, parallel_args) %dofuture% permshap_one(
+    x = X[i, , drop = FALSE],
+    v1 = v1[i, , drop = FALSE],
+    object = object,
+    pred_fun = pred_fun,
+    bg_w = bg_w,
+    v0 = v0,
+    precalc = precalc,
+    feature_names = feature_names,
+    exact = exact,
+    low_memory = low_memory,
+    tol = tol,
+    max_iter = max_iter,
+    pbar = pbar,
+    ...
+  )
 
   # Organize output
   out <- list(

@@ -15,6 +15,7 @@ kernelshap_one <- function(
     max_iter,
     v0,
     precalc,
+    pbar,
     ...) {
   p <- length(feature_names)
   K <- ncol(v1)
@@ -38,6 +39,9 @@ kernelshap_one <- function(
     # Some of the hybrid cases are exact as well
     if (exact || trunc(p / 2) == deg) {
       beta <- solver(A_exact, b_exact, constraint = v1 - v0) #  (p x K)
+      if (!is.null(pbar)) {
+        pbar()
+      }
       return(list(beta = beta))
     }
   }
@@ -90,7 +94,11 @@ kernelshap_one <- function(
       sigma_n <- NA * beta_n #  (p x K)
     }
   }
-  list(beta = beta_n, sigma = sigma_n, n_iter = n_iter, converged = converged)
+  out <- list(beta = beta_n, sigma = sigma_n, n_iter = n_iter, converged = converged)
+  if (!is.null(pbar)) {
+    pbar()
+  }
+  return(out)
 }
 
 # Regression coefficients given sum(beta) = constraint

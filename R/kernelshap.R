@@ -8,6 +8,8 @@
 #' Otherwise, a partly exact hybrid algorithm combining exact calculations and
 #' iterative paired sampling is used, see Details.
 #'
+#' To activate the progress bar, run `progressr::handlers(global = TRUE)` first.
+#'
 #' @details
 #' The pure iterative Kernel SHAP sampling as in Covert and Lee (2021) works like this:
 #'
@@ -198,6 +200,9 @@ kernelshap.default <- function(
     verbose = TRUE,
     seed = NULL,
     ...) {
+  if (parallel) {
+    warning("The 'parallel' argument has been deprecated. Simply set plan(...) to activate parallel computing.")
+  }
   p <- length(feature_names)
   basic_checks(X = X, feature_names = feature_names, pred_fun = pred_fun)
   stopifnot(
@@ -258,53 +263,31 @@ kernelshap.default <- function(
     warning_burden(max(m, m_exact), bg_n = bg_n)
   }
 
-  # Apply Kernel SHAP to each row of X
-  if (isTRUE(parallel)) {
-    future_args <- c(list(seed = TRUE), parallel_args)
-    parallel_args <- c(list(i = seq_len(n)), list(.options.future = future_args))
-    res <- do.call(foreach::foreach, parallel_args) %dofuture% kernelshap_one(
-      x = X[i, , drop = FALSE],
-      v1 = v1[i, , drop = FALSE],
-      object = object,
-      pred_fun = pred_fun,
-      feature_names = feature_names,
-      bg_w = bg_w,
-      exact = exact,
-      deg = hybrid_degree,
-      m = m,
-      tol = tol,
-      max_iter = max_iter,
-      v0 = v0,
-      precalc = precalc,
-      ...
-    )
-  } else {
-    if (verbose && n >= 2L) {
-      pb <- utils::txtProgressBar(max = n, style = 3)
-    }
-    res <- vector("list", n)
-    for (i in seq_len(n)) {
-      res[[i]] <- kernelshap_one(
-        x = X[i, , drop = FALSE],
-        v1 = v1[i, , drop = FALSE],
-        object = object,
-        pred_fun = pred_fun,
-        feature_names = feature_names,
-        bg_w = bg_w,
-        exact = exact,
-        deg = hybrid_degree,
-        m = m,
-        tol = tol,
-        max_iter = max_iter,
-        v0 = v0,
-        precalc = precalc,
-        ...
-      )
-      if (verbose && n >= 2L) {
-        utils::setTxtProgressBar(pb, i)
-      }
-    }
+  pbar <- if (verbose && n >= 2L && requireNamespace("progressr", quietly = TRUE)) {
+    progressr::progressor(n)
   }
+
+  # Apply Kernel SHAP to each row of X
+  future_args <- c(list(seed = TRUE), parallel_args)
+  parallel_args <- c(list(i = seq_len(n)), list(.options.future = future_args))
+
+  res <- do.call(foreach::foreach, parallel_args) %dofuture% kernelshap_one(
+    x = X[i, , drop = FALSE],
+    v1 = v1[i, , drop = FALSE],
+    object = object,
+    pred_fun = pred_fun,
+    feature_names = feature_names,
+    bg_w = bg_w,
+    exact = exact,
+    deg = hybrid_degree,
+    m = m,
+    tol = tol,
+    max_iter = max_iter,
+    v0 = v0,
+    precalc = precalc,
+    pbar = pbar,
+    ...
+  )
 
   # Organize output
   exact <- exact || trunc(p / 2) == hybrid_degree

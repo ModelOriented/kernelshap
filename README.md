@@ -51,6 +51,8 @@ library(ggplot2)
 library(ranger)
 library(shapviz)
 
+progressr::handlers(global = TRUE)  # activates progress bar
+
 options(ranger.num.threads = 8)
 
 diamonds <- transform(
@@ -129,9 +131,7 @@ plan(multisession, workers = 4)  # Windows
 fit <- gam(log_price ~ s(log_carat) + clarity * color + cut, data = diamonds)
 
 system.time(  # 4 seconds in parallel
-  ps <- permshap(
-    fit, X, bg_X = bg_X, parallel = TRUE, parallel_args = list(packages = "mgcv")
-  )
+  ps <- permshap(fit, X, bg_X = bg_X, parallel_args = list(packages = "mgcv"))
 )
 ps
 
@@ -141,6 +141,7 @@ ps
 # [2,]  -0.51546 -0.1174766  0.11122775 0.030243973
 
 # Because there are no interactions of order above 2, Kernel SHAP gives the same:
+plan("sequential") 
 system.time(  # 12 s non-parallel
   ks <- kernelshap(fit, X, bg_X = bg_X)
 )

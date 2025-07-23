@@ -42,6 +42,8 @@ use_package("foreach", "Imports")
 use_package("stats", "Imports")
 use_package("utils", "Imports")
 
+use_package("progressr", "Suggests")
+
 use_gpl_license(2)
 
 # Your files that do not belong to the package itself (others are added by "use_* function")
