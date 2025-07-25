@@ -8,6 +8,11 @@
 #' Otherwise, a partly exact hybrid algorithm combining exact calculations and
 #' iterative paired sampling is used, see Details.
 #'
+#' To activate the progress bar, e.g., run `progressr::handlers(global = TRUE)` first.
+#'
+#' To activate parallel processing, run `future::plan(multisession)` or similar.
+#' To deactivate later, run `plan("sequential")`.
+#'
 #' @details
 #' The pure iterative Kernel SHAP sampling as in Covert and Lee (2021) works like this:
 #'
@@ -52,8 +57,6 @@
 #' (\eqn{N} is the background data size and \eqn{M} the number of \eqn{z} vectors), \eqn{p}
 #' should not be higher than 10 for exact calculations.
 #' For similar reasons, degree 2 hybrids should not use \eqn{p} larger than 40.
-#'
-#' @importFrom doFuture %dofuture%
 #'
 #' @param object Fitted model object.
 #' @param X \eqn{(n \times p)} matrix or `data.frame` with rows to be explained.
@@ -104,16 +107,10 @@
 #'   For `permshap()`, the default is 0.01, while for `kernelshap()` it is set to 0.005.
 #' @param max_iter If the stopping criterion (see `tol`) is not reached after
 #'   `max_iter` iterations, the algorithm stops. Ignored if `exact = TRUE`.
-#' @param parallel If `TRUE`, use [foreach::foreach()] and `%dofuture%` to loop over rows
-#'   to be explained. Must register backend beforehand, e.g., `plan(multisession)`,
-#'   see README for an example. Currently disables the progress bar.
-#' @param parallel_args Named list of arguments passed to
-#'   `foreach::foreach(.options.future = ...)`, ideally `NULL` (default).
-#'   Only relevant if `parallel = TRUE`.
-#'   Example on Windows: if `object` is a GAM fitted with package 'mgcv',
-#'   then one might need to set `parallel_args = list(packages = "mgcv")`.
-#'   Similarly, if the model has been fitted with `ranger()`, then it might be necessary
-#'   to pass `parallel_args = list(packages = "ranger")`.
+#' @param parallel Deprecated.
+#' @param parallel_args Deprecated (see `future.packages`).
+#' @param future.packages Character vector with packages to be attached in the
+#'   R environment evaluating the future. Only if parallel computing.
 #' @param verbose Set to `FALSE` to suppress messages and the progress bar.
 #' @param seed Optional integer random seed. Note that it changes the global seed.
 #' @param survival Should cumulative hazards ("chf", default) or survival
@@ -195,9 +192,19 @@ kernelshap.default <- function(
     max_iter = 100L,
     parallel = FALSE,
     parallel_args = NULL,
+    future.packages = NULL,
     verbose = TRUE,
     seed = NULL,
     ...) {
+  if (parallel) {
+    warning("The 'parallel' argument has been deprecated. Simply set plan(...) to activate parallel computing.")
+  }
+  if (!is.null(parallel_args)) {
+    warning(
+      "The 'parallel_args' argument has been deprecated.
+     If your parallel sessions lack a package, use argument `future.packages`."
+    )
+  }
   p <- length(feature_names)
   basic_checks(X = X, feature_names = feature_names, pred_fun = pred_fun)
   stopifnot(
@@ -258,53 +265,34 @@ kernelshap.default <- function(
     warning_burden(max(m, m_exact), bg_n = bg_n)
   }
 
-  # Apply Kernel SHAP to each row of X
-  if (isTRUE(parallel)) {
-    future_args <- c(list(seed = TRUE), parallel_args)
-    parallel_args <- c(list(i = seq_len(n)), list(.options.future = future_args))
-    res <- do.call(foreach::foreach, parallel_args) %dofuture% kernelshap_one(
-      x = X[i, , drop = FALSE],
-      v1 = v1[i, , drop = FALSE],
-      object = object,
-      pred_fun = pred_fun,
-      feature_names = feature_names,
-      bg_w = bg_w,
-      exact = exact,
-      deg = hybrid_degree,
-      m = m,
-      tol = tol,
-      max_iter = max_iter,
-      v0 = v0,
-      precalc = precalc,
-      ...
-    )
-  } else {
-    if (verbose && n >= 2L) {
-      pb <- utils::txtProgressBar(max = n, style = 3)
-    }
-    res <- vector("list", n)
-    for (i in seq_len(n)) {
-      res[[i]] <- kernelshap_one(
-        x = X[i, , drop = FALSE],
-        v1 = v1[i, , drop = FALSE],
-        object = object,
-        pred_fun = pred_fun,
-        feature_names = feature_names,
-        bg_w = bg_w,
-        exact = exact,
-        deg = hybrid_degree,
-        m = m,
-        tol = tol,
-        max_iter = max_iter,
-        v0 = v0,
-        precalc = precalc,
-        ...
-      )
-      if (verbose && n >= 2L) {
-        utils::setTxtProgressBar(pb, i)
-      }
-    }
+  pbar_step <- max(1L, n %/% 20L)
+  pbar <- if (verbose && n >= 2L && requireNamespace("progressr", quietly = TRUE)) {
+    progressr::progressor(ceiling(n / pbar_step))
   }
+
+  # Apply Kernel SHAP to each row of X
+  res <- future.apply::future_lapply(
+    seq_len(n),
+    FUN = kernelshap_one,
+    future.packages = future.packages,
+    future.seed = TRUE,
+    x = X,
+    v1 = v1,
+    object = object,
+    pred_fun = pred_fun,
+    feature_names = feature_names,
+    bg_w = bg_w,
+    exact = exact,
+    deg = hybrid_degree,
+    m = m,
+    tol = tol,
+    max_iter = max_iter,
+    v0 = v0,
+    precalc = precalc,
+    pbar = pbar,
+    pbar_step = pbar_step,
+    ...
+  )
 
   # Organize output
   exact <- exact || trunc(p / 2) == hybrid_degree

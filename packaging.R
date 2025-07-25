@@ -15,7 +15,7 @@ library(usethis)
 use_description(
   fields = list(
     Title = "Kernel SHAP",
-    Version = "0.9.0",
+    Version = "1.0.0",
     Description = "Efficient implementation of Kernel SHAP
     (Lundberg and Lee, 2017, <doi:10.48550/arXiv.1705.07874>)
     permutation SHAP, and additive SHAP for model interpretability.
@@ -37,12 +37,13 @@ use_description(
   roxygen = TRUE
 )
 
-use_package("doFuture", "Imports")
-use_package("foreach", "Imports")
+use_package("future.apply", "Imports")
 use_package("stats", "Imports")
 use_package("utils", "Imports")
 
-use_gpl_license(2)
+use_package("progressr", "Suggests")
+
+use_gpl_license(3)
 
 # Your files that do not belong to the package itself (others are added by "use_* function")
 use_build_ignore(c(

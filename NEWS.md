@@ -1,4 +1,4 @@
-# kernelshap 0.9.0
+# kernelshap 1.0.0
 
 ### Bug fix
 
@@ -12,21 +12,29 @@ we have fixed a bug in how `kernelshap()` calculates Kernel weights.
 Fixed in [#168](https://github.com/ModelOriented/kernelshap/pull/168), which also has received
 unit tests against Python's "shap".
 
-### API
+### Major improvements for parallel computation
 
+We have switched from `%dopar%` to `future_lapply()`:
+
+- We have a progress bar! Activate via `progressr::handlers(global = TRUE).
+- No need for calling `registerDoFuture()` anymore.
+- No need to set `parallel = TRUE` anymore.
+- No need to declare missing packages anymore via `parallel_args`. Should you still encounter missing packages anyway,
+ use the new argument `future.packages`.
+- Random seeding is now properly handled, thanks [#163](https://github.com/ModelOriented/kernelshap/issues/163) for reporting.
+
+Implemented in PRs [#170](https://github.com/ModelOriented/kernelshap/pull/170) and [#173](https://github.com/ModelOriented/kernelshap/pull/173).
+
+### API changes and improvements
+
+- The traditional progress bar has been replaced by {progressr}. Activate e.g. via `progressr::handlers(global = TRUE).
+  It works in parallel mode as well, and you can choose your own style ([#173](https://github.com/ModelOriented/kernelshap/pull/173)).
 - The argument `feature_names` can now also be used with matrix input ([#166](https://github.com/ModelOriented/kernelshap/pull/166)).
 - `kernelshap()` and `permshap()` have received a `seed = NULL` argument ([#170](https://github.com/ModelOriented/kernelshap/pull/170)).
-- Parallel mode: If missing packages or globals have to be specified, this now has to be done through `parallel_args = list(packages = ..., globals = ...)` 
-instead of `parallel_args = list(.packages = ..., .globals = ...)`, see section on parallelism below. 
-The list is passed to `[foreach::foreach(.options.future = ...)]`.
 
-### Speed and memory improvements
+### Memory improvements
 
 - `permshap()` and `kernelshap()` require about 10% less memory ([#166](https://github.com/ModelOriented/kernelshap/pull/166)).
-- `permshap()` and `kernelshap()` are faster for data.frame input, 
-  and slightly slower for matrix input ([#166](https://github.com/ModelOriented/kernelshap/pull/166)).
-- Additionally, `permshap(, exact = TRUE)` is faster by pre-calculating more 
-  elements used across rows ([#165](https://github.com/ModelOriented/kernelshap/pull/165)).
 
 ### Internal changes
 
@@ -34,19 +42,12 @@ The list is passed to `[foreach::foreach(.options.future = ...)]`.
 - `kernelshap()` solver: Replacing the Moore-Penrose pseudo-inverse by two direct solves, a trick of [Ian Covert](https://github.com/iancovert/shapley-regression/blob/master/shapreg/shapley.py),
   and ported to R in ([#171](https://github.com/ModelOriented/kernelshap/pull/171)).
 
-### Changes in parallelism
+### Change in dependencies
 
-We have switched from `%dopar%` to `doFuture` ([#170](https://github.com/ModelOriented/kernelshap/pull/170)) with the following impact:
-
-- No need for calling `registerDoFuture()` anymore.
-- Random seeding is properly handled, and respects `seed`, thanks [#163](https://github.com/ModelOriented/kernelshap/issues/163) for reporting.
-- If missing packages or globals have to be specified, this now has to be done through `parallel_args = list(packages = ..., globals = ...)` 
-instead of `parallel_args = list(.packages = ..., .globals = ...)`. The list is passed to `[foreach::foreach(.options.future = ...)]`.
-
-### Dependencies
-
-- {MASS}: Dropped from imports
-- {doFuture}: suggests -> imports
+- {MASS}: Dropped from Imports
+- {foreach}: Dropped from Imports
+- {doFuture}: Dropped from suggests and replaced by {future.apply} in Imports
+- {progressr}: New in Suggests
 
 # kernelshap 0.8.0
 

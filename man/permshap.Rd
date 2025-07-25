@@ -22,6 +22,7 @@ permshap(object, ...)
   max_iter = 10L * length(feature_names),
   parallel = FALSE,
   parallel_args = NULL,
+  future.packages = NULL,
   verbose = TRUE,
   seed = NULL,
   ...
@@ -98,17 +99,12 @@ For \code{permshap()}, the default is 0.01, while for \code{kernelshap()} it is 
 \item{max_iter}{If the stopping criterion (see \code{tol}) is not reached after
 \code{max_iter} iterations, the algorithm stops. Ignored if \code{exact = TRUE}.}
 
-\item{parallel}{If \code{TRUE}, use \code{\link[foreach:foreach]{foreach::foreach()}} and \verb{\%dofuture\%} to loop over rows
-to be explained. Must register backend beforehand, e.g., \code{plan(multisession)},
-see README for an example. Currently disables the progress bar.}
+\item{parallel}{Deprecated.}
 
-\item{parallel_args}{Named list of arguments passed to
-\code{foreach::foreach(.options.future = ...)}, ideally \code{NULL} (default).
-Only relevant if \code{parallel = TRUE}.
-Example on Windows: if \code{object} is a GAM fitted with package 'mgcv',
-then one might need to set \code{parallel_args = list(packages = "mgcv")}.
-Similarly, if the model has been fitted with \code{ranger()}, then it might be necessary
-to pass \code{parallel_args = list(packages = "ranger")}.}
+\item{parallel_args}{Deprecated (see \code{future.packages}).}
+
+\item{future.packages}{Character vector with packages to be attached in the
+R environment evaluating the future. Only if parallel computing.}
 
 \item{verbose}{Set to \code{FALSE} to suppress messages and the progress bar.}
 
@@ -148,6 +144,11 @@ By default, for up to p=8 features, exact SHAP values are returned
 (exact with respect to the selected background data).
 Otherwise, the sampling process iterates until the resulting values
 are sufficiently precise, and standard errors are provided.
+
+To activate the progress bar, e.g., run \code{progressr::handlers(global = TRUE)} first.
+
+To activate parallel processing, run \code{future::plan(multisession)} or similar.
+To deactivate later, run \code{plan("sequential")}.
 }
 \details{
 During each iteration, the algorithm cycles twice through a random permutation:
