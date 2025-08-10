@@ -193,18 +193,7 @@ test_that("exact hybrid kernelshap() is similar to exact (non-hybrid)", {
   expect_equal(s1$S, shap[[1L]]$S)
 })
 
-# test_that("kernelshap works for large p (hybrid case)", {
-#   set.seed(9L)
-#   X <- data.frame(matrix(rnorm(20000L), ncol = 100L))
-#   y <- X[, 1L] * X[, 2L] * X[, 3L]
-#   fit <- lm(y ~ X1:X2:X3 + ., data = cbind(y = y, X))
-#   s <- kernelshap(fit, X[1L, ], bg_X = X, verbose = FALSE)
-#
-#   expect_equal(s$baseline, mean(y))
-#   expect_equal(rowSums(s$S) + s$baseline, unname(predict(fit, X[1L, ])))
-# })
-
-test_that("kernelshap and permshap work for models with high-order interactions", {
+test_that("exact kernelshap and permshap agree with Python on model with high-order interactions", {
   # Expected: Python output
   # import numpy as np
   # import shap # 0.47.2
@@ -263,10 +252,36 @@ test_that("kernelshap and permshap work for models with high-order interactions"
 
   ps <- permshap(pf, head(X, 2), bg_X = X, pred_fun = pf, verbose = FALSE)
   expect_equal(unname(ps$S), expected)
+})
 
-  # Sampling versions of KernelSHAP is quite close
+test_that("Test that sampling versions are close to exact with interaction of order 3", {
+  # We use a different example with less multi-collinearity, but still there is strong
+  # collinearity between the first two features
+  n <- 100
   set.seed(1)
-  ksh2 <- kernelshap(
+  X <- data.frame(
+    x1 = 1:n,
+    x2 = sqrt(1:n),
+    x3 = cos(1:n),
+    x4 = rnorm(n),
+    x5 = rexp(n),
+    x6 = runif(n)
+  )
+
+  pf <- function(model, newdata) {
+    x <- newdata
+    x[, 1] * x[, 2] * x[, 3] + x[, 4]
+  }
+  ks <- kernelshap(pf, head(X, 1), bg_X = X, pred_fun = pf, verbose = FALSE)
+  ps <- permshap(pf, head(X, 1), bg_X = X, pred_fun = pf, verbose = FALSE)
+  expect_equal(ks$S, ps$S)
+  expect_equal(
+    c(ks$S), c(-44.71698, -32.89963, 78.34841, -0.7353412, 0, 0),
+    tolerance = 0.0001
+  )
+
+  # Sampling versions of KernelSHAP are very close
+  ks2 <- kernelshap(
     pf,
     head(X, 1),
     bg_X = X,
@@ -276,16 +291,17 @@ test_that("kernelshap and permshap work for models with high-order interactions"
     m = 1000,
     max_iter = 100,
     tol = 0.001,
-    verbose = FALSE
+    verbose = FALSE,
+    seed = 1
   )
+  expect_true(ks2$converged)
   expect_equal(
-    c(ksh2$S),
-    c(-1.194878, -1.24747, -0.9596389, 3.883523, -0.3349787, 0.5453894),
-    tolerance = 1e-4
+    c(ks2$S), c(-44.52355, -32.93511, 78.16014, -0.7202121, -0.02362539, 0.03880312),
+    # Exact   c(-44.71698, -32.89963, 78.34841, -0.7353412, 0, 0)
+    tolerance = 0.0001
   )
 
-  set.seed(1)
-  ksh1 <- kernelshap(
+  ks1 <- kernelshap(
     pf,
     head(X, 1),
     bg_X = X,
@@ -294,37 +310,56 @@ test_that("kernelshap and permshap work for models with high-order interactions"
     exact = FALSE,
     m = 1000,
     max_iter = 1000,
-    tol = 0.002,
-    verbose = FALSE
+    tol = 0.001,
+    verbose = FALSE,
+    seed = 1
   )
+  expect_true(ks1$converged)
   expect_equal(
-    c(ksh1$S),
-    c(-1.196958, -1.256924, -0.9603291, 3.886163, -0.3277153, 0.5477104),
-    tolerance = 1e-3
+    c(ks1$S), c(-44.8478, -32.81717, 78.46633, -0.8514861, 0.01075054, 0.03582543),
+    # Exact   c(-44.71698, -32.89963, 78.34841, -0.7353412, 0, 0)
+    tolerance = 0.001
   )
 
-  set.seed(1)
-  ksh0 <- suppressWarnings(
-    kernelshap(
-      pf,
-      head(X, 1),
-      bg_X = X,
-      pred_fun = pf,
-      hybrid_degree = 0,
-      exact = FALSE,
-      m = 10000,
-      max_iter = 10000,
-      tol = 0.003,
-      verbose = FALSE
-    )
+  ks0 <- kernelshap(
+    pf,
+    head(X, 1),
+    bg_X = X,
+    pred_fun = pf,
+    hybrid_degree = 0,
+    exact = FALSE,
+    m = 1000,
+    max_iter = 1000,
+    tol = 0.005,
+    verbose = FALSE,
+    seed = 1
   )
+  expect_true(ks0$converged)
   expect_equal(
-    c(ksh0$S),
-    c(-1.18917, -1.2298, -0.9247995, 3.80673, -0.3144175, 0.5434034),
-    tolerance = 1e-3
+    c(ks0$S), c(-44.29753, -33.39267, 78.67423, -0.290739, -0.3779175, -0.3189199),
+    # Exact   c(-44.71698, -32.89963, 78.34841, -0.7353412, 0, 0)
+    tolerance = 0.001
+  )
+
+  # Too slow for closer results, but we can see additive recovery for x4-x6
+  pss <- permshap(
+    pf,
+    head(X, 1),
+    bg_X = X,
+    pred_fun = pf,
+    exact = FALSE,
+    max_iter = 100000,
+    tol = 0.005,
+    verbose = FALSE,
+    seed = 1
+  )
+  expect_true(pss$converged)
+  expect_equal(
+    c(pss$S), c(-44.36299, -32.79343, 77.88822, -0.7353412, 0, 0),
+    # Exact   c(-44.71698, -32.89963, 78.34841, -0.7353412, 0, 0)
+    tolerance = 0.001
   )
 })
-
 
 test_that("Random seed works", {
   n <- 100
@@ -344,9 +379,36 @@ test_that("Random seed works", {
   }
 
   for (algo in c(permshap, kernelshap)) {
-    s1a <- algo(pf, head(X, 2), bg_X = X, pred_fun = pf, verbose = FALSE, seed = 1, exact = FALSE, hybrid_degree = 0)
-    s1b <- algo(pf, head(X, 2), bg_X = X, pred_fun = pf, verbose = FALSE, seed = 1, exact = FALSE, hybrid_degree = 0)
-    s2 <- algo(pf, head(X, 2), bg_X = X, pred_fun = pf, verbose = FALSE, seed = 2, exact = FALSE, hybrid_degree = 0)
+    s1a <- algo(
+      pf,
+      head(X, 2),
+      bg_X = X,
+      pred_fun = pf,
+      verbose = FALSE,
+      seed = 1,
+      exact = FALSE,
+      hybrid_degree = 0
+    )
+    s1b <- algo(
+      pf,
+      head(X, 2),
+      bg_X = X,
+      pred_fun = pf,
+      verbose = FALSE,
+      seed = 1,
+      exact = FALSE,
+      hybrid_degree = 0
+    )
+    s2 <- algo(
+      pf,
+      head(X, 2),
+      bg_X = X,
+      pred_fun = pf,
+      verbose = FALSE,
+      seed = 2,
+      exact = FALSE,
+      hybrid_degree = 0
+    )
     expect_equal(s1a, s1b)
     expect_false(identical(s1a$S, s2$S))
   }

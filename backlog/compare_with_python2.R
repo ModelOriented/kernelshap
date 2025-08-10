@@ -18,8 +18,8 @@ pf <- function(model, newdata) {
 }
 ks <- kernelshap(pf, head(X), bg_X = X, pred_fun = pf)
 ks # -1.196216 -1.241848 -0.9567848 3.879420 -0.33825  0.5456252
-es <- permshap(pf, head(X), bg_X = X, pred_fun = pf)
-es # -1.196216 -1.241848 -0.9567848 3.879420 -0.33825  0.5456252
+ps <- permshap(pf, head(X), bg_X = X, pred_fun = pf)
+ps # -1.196216 -1.241848 -0.9567848 3.879420 -0.33825  0.5456252
 
 set.seed(10)
 kss <- kernelshap(
@@ -61,3 +61,15 @@ ksh2 <- kernelshap(
   tol = 0.0001
 )
 ksh2 # 1.195976 -1.241107 -0.9565121 3.878891 -0.3384621 0.5451118
+
+set.seed(1)
+pss <- permshap(
+  pf,
+  head(X, 1),
+  bg_X = X,
+  pred_fun = pf,
+  exact = FALSE,
+  max_iter = 40000,
+  tol = 0.0001
+)
+pss # -1.222608 -1.252001 -0.9312635 3.890444 -0.33825 0.5456252 non-convergence

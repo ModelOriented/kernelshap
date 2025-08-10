@@ -73,36 +73,32 @@ exact_Z <- function(p, feature_names) {
 #'
 #' @inheritParams kernelshap
 #' @param x Row to be explained.
-#' @param bg Background data stacked m times.
-#' @param Z A logical (m x p) matrix with on-off values.
+#' @param bg_rep Background data stacked m times.
+#' @param Z_rep A logical ((m * bg_n) x p) matrix with on-off values.
 #' @param w A vector with case weights (of the same length as the unstacked
 #'   background data).
+#' @param bg_n Size of background dataset (unstacked).
 #' @returns A (m x K) matrix with vz values.
-get_vz <- function(x, bg, Z, object, pred_fun, w, ...) {
-  m <- nrow(Z)
-  n_bg <- nrow(bg) / m # because bg was replicated m times
-
-  # Replicate Z, so that bg and Z are of dimension (m*n_bg x p)
-  g <- rep_each(m, each = n_bg)
-  Z_rep <- Z[g, , drop = FALSE]
-
-  for (v in colnames(Z)) {
+get_vz <- function(x, bg_rep, Z_rep, object, pred_fun, w, bg_n, ...) {
+  for (v in colnames(Z_rep)) {
     s <- Z_rep[, v]
     if (is.matrix(x)) {
-      bg[s, v] <- x[, v]
+      bg_rep[s, v] <- x[, v]
     } else {
-      bg[[v]][s] <- x[[v]]
+      bg_rep[[v]][s] <- x[[v]]
     }
   }
 
-  preds <- align_pred(pred_fun(object, bg, ...))
+  preds <- align_pred(pred_fun(object, bg_rep, ...))
 
   # Aggregate (distinguishing fast 1-dim case)
+  m <- nrow(Z_rep) %/% bg_n
   if (ncol(preds) == 1L) {
     return(wrowmean_vector(preds, ngroups = m, w = w))
   }
+  g <- rep_each(m, each = bg_n)
   if (is.null(w)) {
-    return(rowsum(preds, group = g, reorder = FALSE) / n_bg)
+    return(rowsum(preds, group = g, reorder = FALSE) / bg_n)
   }
   rowsum(preds * w, group = g, reorder = FALSE) / sum(w)
 }
