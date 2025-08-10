@@ -15,6 +15,7 @@ kernelshap_one <- function(
     max_iter,
     v0,
     precalc,
+    bg_n,
     ...) {
   p <- length(feature_names)
   K <- ncol(v1)
@@ -22,18 +23,24 @@ kernelshap_one <- function(
 
   # Calculate A_exact and b_exact
   if (exact || deg >= 1L) {
-    A_exact <- precalc[["A"]] #  (p x p)
-    bg_X_exact <- precalc[["bg_X_exact"]] #  (m_ex*n_bg x p)
-    Z <- precalc[["Z"]] #  (m_ex x p)
+    A_exact <- precalc$A #  (p x p)
+    Z <- precalc$Z #  (m_ex x p)
     m_exact <- nrow(Z)
     v0_m_exact <- v0[rep.int(1L, m_exact), , drop = FALSE] #  (m_ex x K)
 
     # Most expensive part
     vz <- get_vz(
-      x = x, bg = bg_X_exact, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
+      x = x,
+      bg_rep = precalc$bg_exact_rep, #  (m_ex*bg_n x p)
+      Z_rep = precalc$Z_exact_rep, #  (m_ex*bg_n x p)
+      object = object,
+      pred_fun = pred_fun,
+      w = bg_w,
+      bg_n = bg_n,
+      ...
     )
     # Note: w is correctly replicated along columns of (vz - v0_m_exact)
-    b_exact <- crossprod(Z, precalc[["w"]] * (vz - v0_m_exact)) #  (p x K)
+    b_exact <- crossprod(Z, precalc$w * (vz - v0_m_exact)) #  (p x K)
 
     # Some of the hybrid cases are exact as well
     if (exact || trunc(p / 2) == deg) {
@@ -43,7 +50,8 @@ kernelshap_one <- function(
   }
 
   # Iterative sampling part, always using A_exact and b_exact to fill up the weights
-  bg_X_m <- precalc[["bg_X_m"]] #  (m*n_bg x p)
+  g <- rep_each(m, each = bg_n)
+
   v0_m <- v0[rep.int(1L, m), , drop = FALSE] #  (m x K)
   est_m <- array(
     data = 0, dim = c(max_iter, p, K), dimnames = list(NULL, feature_names, K_names)
@@ -62,16 +70,23 @@ kernelshap_one <- function(
   while (!converged && n_iter < max_iter) {
     n_iter <- n_iter + 1L
     input <- input_sampling(p = p, m = m, deg = deg, feature_names = feature_names)
-    Z <- input[["Z"]]
+    Z <- input$Z
 
     # Expensive                                                              #  (m x K)
     vz <- get_vz(
-      x = x, bg = bg_X_m, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
+      x = x,
+      bg_rep = precalc$bg_sampling_rep, #  (m*bg_n x p)
+      Z_rep = Z[g, , drop = FALSE],
+      object = object,
+      pred_fun = pred_fun,
+      w = bg_w,
+      bg_n = bg_n,
+      ...
     )
 
-    # The sum of weights of A_exact and input[["A"]] is 1, same for b
-    A_temp <- A_exact + input[["A"]] #  (p x p)
-    b_temp <- b_exact + crossprod(Z, input[["w"]] * (vz - v0_m)) #  (p x K)
+    # The sum of weights of A_exact and input$A is 1, same for b
+    A_temp <- A_exact + input$A #  (p x p)
+    b_temp <- b_exact + crossprod(Z, input$w * (vz - v0_m)) #  (p x K)
     A_sum <- A_sum + A_temp #  (p x p)
     b_sum <- b_sum + b_temp #  (p x K)
 

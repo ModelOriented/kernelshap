@@ -242,16 +242,19 @@ kernelshap.default <- function(
         p = p, deg = hybrid_degree, feature_names = feature_names
       )
     }
-    m_exact <- nrow(precalc[["Z"]])
+    Z <- precalc[["Z"]]
+    m_exact <- nrow(Z)
     prop_exact <- sum(precalc[["w"]])
-    precalc[["bg_X_exact"]] <- rep_rows(bg_X, rep.int(seq_len(bg_n), m_exact))
+    precalc[["bg_exact_rep"]] <- rep_rows(bg_X, rep.int(seq_len(bg_n), m_exact))
+    g <- rep_each(m_exact, each = bg_n)
+    precalc[["Z_exact_rep"]] <- Z[g, , drop = FALSE]
   } else {
     precalc <- list()
     m_exact <- 0L
     prop_exact <- 0
   }
   if (!exact) {
-    precalc[["bg_X_m"]] <- rep_rows(bg_X, rep.int(seq_len(bg_n), m))
+    precalc[["bg_sampling_rep"]] <- rep_rows(bg_X, rep.int(seq_len(bg_n), m))
   }
 
   if (max(m, m_exact) * bg_n > 2e5) {
@@ -276,6 +279,7 @@ kernelshap.default <- function(
       max_iter = max_iter,
       v0 = v0,
       precalc = precalc,
+      bg_n = bg_n,
       ...
     )
   } else {
@@ -298,6 +302,7 @@ kernelshap.default <- function(
         max_iter = max_iter,
         v0 = v0,
         precalc = precalc,
+        bg_n = bg_n,
         ...
       )
       if (verbose && n >= 2L) {

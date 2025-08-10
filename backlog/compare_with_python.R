@@ -25,23 +25,23 @@ ks
 # [1,] -2.050074 -0.28048747 0.1281222 0.01587382
 # [2,] -2.085838  0.04050415 0.1283010 0.03731644
 
-# Pure sampling version takes a bit longer (6.6 seconds)
+# Pure sampling version takes a bit longer (5.6 seconds)
 system.time(
   ks2 <- kernelshap(fit, X_small, bg_X = bg_X, exact = FALSE, hybrid_degree = 0)
 )
 ks2
 
 bench::mark(kernelshap(fit, X_small, bg_X = bg_X, verbose=F))
-# 2.17s 1.64GB -> 1.79s 1.43GB
+# 1.66s 1.4GB -> 1.79s 1.43GB
 
 bench::mark(kernelshap(fit, X_small, bg_X = bg_X, verbose=F, exact=F, hybrid_degree = 1))
-# 4.88s  2.79GB ->  4.38s 2.48GB
+# 4.58s  2.45GB ->  4.38s 2.48GB
 
 bench::mark(permshap(fit, X_small, bg_X = bg_X, verbose=F))
-# 1.97s 1.64GB -> 1.9s 1.43GB
+# 1.75s 1.4GB -> 1.9s 1.43GB
 
 bench::mark(permshap(fit, X_small, bg_X = bg_X, verbose=F, exact=F))
-# 3.04s  1.88GB ->  2.8s 1.64GB
+# 3.97s  1.63GB ->  2.8s 1.64GB
 
 # SHAP values of first 2 observations:
 #          carat     clarity     color        cut

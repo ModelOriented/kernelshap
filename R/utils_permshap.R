@@ -26,26 +26,25 @@ permshap_one <- function(
     low_memory,
     tol,
     max_iter,
+    bg_n,
     ...) {
-  bg <- precalc$bg_X_rep
-
   p <- length(feature_names)
   K <- ncol(v1)
   K_names <- colnames(v1)
   beta_n <- matrix(0, nrow = p, ncol = K, dimnames = list(feature_names, K_names))
 
   if (exact) {
-    Z <- precalc$Z # ((m_ex+2) x K)
-    vz <- get_vz( # (m_ex x K)
+    vz <- get_vz(
       x = x,
-      bg = bg,
-      Z = Z[2L:(nrow(Z) - 1L), , drop = FALSE], # (m_ex x p)
+      bg_rep = precalc$bg_exact_rep,
+      Z_rep = precalc$Z_exact_rep,
       object = object,
       pred_fun = pred_fun,
       w = bg_w,
+      bg_n = bg_n,
       ...
     )
-    vz <- rbind(v0, vz, v1) # we add the cheaply calculated v0 and v1
+    vz <- rbind(v0, vz, v1)
 
     for (j in seq_len(p)) {
       pos <- precalc$positions[[j]]
@@ -68,11 +67,12 @@ permshap_one <- function(
   # Pre-calculate part of Z with rowsum 1 or p - 1
   vz_balanced <- get_vz( # (2p x K)
     x = x,
-    bg = precalc$bg_X_balanced,
-    Z = precalc$Z_balanced,
+    bg_rep = precalc$bg_balanced_rep,
+    Z_rep = precalc$Z_balanced_rep,
     object = object,
     pred_fun = pred_fun,
     w = bg_w,
+    bg_n = bg_n,
     ...
   )
 
@@ -83,24 +83,35 @@ permshap_one <- function(
   from_balanced <- c(2L, 2L + p, p, 2L * p)
   from_iter <- c(3L:(p - 1L), (p + 3L):(2L * p - 1L))
 
+  bg_sampling_rep <- precalc$bg_sampling_rep
+  g <- rep_each(nrow(bg_sampling_rep) %/% bg_n, each = bg_n)
+
   while (!converged && n_iter < max_iter) {
     chains <- balanced_chains(p)
     Z <- lapply(chains, sample_Z_from_chain, feature_names = feature_names)
     if (!low_memory) { # predictions for all chains at once
       Z <- do.call(rbind, Z)
       vz <- get_vz(
-        x = x, bg = bg, Z = Z, object = object, pred_fun = pred_fun, w = bg_w, ...
+        x = x,
+        bg_rep = bg_sampling_rep,
+        Z_rep = Z[g, , drop = FALSE],
+        object = object,
+        pred_fun = pred_fun,
+        w = bg_w,
+        bg_n = bg_n,
+        ...
       )
     } else { # predictions for each chain separately
       vz <- vector("list", length = p)
       for (j in seq_len(p)) {
         vz[[j]] <- get_vz(
           x = x,
-          bg = bg,
-          Z = Z[[j]],
+          bg_rep = bg_sampling_rep,
+          Z_rep = Z[[j]][g, , drop = FALSE],
           object = object,
           pred_fun = pred_fun,
           w = bg_w,
+          bg_n = bg_n,
           ...
         )
       }
