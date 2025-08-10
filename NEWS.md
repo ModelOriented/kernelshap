@@ -1,3 +1,9 @@
+# kernelshap 0.9.1
+
+### Speed and memory improvements
+
+- More pre-calculations for exact part of the methods ([#175](https://github.com/ModelOriented/kernelshap/pull/175)).
+
 # kernelshap 0.9.0
 
 ### Bug fix
