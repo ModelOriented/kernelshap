@@ -205,15 +205,16 @@ kernelshap.default <- function(
     p == 1L || exact || hybrid_degree %in% 0:(p / 2),
     "m must be even" = trunc(m / 2) == m / 2
   )
+
+  if (!is.null(seed)) {
+    set.seed(seed)
+  }
+
   prep_bg <- prepare_bg(X = X, bg_X = bg_X, bg_n = bg_n, bg_w = bg_w, verbose = verbose)
   bg_X <- prep_bg$bg_X
   bg_w <- prep_bg$bg_w
   bg_n <- nrow(bg_X)
   n <- nrow(X)
-
-  if (!is.null(seed)) {
-    set.seed(seed)
-  }
 
   # Calculate v1 and v0
   bg_preds <- align_pred(pred_fun(object, bg_X, ...))

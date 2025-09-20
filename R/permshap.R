@@ -124,16 +124,16 @@ permshap.default <- function(
     message(txt)
   }
 
+  if (!is.null(seed)) {
+    set.seed(seed)
+  }
+
   basic_checks(X = X, feature_names = feature_names, pred_fun = pred_fun)
   prep_bg <- prepare_bg(X = X, bg_X = bg_X, bg_n = bg_n, bg_w = bg_w, verbose = verbose)
   bg_X <- prep_bg$bg_X
   bg_w <- prep_bg$bg_w
   bg_n <- nrow(bg_X)
   n <- nrow(X)
-
-  if (!is.null(seed)) {
-    set.seed(seed)
-  }
 
   # Baseline and predictions on explanation data
   bg_preds <- align_pred(pred_fun(object, bg_X, ...))

@@ -4,6 +4,12 @@
 
 - More pre-calculations for exact part of the methods ([#175](https://github.com/ModelOriented/kernelshap/pull/175)).
 
+### Bug fixes
+
+- Setting the random seed in `kernelshap()` or `permshap()` would not respect the random selection of the background dataset.
+ ([#177](https://github.com/ModelOriented/kernelshap/pull/177)).
+
+
 # kernelshap 0.9.0
 
 ### Bug fix
